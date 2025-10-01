@@ -1,0 +1,1 @@
+web: npx --yes serve public -l $PORT
