@@ -18,9 +18,16 @@
     .row-silver:hover { background-color: #C0C0C044; }
     .row-bronze:hover { background-color: #CD7F3244; }
   </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Deploy Dashboard</h1>
+  <header id="global-header">
+    <h1>📊 Project Status Dashboard</h1>
+  </header>
+  <div id="warning-banner" class="hidden">
+    <div id="warning-barcode"></div>
+    <span id="warning-text"></span>
+  </div>
   <table>
     <thead>
       <tr>
@@ -110,8 +117,23 @@
         `;
         table.appendChild(row);
       });
+
+      // Show global warning banner if any missing glyphs
+      if (typeof showWarningBanner === 'function' && Object.values(projects).length > 0) {
+        let missingCount = 0;
+        for (const p of Object.values(projects)) {
+          const metaEntry = meta[p.name] || {};
+          const glyphChar = metaEntry.barcodeGlyph || metaEntry.glyph || "";
+          if (showGlyphWarnings && !glyphChar) missingCount++;
+        }
+        if (missingCount > 0 && showGlyphWarnings) {
+          const firstProject = Object.keys(projects)[0] || "Generic";
+          showWarningBanner("⚠️ Some projects missing SVG glyphs, fallback used.", firstProject);
+        }
+      }
     });
   </script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
 

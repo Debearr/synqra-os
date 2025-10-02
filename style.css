@@ -1,0 +1,36 @@
+#warning-banner {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #b30000, #ffcc00);
+  color: white;
+  font-weight: bold;
+  padding: 8px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+}
+
+#warning-barcode {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0.15;
+  background-repeat: repeat;
+  background-size: contain;
+  animation: moveBarcode 6s linear infinite;
+}
+
+@keyframes moveBarcode {
+  from { background-position: 0 0; }
+  to { background-position: 100% 0; }
+}
+
+#warning-text {
+  position: relative;
+  z-index: 2;
+}
+
+.hidden {
+  display: none;
+}
