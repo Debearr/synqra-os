@@ -233,6 +233,14 @@ render_dashboard() {
     <tr><th>Project</th><th>Status %</th><th>Trend</th><th>Momentum</th><th>Last Deployed</th><th>Notes</th></tr>
 EOL
 
+  # Increment mode label for tooltips
+  local inc_mode_label
+  if [[ "${DEPLOY_MODE:-adaptive}" == "fixed" ]]; then
+    inc_mode_label="Fixed Increment"
+  else
+    inc_mode_label="Adaptive Increment"
+  fi
+
   if [[ -f projects.json ]]; then
     while IFS= read -r proj; do
       [[ -z "$proj" ]] && continue
@@ -261,7 +269,7 @@ EOL
       local bar_color="#f44336"
       if (( percent >= 80 )); then bar_color="#4caf50"; elif (( percent >= 50 )); then bar_color="#ffc107"; fi
       local tooltip
-      tooltip="Global: $global_icon $global_emoji | Project: $momentum_icon $momentum_emoji"
+      tooltip="Global: $global_icon $global_emoji | Project: $momentum_icon $momentum_emoji • ⚙️ $inc_mode_label"
       cat <<ROW
     <tr class='$row_class'>
       <td>$name</td>
