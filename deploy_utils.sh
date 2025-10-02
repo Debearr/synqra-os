@@ -248,6 +248,46 @@ render_dashboard() {
   #mode-subtitle { font-size: 14px; font-style: italic; margin-top: -4px; opacity: 0.75; }
   .bar-outer { position:relative; width:100%; background:#333; border-radius:4px; height:16px; }
   .bar-inner { height:16px; border-radius:4px; }
+
+  /* Premium Tooltip */
+  .tooltip-gradient {
+    background: rgba(20,20,20,0.9);
+    border: 1px solid rgba(255,215,0,0.4);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    transition: opacity 0.2s ease;
+  }
+
+  /* Gradient shimmer sync with heartbeat */
+  .tooltip-gradient:hover {
+    background-image: linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,255,255,0.05), rgba(255,215,0,0.2));
+    background-size: 200% 100%;
+    animation: tooltipShine var(--pulse-speed) linear infinite;
+  }
+
+  /* Elegant pulse */
+  @keyframes tooltipShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Subtitles */
+  .project-subtitle {
+    font-size: 0.85rem;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.75);
+    border-left: 4px solid transparent;
+    padding-left: 8px;
+    margin-top: 3px;
+    transition: all 0.3s ease;
+  }
 </style>
 </head>
 <body>
