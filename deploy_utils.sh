@@ -94,6 +94,9 @@ update_dashboard() {
       stroke-width: 1;
       fill: none;
     }
+    .sparkline-green { stroke: #4caf50; stroke-width: 2; fill: none; }
+    .sparkline-yellow { stroke: #ffc107; stroke-width: 2; fill: none; }
+    .sparkline-red { stroke: #f44336; stroke-width: 2; fill: none; }
   </style>
   <style>
     /* --- Responsive tweaks --- */
