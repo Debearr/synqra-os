@@ -2,5 +2,5 @@
   "name": "\ud83d\ude80 Safe Deploy",
   "description": "One-click safe deploy agent. Runs safeguard, auto-deploy, logs, and echoes final URL.",
   "type": "background",
-  "script": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Import safeguard + deploy utils\nsource ./deploy_utils.sh\n\n# Run deploy\nrailway up --service=synqra-os | tee deploy_output.log\n\n# Extract URL (if available)\nURL=$(grep -o 'https://[^ ]*railway.app' deploy_output.log | tail -n 1 || true)\n\nif [ -n \"$URL\" ]; then\n  echo -e \"\\n\\033[1;33m\ud83d\ude80 FINAL DEPLOY URL: $URL\\033[0m\\n\"\n  log_deploy \"synqra-os\" \"$URL\"\nelse\n  echo -e \"\\n\u274c No URL found in logs. Check Railway dashboard.\\n\"\nfi\n"
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\nsource ./scripts/deploy_utils.sh\n\nREPO_NAME=$(basename $(git rev-parse --show-toplevel))\n\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n"
 }
