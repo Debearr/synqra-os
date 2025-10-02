@@ -3,23 +3,41 @@ set -euo pipefail
 
 # Usage:
 #   ./deploy_any.sh <repo_name>
+#   DRY_RUN=1 ./deploy_any.sh <repo_name>
+#   NO_GIT_PUSH=1 NO_BROWSER=1 ./deploy_any.sh <repo_name>
 # Example:
 #   ./deploy_any.sh synqra-os
 
 main() {
   if [ $# -lt 1 ]; then
-    echo "❌ Please provide a repo name. Example: ./deploy_any.sh synqra-os"
-    exit 1
+    read -r -p "👉 Enter repo name to deploy: " REPO_NAME
+    if [ -z "${REPO_NAME:-}" ]; then
+      echo "❌ Repo name is required"
+      exit 1
+    fi
+  else
+    REPO_NAME="$1"
   fi
 
-  REPO_NAME="$1"
-  REPO_PATH="$HOME/$REPO_NAME"
+  # Resolve repo path candidates in priority order
+  CANDIDATES=(
+    "$HOME/$REPO_NAME"
+    "/workspace/$REPO_NAME"
+    "$PWD/$REPO_NAME"
+  )
+  REPO_PATH=""
+  for p in "${CANDIDATES[@]}"; do
+    if [ -d "$p" ]; then
+      REPO_PATH="$p"
+      break
+    fi
+  done
 
   echo "[deploy] Starting deployment for $REPO_NAME..."
 
   # --- Step 0: Switch into repo ---
-  if [ ! -d "$REPO_PATH" ]; then
-    echo "[deploy] ❌ Repo '$REPO_NAME' not found at $REPO_PATH"
+  if [ -z "$REPO_PATH" ]; then
+    echo "[deploy] ❌ Repo '$REPO_NAME' not found in: ${CANDIDATES[*]}"
     exit 1
   fi
   cd "$REPO_PATH"
@@ -45,7 +63,16 @@ main() {
   fi
 
   # --- Step 3: Fetch live URL ---
-  url=$(railway status --service "$REPO_NAME" --json | jq -r '.url')
+  url=""
+  if railway status --service "$REPO_NAME" --json >/dev/null 2>&1; then
+    url=$(railway status --service "$REPO_NAME" --json | jq -r '.url')
+  fi
+  if [ -z "$url" ] || [ "$url" = "null" ]; then
+    # Fallback to project-level URL if available
+    if railway status --json >/dev/null 2>&1; then
+      url=$(railway status --json | jq -r '.url // empty')
+    fi
+  fi
   if [ -z "$url" ] || [ "$url" = "null" ]; then
     echo "[deploy] ❌ Could not fetch live URL for $REPO_NAME"
     exit 1
@@ -53,12 +80,16 @@ main() {
   echo "[deploy] ✅ $REPO_NAME live here: $url"
 
   # --- Step 4: Auto-open browser ---
-  case "$OSTYPE" in
-    linux*)    xdg-open "$url" >/dev/null 2>&1 & ;;
-    darwin*)   open "$url" >/dev/null 2>&1 & ;;
-    msys*|cygwin*|win32*) start "" "$url" >/dev/null 2>&1 ;;
-    *) echo "[deploy] 🌍 Please open manually: $url" ;;
-  esac
+  if [ -z "${NO_BROWSER:-}" ]; then
+    case "$OSTYPE" in
+      linux*)    xdg-open "$url" >/dev/null 2>&1 & ;;
+      darwin*)   open "$url" >/dev/null 2>&1 & ;;
+      msys*|cygwin*|win32*) start "" "$url" >/dev/null 2>&1 ;;
+      *) echo "[deploy] 🌍 Please open manually: $url" ;;
+    esac
+  else
+    echo "[deploy] 🌍 Skipping browser open (NO_BROWSER=1). URL: $url"
+  fi
 
   # --- Step 5: Update README.md ---
   if [ -f README.md ]; then
@@ -71,9 +102,17 @@ main() {
     echo "## 🌍 Live Deployment\n$REPO_NAME is live here: $url" > README.md
   fi
 
-  git add README.md
-  git commit -m "docs: auto-update $REPO_NAME live deployment URL"
-  git push origin main
+  if [ -n "${DRY_RUN:-}" ]; then
+    echo "[deploy] 🔎 DRY_RUN=1 set; skipping git commit/push"
+  elif [ -n "${NO_GIT_PUSH:-}" ]; then
+    echo "[deploy] ⏭️  NO_GIT_PUSH=1 set; not pushing changes"
+    git add README.md || true
+    git commit -m "docs: auto-update $REPO_NAME live deployment URL" || true
+  else
+    git add README.md
+    git commit -m "docs: auto-update $REPO_NAME live deployment URL" || true
+    git push origin main
+  fi
 
   echo "[deploy] 🚀 Finished deployment for $REPO_NAME"
 }
