@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Clean previous URL
+# Clean previous URL before deploy
 rm -f DEPLOY_URL.txt
 
 main() {
