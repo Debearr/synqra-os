@@ -266,7 +266,8 @@
       <h1>📊 Project Status Dashboard</h1>
     </header>
     <!-- Barcode Watermark -->
-    <div class="barcode-watermark">
+    <div class="barcode-watermark" id="barcodeWatermark">
+      <span id="barcodeText">||| || ||| |||</span>
       <div class="barcode-reflection"></div>
       <div class="tag">De Bear x 🧸</div>
     </div>
@@ -295,6 +296,85 @@
         tt.innerHTML += `<div style="margin-top:4px;font-size:0.75rem;opacity:0.8;">Shimmer: ✨ ${shimmerSpeed}</div>`;
       });
     </script>
+
+    <script>
+      async function updateBarcode() {
+        try {
+          const res = await fetch("barcodes.json");
+          const barcodes = await res.json();
+
+          // Auto-detect project name from meta tag injected by deploy scripts
+          const meta = document.querySelector('meta[name="project-name"]');
+          const project = meta ? meta.content : (window.dashboardConfig?.project || "default");
+
+          const projectData = barcodes[project] || barcodes["default"] || { pattern: "||| ||| |||", glyphs: {} };
+          const barcode = projectData.pattern;
+          const glyphs = projectData.glyphs || {};
+
+          // Render text with glyph transformations
+          let displayText = String(project).replace(/-os$/, "").toUpperCase();
+          displayText = displayText.split("").map(char => {
+            if (glyphs[char]) {
+              switch (glyphs[char]) {
+                case "barcode-vertical":
+                  return `
+                    <span class="glyph-barcode-s">
+                      <span></span><span></span><span class="spacer"></span><span></span>
+                    </span>`;
+                case "barcode-fill":
+                  return `<span class="glyph-barcode-fill">${char}</span>`;
+                case "slash":
+                  return `<span class="glyph-slash">${char}<span class="slash-overlay">/</span></span>`;
+                case "circle":
+                  return `<span class="glyph-circle">${char}</span>`;
+                case "barcode-grid":
+                  return `<span class="glyph-barcode-grid">${char}</span>`;
+                default:
+                  return char;
+              }
+            }
+            return char;
+          }).join("");
+
+          document.getElementById("barcodeText").innerHTML = displayText + "<br>" + barcode;
+          console.log("[watermark] Project:", project, "| Glyphs applied:", glyphs);
+        } catch (e) {
+          console.error("[watermark] Failed to load barcode", e);
+        }
+      }
+      updateBarcode();
+    </script>
+
+    <style>
+      .glyph-barcode-s { display:inline-flex; align-items:flex-end; gap:1px; }
+      .glyph-barcode-s span { display:inline-block; width:2px; height:16px; background: rgba(255,255,255,0.55); }
+      .glyph-barcode-s .spacer { width:3px; background: transparent; }
+
+      .glyph-slash { position: relative; display:inline-block; padding-right: 6px; }
+      .slash-overlay { position: absolute; left: 50%; top: -1px; color: rgba(255,215,0,0.75); transform: translateX(-50%); }
+
+      .glyph-barcode-fill {
+        background: repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.55) 0px,
+          rgba(255,255,255,0.55) 2px,
+          transparent 2px,
+          transparent 4px
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .glyph-circle { border: 1px solid rgba(255,255,255,0.55); border-radius: 50%; padding: 0 4px; display:inline-block; }
+
+      .glyph-barcode-grid {
+        background: linear-gradient(90deg, rgba(255,255,255,0.5) 50%, transparent 50%),
+                    linear-gradient(0deg, rgba(255,255,255,0.5) 50%, transparent 50%);
+        background-size: 4px 100%, 100% 4px;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    </style>
   </body>
 </html>
 
