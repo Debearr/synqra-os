@@ -109,10 +109,18 @@ log_deploy() {
   ts=$(date +"%Y-%m-%d %H:%M:%S")
   day=$(date +"%Y-%m-%d")
 
+  # Colored increment mode label for log entry
+  local modeColor
+  if [[ "$mode" == "fixed" ]]; then
+    modeColor="<span style='color:#F44336'>⚙️ Fixed Increment</span>"
+  else
+    modeColor="<span style='color:#2196F3'>⚙️ Adaptive Increment</span>"
+  fi
+
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel (${mode^} Increment) • 🖤 $pulseLabel"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseLabel"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
