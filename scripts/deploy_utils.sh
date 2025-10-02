@@ -44,3 +44,47 @@ finalize_deploy() {
   fi
 }
 
+# 🔧 log_deploy: append to DeployLog.md and podium-tag latest three for repo
+log_deploy() {
+  local REPO_NAME="$1"
+  local URL="$2"
+  local DATE
+  DATE="$(date '+%Y-%m-%d %H:%M:%S')"
+
+  echo "$DATE — $REPO_NAME — $URL" >> DeployLog.md
+
+  local TMPFILE
+  TMPFILE="$(mktemp)"
+  tac DeployLog.md | awk -v repo="$REPO_NAME" '
+    $0 ~ repo {
+      count++
+      if (count == 1) sub(repo, "🥇 " repo)
+      else if (count == 2) sub(repo, "🥈 " repo)
+      else if (count == 3) sub(repo, "🥉 " repo)
+    }
+    {print}
+  ' | tac > "$TMPFILE"
+  mv "$TMPFILE" DeployLog.md
+}
+
+# 🔧 export_deploy_log_pdf: export DeployLog.md to PDF with podium highlights
+export_deploy_log_pdf() {
+  local OUTPUT="DeployLog.pdf"
+  local TMPHTML
+  TMPHTML="$(mktemp).html"
+
+  pandoc DeployLog.md -o "$TMPHTML" --standalone -t html
+
+  sed -i '1i <style>\n  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }\n  .gold   { background-color: #FFD70022; }\n  .silver { background-color: #C0C0C022; }\n  .bronze { background-color: #CD7F3222; }\n  </style>' "$TMPHTML"
+
+  sed -i 's/🥇 /<div class="gold">🥇 /' "$TMPHTML"
+  sed -i 's/🥈 /<div class="silver">🥈 /' "$TMPHTML"
+  sed -i 's/🥉 /<div class="bronze">🥉 /' "$TMPHTML"
+  sed -i 's/$/<\/div>/' "$TMPHTML"
+
+  wkhtmltopdf "$TMPHTML" "$OUTPUT"
+  rm "$TMPHTML"
+
+  echo "📄 Exported deploy log with podium highlights → $OUTPUT"
+}
+

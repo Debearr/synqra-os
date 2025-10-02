@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deploy Dashboard</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+    .progress-bar { height: 8px; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 4px; }
+
+    /* 🏆 Podium tints */
+    .row-gold   { background-color: #FFD70022; }
+    .row-silver { background-color: #C0C0C022; }
+    .row-bronze { background-color: #CD7F3222; }
+    .row-gold:hover   { background-color: #FFD70044; }
+    .row-silver:hover { background-color: #C0C0C044; }
+    .row-bronze:hover { background-color: #CD7F3244; }
+  </style>
+</head>
+<body>
+  <h1>Deploy Dashboard</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th>Progress</th>
+        <th>%</th>
+        <th>Last Deploy</th>
+      </tr>
+    </thead>
+    <tbody id="projects-table"></tbody>
+  </table>
+
+  <script>
+    Promise.all([
+      fetch("projects.json").then(res => res.json()).catch(() => ({ projects: [] })),
+      fetch("DeployLog.md").then(res => res.ok ? res.text() : "").catch(() => "")
+    ]).then(([data, logText]) => {
+      const table = document.getElementById("projects-table");
+      (data.projects || []).forEach(project => {
+        const row = document.createElement("tr");
+
+        // 🏆 Detect podium tag from DeployLog.md
+        const podiumRegex = new RegExp("(🥇|🥈|🥉)\\s*" + project.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+        const podiumMatch = logText.match(podiumRegex);
+        let podiumClass = "";
+        let podiumEmoji = "";
+        if (podiumMatch) {
+          if (podiumMatch[1] === "🥇") { podiumClass = "row-gold"; podiumEmoji = "🥇"; }
+          if (podiumMatch[1] === "🥈") { podiumClass = "row-silver"; podiumEmoji = "🥈"; }
+          if (podiumMatch[1] === "🥉") { podiumClass = "row-bronze"; podiumEmoji = "🥉"; }
+        }
+
+        // 🕒 Extract latest timestamp for this project from DeployLog.md
+        const timeRegex = new RegExp("(\\\\d{4}-\\\\d{2}-\\\\d{2} \\d{2}:\\d{2}:\\d{2}).*" + project.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ".*https://", 'g');
+        let lastMatch, matchArr;
+        while ((matchArr = timeRegex.exec(logText)) !== null) {
+          lastMatch = matchArr[1];
+        }
+
+        row.className = podiumClass;
+        row.innerHTML = `
+          <td>${podiumEmoji} ${project.name}</td>
+          <td><div class="progress-bar" style="width:${project.progress}%"></div></td>
+          <td>${project.progress}%</td>
+          <td>${lastMatch || "—"}</td>
+        `;
+        table.appendChild(row);
+      });
+    });
+  </script>
+</body>
+</html>
+
