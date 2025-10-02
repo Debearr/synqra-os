@@ -106,6 +106,48 @@
     </style>
   </head>
   <body>
+
+    <!-- Luxury Watermark & Product Tag -->
+    <div id="luxury-watermark"></div>
+    <div id="product-tag"></div>
+
+    <script>
+      // Detect project + mode dynamically
+      const project = window.dashboardConfig?.project || "Synqra";
+      const mode = window.dashboardConfig?.mode || "Corner Snap Mode";
+
+      // Aura color mapping
+      let auraColor = "rgba(255,215,0,0.06)"; // default ghost gold
+      if (mode.includes("Corner")) auraColor = "rgba(255,0,0,0.06)";
+      if (mode.includes("Magnetic")) auraColor = "rgba(0,123,255,0.06)";
+
+      // Inject watermark
+      const wm = document.getElementById("luxury-watermark");
+      wm.innerText = `De Bear x ${project} 🖤🧸`;
+      wm.style.position = "fixed";
+      wm.style.top = "40%";
+      wm.style.left = "50%";
+      wm.style.transform = "translate(-50%, -50%) rotate(-25deg)";
+      wm.style.fontSize = "4em";
+      wm.style.fontWeight = "700";
+      wm.style.letterSpacing = "0.15em";
+      wm.style.color = auraColor;
+      wm.style.pointerEvents = "none";
+      wm.style.whiteSpace = "nowrap";
+      wm.style.zIndex = "-1";
+
+      // Inject product tag (footer style)
+      const tag = document.getElementById("product-tag");
+      tag.innerText = `NØID Labs™ | Product: ${project}`;
+      tag.style.position = "fixed";
+      tag.style.bottom = "10px";
+      tag.style.right = "20px";
+      tag.style.fontSize = "0.8em";
+      tag.style.fontWeight = "400";
+      tag.style.fontStyle = "italic";
+      tag.style.letterSpacing = "0.1em";
+      tag.style.color = auraColor;
+    </script>
     <header>
       <h1>📊 Project Status Dashboard</h1>
     </header>
