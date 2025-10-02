@@ -23,6 +23,7 @@ log_deploy() {
     # If any glyph missing for this project, mark a global warning
     if [ -n "$glyphTag" ] && [ ! -f ".cursor/glyphs/${glyph}.svg" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') [GLOBAL WARNING] ⚠️ Some projects missing SVG glyphs, fallback used." >> DeployLog.md
+      echo "[GLOBAL WARNING BANNER] ⚠️ Some projects missing SVG glyphs, fallback used." >> DeployLog.md
     fi
   fi
 
