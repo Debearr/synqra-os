@@ -1,6 +1,6 @@
 {
   "name": "🚀 Universal Deploy",
-  "description": "One button deploy for any repo. If inside a repo, deploys it. If given a name, deploys that repo. Auto-start + logging built-in.",
+  "description": "One button deploy for any repo. If inside a repo, deploys it. If given a name, deploys that repo. Auto-start + logging built-in. Shows last 3 URLs.",
   "type": "background",
-  "script": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Import utils\nsource ./scripts/deploy_utils.sh\n\n# Decide repo name\nif [ $# -gt 0 ]; then\n  REPO_NAME=\"$1\"\nelse\n  REPO_NAME=$(basename $(git rev-parse --show-toplevel))\nfi\n\n# Smart auto-start + deploy\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n"
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Import utils\nsource ./scripts/deploy_utils.sh\n\n# Decide repo name\nif [ $# -gt 0 ]; then\n  REPO_NAME=\"$1\"\nelse\n  REPO_NAME=$(basename $(git rev-parse --show-toplevel))\nfi\n\n# Smart auto-start + deploy\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n\n# Show last 3 history entries for this project\nLOG_FILE=\"DEPLOY_LOG.md\"\n[ -f DeployLog.md ] && LOG_FILE=\"DeployLog.md\"\nif [ -f \"$LOG_FILE\" ]; then\n  echo -e \"\\n📜 Recent Deploy History for $REPO_NAME:\"\n  grep \"$REPO_NAME\" \"$LOG_FILE\" | grep 'https://' | tail -n 3 || true\nfi\n"
 }
