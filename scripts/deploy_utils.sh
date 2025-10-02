@@ -68,9 +68,18 @@ log_deploy() {
   # --- Auto-update projects.json progress ---
   if [ -f "projects.json" ]; then
     tmp=$(mktemp)
+    was_new=$(jq --arg proj "$project" 'any(.name == $proj) | not' projects.json)
     jq --arg proj "$project" --argjson prog "$percent" '
-      map(if .name == $proj then .progress = $prog | .last_deploy = (now | todate) else . end)
+      if any(.name == $proj) then
+        map(if .name == $proj then .progress = $prog | .last_deploy = (now | todate) else . end)
+      else
+        . + [{ "name": $proj, "progress": $prog, "last_deploy": (now | todate), "mode": "Adaptive" }]
+      end
     ' projects.json > "$tmp" && mv "$tmp" projects.json
+
+    if [ "$was_new" = "true" ]; then
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] $project 🆕 New project registered → $url | ${percent}% complete" >> DEPLOY_LOG.md
+    fi
   fi
 }
 
