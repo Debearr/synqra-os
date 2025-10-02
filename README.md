@@ -26,3 +26,20 @@ Example:
 ```bash
 RAILWAY_SERVICE_NAME=synqra-os scripts/verify_deploy.sh
 ```
+
+## Auto-update README with live URL
+
+Update the README with the current Railway live URL after each deploy.
+
+```bash
+# Auth (optional if already logged in via Railway CLI)
+export RAILWAY_TOKEN=<your_token>
+
+# Update README. Set COMMIT=1 to auto-commit and push the change
+COMMIT=1 scripts/update_readme_live_url.sh
+```
+
+Notes:
+- Requires Railway CLI available via `npx` and Node.js at runtime
+- If `jq` is not present, Node is used to parse JSON
+- Uses current Railway context; ensure the project/env is selected
