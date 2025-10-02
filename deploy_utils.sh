@@ -480,6 +480,7 @@ usage() {
 Usage:
   $0 log <project_id> <url> <percent>
   $0 render > dashboard.html
+  $0 render_pdf [project_name]
 
 Notes:
   - Expects DEPLOY_LOG.md for momentum history (optional).
@@ -496,6 +497,94 @@ case "$cmd" in
     ;;
   render)
     render_dashboard
+    ;;
+  render_pdf)
+    shift || true
+    project_arg="${1:-}"
+    # Determine project name
+    proj_name="$project_arg"
+    if [[ -z "$proj_name" && -f projects.json ]]; then
+      proj_name=$(jq -r '.[0].name // .[0].id // empty' projects.json || true)
+    fi
+    if [[ -z "$proj_name" && -f DEPLOY_LOG.md ]]; then
+      proj_name=$(grep -m1 -o "\[PROJECT: .*\]" DEPLOY_LOG.md | sed -E 's/\[PROJECT: (.*)\]/\1/' || true)
+    fi
+    if [[ -z "$proj_name" ]]; then
+      proj_name="Synqra"
+    fi
+
+    # Determine mode color based on current mode
+    modeLabel="Corner Snap Mode"
+    if [[ -f .mode_state ]]; then
+      state=$(cat .mode_state || true)
+      if [[ "$state" == "edge" ]]; then
+        modeLabel="Magnetic Edge Mode"
+      fi
+    fi
+    MODE_COLOR="rgba(255,215,0,0.08)"
+    if [[ "$modeLabel" == "Corner Snap Mode" ]]; then MODE_COLOR="rgba(255,0,0,0.08)"; fi
+    if [[ "$modeLabel" == "Magnetic Edge Mode" ]]; then MODE_COLOR="rgba(0,123,255,0.08)"; fi
+
+    if command -v pandoc >/dev/null 2>&1; then
+      cat > luxury-pdf.css <<CSS
+body { font-family: 'Inter', sans-serif; background: #0D0D0D; color: white; }
+h1, h2, h3 { 
+  font-weight: 600; 
+  letter-spacing: 0.08em; 
+  text-transform: uppercase; 
+  margin-top: 1.2em;
+  margin-bottom: 0.6em;
+}
+/* Luxury Gold Gradient */
+h1 {
+  font-size: 1.8em;
+  background: linear-gradient(90deg, #FFD700, #FFEA70, #FFB700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+h2 {
+  font-size: 1.4em;
+  background: linear-gradient(90deg, #FFD700, #FFEA70, #FFB700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  border-bottom: 1px solid rgba(255,215,0,0.4);
+  padding-bottom: 4px;
+}
+code, pre { background: rgba(255,215,0,0.12); padding: 4px 8px; border-radius: 6px; }
+p { margin: 0.4em 0; }
+
+/* Dynamic Luxury Watermark (Project) */
+body::before {
+  content: "De Bear x ${proj_name} 🖤🧸";
+  position: fixed;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-size: 4em; font-weight: 700; letter-spacing: 0.15em;
+  color: ${MODE_COLOR};
+  pointer-events: none; z-index: -1; white-space: nowrap;
+}
+
+/* Product Tag in footer */
+footer::before {
+  content: "NØID Labs™ | Product: ${proj_name}";
+  display: block; position: absolute; bottom: 10px; right: 20px;
+  font-size: 0.75em; font-weight: 400; letter-spacing: 0.1em; font-style: italic;
+  color: rgba(255,215,0,0.15);
+}
+
+/* Barcode / QR balance */
+footer::after {
+  content: "|| ||| | |||| | Drop | || ||| | ||";
+  position: absolute; bottom: 10px; left: 20px; font-size: 0.7em; font-family: monospace;
+  color: rgba(255,255,255,0.1);
+}
+CSS
+
+      pandoc DEPLOY_LOG.md -c luxury-pdf.css -o DeployLog.pdf --pdf-engine=wkhtmltopdf
+      echo "[deploy] 📑 Luxury PDF exported with watermark + NØID tag: DeployLog.pdf"
+    else
+      echo "[deploy] ⚠️ Pandoc not found, skipping PDF export."
+    fi
     ;;
   *)
     usage
