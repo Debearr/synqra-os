@@ -2,6 +2,14 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import Table
+from reportlab.pdfgen.canvas import Canvas
+
+def draw_barcode_watermark(canvas, doc):
+    canvas.saveState()
+    canvas.setFillColorRGB(0.9, 0.9, 0.9, alpha=0.15)
+    canvas.setFont("Courier-Bold", 36)
+    canvas.drawCentredString(doc.width/2.0 + doc.leftMargin, doc.height + doc.topMargin - 30, "||||| || ||| |||||")
+    canvas.restoreState()
 
 
 def render_pdf_from_log(log_file: str, pdf_file: str) -> None:
@@ -30,7 +38,7 @@ def render_pdf_from_log(log_file: str, pdf_file: str) -> None:
             story.append(Paragraph(line.strip(), styles["Normal"]))
             story.append(Spacer(1, 6))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=draw_barcode_watermark, onLaterPages=draw_barcode_watermark)
 
 
 if __name__ == "__main__":
