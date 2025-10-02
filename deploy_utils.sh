@@ -481,6 +481,15 @@ ROW
 EOL
 }
 
+# --- Utility: Mark End of Day Snapshot ---
+log_day_complete() {
+  {
+    echo "------------------------------------------------------------"
+    echo "🌙 Day Complete — $(date '+%Y-%m-%d')"
+    echo "------------------------------------------------------------"
+  } >> DEPLOY_LOG.md
+}
+
 usage() {
   cat <<USAGE
 Usage:
