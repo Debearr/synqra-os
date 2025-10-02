@@ -24,9 +24,17 @@ def generate_pdf():
             glyph_char = m.group(1)
             svg_file = f".cursor/glyphs/{glyph_char}.svg"
             if os.path.exists(svg_file):
-                drawing = svg2rlg(svg_file)
-                story.append(drawing)
-                line = glyph_pattern.sub("", line)
+                try:
+                    drawing = svg2rlg(svg_file)
+                    story.append(drawing)
+                    # Strip tag for clean text display
+                    line = glyph_pattern.sub("", line)
+                except Exception:
+                    # Graceful fallback if SVG parse fails
+                    line = line.replace(f"[GLYPH:{glyph_char}]", f"<b>{glyph_char}</b>")
+            else:
+                # Fallback if no SVG exists
+                line = line.replace(f"[GLYPH:{glyph_char}]", f"<b>{glyph_char}</b>")
 
         if line.strip():
             p = Paragraph(line, style_normal)
