@@ -1,8 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+safeguard_check() {
+  echo "[safeguard] 🔍 Checking for duplicate commits..."
+  last_msg=$(git log -1 --pretty=%B || echo "")
+  prev_msg=$(git log -2 --pretty=%B | tail -n1 || echo "")
+  if [[ "$last_msg" == "$prev_msg" && -n "$last_msg" ]]; then
+    echo "[safeguard] ❌ Duplicate commit detected: '$last_msg'"
+    echo "[safeguard] Aborting deploy to prevent double-squash."
+    exit 1
+  fi
+  echo "[safeguard] ✅ No duplicate commits. Safe to continue."
+}
+
 main() {
   echo "[deploy] Starting Synqra deployment verification..."
+
+  # 🛡️ Safeguard check
+  safeguard_check
 
   # 1) Ensure Railway CLI installed
   if ! command -v railway >/dev/null 2>&1; then
