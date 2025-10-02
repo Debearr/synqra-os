@@ -127,10 +127,20 @@ log_deploy() {
     *) pulseColor="$pulseLabel" ;;
   esac
 
+  # Gradient heartbeat label for log entry
+  local pulseGradient
+  case "$pulseLabel" in
+    "Fast"|"Fast Heartbeat") pulseGradient="<span style='background:linear-gradient(90deg, #4CAF50, #81C784); -webkit-background-clip:text; color:transparent;'>Fast</span>" ;;
+    "Medium"|"Medium Heartbeat") pulseGradient="<span style='background:linear-gradient(90deg, #FFC107, #FFD54F); -webkit-background-clip:text; color:transparent;'>Medium</span>" ;;
+    "Slow"|"Slow Heartbeat") pulseGradient="<span style='background:linear-gradient(90deg, #F44336, #E57373); -webkit-background-clip:text; color:transparent;'>Slow</span>" ;;
+    "Critical") pulseGradient="<span style='background:linear-gradient(90deg, #B71C1C, #F44336); -webkit-background-clip:text; color:transparent;'>CRITICAL</span>" ;;
+    *) pulseGradient="$pulseLabel" ;;
+  esac
+
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseColor"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseGradient"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
