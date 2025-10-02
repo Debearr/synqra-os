@@ -1,0 +1,6 @@
+{
+  "name": "🛡️ Commit Safeguard",
+  "description": "Checks last 10 commits to prevent duplicate squash merges or accidental double commits.",
+  "type": "background",
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\n\nmain() {\n  echo \"[safeguard] Checking last 10 commits...\"\n\n  commits=$(git log -n 10 --pretty=format:'%s')\n  last_commit=$(echo \"$commits\" | head -n1)\n  prev_commit=$(echo \"$commits\" | sed -n '2p')\n\n  if [ \"$last_commit\" = \"$prev_commit\" ]; then\n    echo \"❌ Duplicate commit detected: '$last_commit' == '$prev_commit'\"\n    echo \"[safeguard] Aborting merge to avoid double-squash.\"\n    exit 1\n  fi\n\n  echo \"✅ Safe: No duplicate commits detected.\"\n}\n\nmain \"$@\""
+}
