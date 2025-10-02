@@ -1,0 +1,12 @@
+{
+  "name": "synqra-coming-soon",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Synqra Coming Soon static page served via Railway",
+  "scripts": {
+    "start": "serve -s public"
+  },
+  "dependencies": {
+    "serve": "^14.2.3"
+  }
+}
