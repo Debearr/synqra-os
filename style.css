@@ -34,3 +34,73 @@
 .hidden {
   display: none;
 }
+
+/* Existing luxury theme … */
+
+/* ----------------------------
+   Heartbeat-synced luxury aura
+   ---------------------------- */
+/* Luxury-inspired palette and typography */
+:root {
+  /* Luxury-inspired palette */
+  --hb-green: #1b5e3a;   /* Malachite green */
+  --hb-yellow: #bfa46f;  /* Champagne gold (muted) */
+  --hb-red: #6e1c1c;     /* Bordeaux red */
+  --hb-black: #0a0a0a;   /* Deep matte black */
+
+  /* Typography */
+  --font-heading: "Didot", "Bodoni MT", serif;
+  --font-body: "Helvetica Neue", "Gotham", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #0b0b0b;
+  color: #eaeaea;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+}
+
+/* Refined heartbeat aura */
+.progress-fill {
+  transition: width 1.4s ease;
+}
+
+.hb-green .progress-fill { background-color: var(--hb-green); }
+.hb-yellow .progress-fill{ background-color: var(--hb-yellow); }
+.hb-red .progress-fill   { background-color: var(--hb-red); }
+.hb-black .progress-fill { background-color: var(--hb-black); }
+
+/* Subtle shimmer sweep */
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -50%;
+  height: 100%; width: 50%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+  animation: shimmer 12s linear infinite;
+}
+@keyframes shimmer {
+  0% { left: -50%; }
+  100% { left: 120%; }
+}
+
+/* Barcode banner as embossed strip */
+#warning-banner {
+  background: rgba(20,20,20,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+#warning-barcode {
+  opacity: 0.08;
+  filter: contrast(120%) brightness(90%);
+}
