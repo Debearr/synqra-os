@@ -69,6 +69,10 @@ log_deploy() {
   project="$1"; url="$2"; percent_raw="${3:-0}"
   percent=$(read_safe_percent "$percent_raw")
 
+  # Deployment increment mode (affects projects.json update)
+  local mode
+  mode="${DEPLOY_MODE:-adaptive}"
+
   # Determine global momentum for log entry
   local _gcls gicon gemoji _gf _gl gc
   IFS='|' read -r _gcls gicon gemoji _gf _gl gc <<<"$(compute_global_momentum)"
@@ -108,7 +112,7 @@ log_deploy() {
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • 🖤 $pulseLabel"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel (${mode^} Increment) • 🖤 $pulseLabel"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
@@ -126,16 +130,32 @@ log_deploy() {
         brew install jq
       fi
     fi
-    # Increment percent by +2, clamp 100, and update last timestamp
-    jq --arg name "$project" --arg ts "$ts_iso" '
-      map(
-        if (.name == $name or .id == $name) then
-          .percent = ((.percent + 2) | if . > 100 then 100 else . end) |
-          .last = $ts
-        else . end
-      )
-    ' projects.json > projects.tmp && mv projects.tmp projects.json
-    echo "[deploy] ✅ Auto-incremented $project progress by +2% → new progress logged with $ts_iso"
+    # Increment strategy based on DEPLOY_MODE
+    if [[ "$mode" == "fixed" ]]; then
+      jq --arg name "$project" --arg ts "$ts_iso" '
+        map(
+          if (.name == $name or .id == $name) then
+            .percent = ((.percent + 2) | if . > 100 then 100 else . end) |
+            .last = $ts
+          else . end
+        )
+      ' projects.json > projects.tmp && mv projects.tmp projects.json
+      echo "[deploy] ✅ [Fixed] $project progress +2% → updated with $ts_iso"
+    else
+      jq --arg name "$project" --arg ts "$ts_iso" '
+        map(
+          if (.name == $name or .id == $name) then
+            .percent = (
+              if .percent < 50 then .percent + 5
+              elif .percent < 80 then .percent + 3
+              else .percent + 1 end
+            ) | if . > 100 then 100 else . end |
+            .last = $ts
+          else . end
+        )
+      ' projects.json > projects.tmp && mv projects.tmp projects.json
+      echo "[deploy] ✅ [Adaptive] $project progress auto-adjusted → updated with $ts_iso"
+    fi
   fi
 }
 
