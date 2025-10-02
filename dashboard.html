@@ -35,37 +35,67 @@
 
   <script>
     Promise.all([
-      fetch("projects.json").then(res => res.json()).catch(() => ({ projects: [] })),
-      fetch("DeployLog.md").then(res => res.ok ? res.text() : "").catch(() => "")
-    ]).then(([data, logText]) => {
+      fetch("projects.json").then(res => res.json()).catch(() => ({})),
+      fetch("DeployLog.md").then(res => res.text()),
+      fetch(".cursor/glyphs/barcodes.json").then(res => res.json()).catch(() => ({}))
+    ]).then(([meta, logText, glyphDefs]) => {
       const table = document.getElementById("projects-table");
-      (data.projects || []).forEach(project => {
+
+      // Build a map of latest % and timestamp from log (log-driven)
+      const projects = {};
+      const lineRegex = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*?\s(🥇|🥈|🥉)?\s*([a-zA-Z0-9_-]+)\s.*?(\d+)%.*https:\/\//gm;
+      let m;
+      while ((m = lineRegex.exec(logText)) !== null) {
+        const ts = m[1];
+        const podium = m[2] || "";
+        const name = m[3];
+        const prog = parseInt(m[4], 10);
+        projects[name] = { name, progress: prog, lastDeploy: ts, podium };
+      }
+
+      // Helper: return SVG string for this project/glyph, or empty if none
+      const getGlyphSVG = (projectName) => {
+        const metaEntry = meta[projectName] || {};
+        const glyphChar = metaEntry.barcodeGlyph || metaEntry.glyph || ""; // e.g., "S" or "Ø"
+        if (!glyphChar) return "";
+        // Prefer per-project map: glyphDefs[BrandOrProject].glyphs[glyphChar]
+        const projectGlyphs =
+          (glyphDefs[projectName] && glyphDefs[projectName].glyphs) ||
+          (glyphDefs[(metaEntry.brand || "")] && glyphDefs[(metaEntry.brand || "")].glyphs) ||
+          null;
+        if (projectGlyphs && projectGlyphs[glyphChar]) return projectGlyphs[glyphChar];
+        // Fallback: global top-level glyphs table (optional future structure)
+        if (glyphDefs.glyphs && glyphDefs.glyphs[glyphChar]) return glyphDefs.glyphs[glyphChar];
+        return "";
+      };
+
+      // Render rows
+      Object.values(projects).forEach(p => {
         const row = document.createElement("tr");
-
-        // 🏆 Detect podium tag from DeployLog.md
-        const podiumRegex = new RegExp("(🥇|🥈|🥉)\\s*" + project.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-        const podiumMatch = logText.match(podiumRegex);
-        let podiumClass = "";
-        let podiumEmoji = "";
-        if (podiumMatch) {
-          if (podiumMatch[1] === "🥇") { podiumClass = "row-gold"; podiumEmoji = "🥇"; }
-          if (podiumMatch[1] === "🥈") { podiumClass = "row-silver"; podiumEmoji = "🥈"; }
-          if (podiumMatch[1] === "🥉") { podiumClass = "row-bronze"; podiumEmoji = "🥉"; }
-        }
-
-        // 🕒 Extract latest timestamp for this project from DeployLog.md
-        const timeRegex = new RegExp("(\\\\d{4}-\\\\d{2}-\\\\d{2} \\d{2}:\\d{2}:\\d{2}).*" + project.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ".*https://", 'g');
-        let lastMatch, matchArr;
-        while ((matchArr = timeRegex.exec(logText)) !== null) {
-          lastMatch = matchArr[1];
-        }
-
+        // 🏆 Podium tint from log
+        let podiumClass = "", podiumEmoji = "";
+        if (p.podium === "🥇") { podiumClass = "row-gold"; podiumEmoji = "🥇 "; }
+        else if (p.podium === "🥈") { podiumClass = "row-silver"; podiumEmoji = "🥈 "; }
+        else if (p.podium === "🥉") { podiumClass = "row-bronze"; podiumEmoji = "🥉 "; }
         row.className = podiumClass;
+
+        // Brand label + inline SVG glyph
+        const metaEntry = meta[p.name] || {};
+        const brandLabel = metaEntry.brand || p.name;
+        const svg = getGlyphSVG(p.name); // SVG string or ""
+        const brandCell = svg
+          ? `<span class="glyph">${svg}</span><span>${brandLabel}</span>`
+          : `<span>${brandLabel}</span>`;
+
         row.innerHTML = `
-          <td>${podiumEmoji} ${project.name}</td>
-          <td><div class="progress-bar" style="width:${project.progress}%"></div></td>
-          <td>${project.progress}%</td>
-          <td>${lastMatch || "—"}</td>
+          <td class="brand-cell">${podiumEmoji}${brandCell}</td>
+          <td>
+            <div class="progress-bar" style="--progress:${p.progress}%">
+              <div class="progress-fill" style="width:${p.progress}%"></div>
+            </div>
+          </td>
+          <td>${p.progress}%</td>
+          <td>${p.lastDeploy || "—"}</td>
         `;
         table.appendChild(row);
       });
