@@ -124,6 +124,7 @@
       // Inject watermark
       const wm = document.getElementById("luxury-watermark");
       wm.innerText = `De Bear x ${project} 🖤🧸`;
+      wm.setAttribute('data-text', `De Bear x ${project} 🖤🧸`);
       wm.style.position = "fixed";
       wm.style.top = "40%";
       wm.style.left = "50%";
@@ -179,6 +180,27 @@
       body.heartbeat-slow #luxury-watermark { animation-duration: 8s; }
       body.heartbeat-medium #luxury-watermark { animation-duration: 6s; }
       body.heartbeat-fast #luxury-watermark { animation-duration: 3s; }
+
+      /* Watermark Reflection Effect */
+      #luxury-watermark::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform: scaleY(-1);
+        opacity: 0.1;
+        filter: blur(4px);
+        background: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        pointer-events: none;
+      }
+
+      /* Sync reflection color with heartbeat aura */
+      body.heartbeat-fast #luxury-watermark::after { opacity: 0.15; }
+      body.heartbeat-slow #luxury-watermark::after { opacity: 0.08; }
     </style>
 
     <script>
