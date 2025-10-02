@@ -1,5 +1,31 @@
 #!/usr/bin/env bash
 
+# Function: log_deploy
+# Usage: log_deploy <project_name> <url>
+# Example: log_deploy synqra-os https://synqra.up.railway.app
+log_deploy() {
+  local project_name="$1"
+  local url="$2"
+  local timestamp
+  timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+  # Fetch current % from projects.json
+  local percent
+  percent=$(jq -r ".[ ][] | select(.id==\"$project_name\") | .percent" projects.json 2>/dev/null)
+  if [ -z "$percent" ] || [ "$percent" = "null" ]; then
+    percent="N/A"
+  fi
+
+  # Write log entry in consistent format with % included
+  echo "$timestamp — [PROJECT: $project_name] deployed successfully — $percent% — URL: $url" \
+    | cat - DEPLOY_LOG.md > temp && mv temp DEPLOY_LOG.md
+
+  git add DEPLOY_LOG.md
+  git commit -m "docs: log deployment for $project_name ($percent%)"
+  git push origin main
+  echo "[deploy-utils] 📖 Logged deploy for $project_name at $percent%"
+}
+
 # Function: update_dashboard
 update_dashboard() {
   if ! command -v jq >/dev/null 2>&1; then
