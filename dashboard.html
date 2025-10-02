@@ -314,26 +314,30 @@
           // Render text with glyph transformations
           let displayText = String(project).replace(/-os$/, "").toUpperCase();
           displayText = displayText.split("").map(char => {
-            if (glyphs[char]) {
-              switch (glyphs[char]) {
-                case "barcode-vertical":
-                  return `
-                    <span class="glyph-barcode-s">
-                      <span></span><span></span><span class="spacer"></span><span></span>
-                    </span>`;
-                case "barcode-fill":
-                  return `<span class="glyph-barcode-fill">${char}</span>`;
-                case "slash":
-                  return `<span class="glyph-slash">${char}<span class="slash-overlay">/</span></span>`;
-                case "circle":
-                  return `<span class="glyph-circle">${char}</span>`;
-                case "barcode-grid":
-                  return `<span class="glyph-barcode-grid">${char}</span>`;
-                default:
-                  return char;
-              }
+            const rule = glyphs[char];
+            if (!rule) return char;
+            switch (rule) {
+              case "barcode-vertical":
+                // Render as 4 bars with a spacer visually resembling a stylized S
+                return `
+                  <span class="glyph-barcode-s">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="space"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                  </span>`;
+              case "barcode-fill":
+                return `<span class="glyph-barcode-fill">${char}</span>`;
+              case "slash":
+                return `<span class="glyph-slash">${char}<span class="slash-overlay">/</span></span>`;
+              case "circle":
+                return `<span class="glyph-circle">${char}</span>`;
+              case "barcode-grid":
+                return `<span class="glyph-barcode-grid">${char}</span>`;
+              default:
+                return char;
             }
-            return char;
           }).join("");
 
           document.getElementById("barcodeText").innerHTML = displayText + "<br>" + barcode;
@@ -346,9 +350,10 @@
     </script>
 
     <style>
-      .glyph-barcode-s { display:inline-flex; align-items:flex-end; gap:1px; }
-      .glyph-barcode-s span { display:inline-block; width:2px; height:16px; background: rgba(255,255,255,0.55); }
-      .glyph-barcode-s .spacer { width:3px; background: transparent; }
+      /* Barcode-S style */
+      .glyph-barcode-s { display:inline-flex; align-items:center; margin-right:2px; }
+      .glyph-barcode-s .bar { display:inline-block; width:2px; height:18px; background: rgba(255,255,255,0.6); margin: 0 1px; }
+      .glyph-barcode-s .space { width:3px; }
 
       .glyph-slash { position: relative; display:inline-block; padding-right: 6px; }
       .slash-overlay { position: absolute; left: 50%; top: -1px; color: rgba(255,215,0,0.75); transform: translateX(-50%); }
