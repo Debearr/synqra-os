@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>📊 Project Status Dashboard</title>
+    <!-- Luxury Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+        background: #0D0D0D;
+        color: white;
+        line-height: 1.6;
+      }
+
+      h1, h2, h3 {
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+
+      /* Header luxury accent */
+      header {
+        background: linear-gradient(90deg, #111, #0D0D0D);
+        border-bottom: 1px solid rgba(255,215,0,0.3);
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+      }
+
+      /* Progress bars luxury glow */
+      .progress-bar {
+        border-radius: 12px;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.3);
+      }
+
+      /* Tooltips with brushed metal shimmer */
+      .tooltip-gradient {
+        background: rgba(20,20,20,0.9);
+        border: 1px solid rgba(255,215,0,0.4);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      }
+      .tooltip-gradient:hover {
+        background-image: linear-gradient(
+          90deg, rgba(255,215,0,0.2), rgba(255,255,255,0.05), rgba(255,215,0,0.2)
+        );
+        background-size: 200% 100%;
+        animation: tooltipShine var(--pulse-speed) linear infinite;
+      }
+      @keyframes tooltipShine {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Subtitles luxury look */
+      .project-subtitle {
+        font-size: 0.85rem;
+        font-weight: 300;
+        font-style: italic;
+        color: rgba(255,255,255,0.75);
+        border-left: 4px solid transparent;
+        padding-left: 8px;
+        margin-top: 3px;
+        transition: all 0.3s ease;
+      }
+
+      /* Luxury hover highlight */
+      tr:hover {
+        background: rgba(255,215,0,0.05);
+        transition: background 0.3s ease;
+      }
+
+      /* Pulse glow */
+      @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 8px rgba(255,215,0,0.2); } 50% { box-shadow: 0 0 18px rgba(255,215,0,0.6); } }
+
+      /* Progress bar fill + shimmer */
+      .progress-bar-fill {
+        animation: fillBar 1.8s ease forwards, goldShimmer 2.5s infinite linear;
+        background: linear-gradient(90deg, #FFD700, #FFF3B0, #FFD700);
+        background-size: 200% 100%;
+      }
+      @keyframes fillBar { from { width: 0%; } to { width: var(--progress); } }
+      @keyframes goldShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+      /* Sparkline draw */
+      .sparkline path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 2s ease forwards; }
+      @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+      /* Row hover lift */
+      tr:hover { transform: translateY(-2px); background: rgba(255,215,0,0.07); transition: all 0.25s ease; }
+
+      /* Tooltip reveal */
+      .tooltip-gradient { opacity: 0; transform: translateY(5px); transition: all 0.25s cubic-bezier(.25,.8,.25,1); }
+      .tooltip-gradient.show { opacity: 1; transform: translateY(0); }
+
+      /* Deploy reward spark */
+      @keyframes deploySpark { 0% { opacity: 0; transform: scale(0.5) rotate(15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(0deg); } 100% { opacity: 0; transform: scale(0.8) rotate(-15deg); } }
+      .deploy-reward { animation: deploySpark 1s ease; }
+      /* --- Barcode Watermark --- */
+      .barcode-watermark {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        opacity: 0.08;
+        pointer-events: none;
+        z-index: 0;
+        width: 180px;
+        height: 80px;
+        background: repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.15) 0px,
+          rgba(255,255,255,0.15) 2px,
+          transparent 2px,
+          transparent 6px
+        );
+        background-size: 200px 80px;
+        animation: shimmerBarcode var(--pulse-speed, 6s) infinite linear;
+      }
+
+      @keyframes shimmerBarcode {
+        0% { background-position: 0 0; }
+        100% { background-position: 200px 0; }
+      }
+
+      /* --- Reflection Glow --- */
+      .barcode-reflection {
+        position: absolute;
+        bottom: -12px;
+        right: 0;
+        width: 100%;
+        height: 20px;
+        background: linear-gradient(to bottom, rgba(255,215,0,0.2), transparent);
+        filter: blur(6px);
+        animation: reflectionSlide var(--pulse-speed, 6s) infinite ease-in-out;
+      }
+
+      @keyframes reflectionSlide {
+        0%,100% { transform: translateX(0px); }
+        50% { transform: translateX(-15px); }
+      }
+
+      /* --- Personal Tag --- */
+      .tag {
+        font-size: 10px;
+        font-style: italic;
+        color: rgba(255,215,0,0.8);
+        position: absolute;
+        bottom: -20px;
+        right: 0;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Luxury Watermark & Product Tag -->
+    <div id="luxury-watermark"></div>
+    <div id="product-tag"></div>
+
+    <script>
+      // Detect project + mode dynamically
+      const project = window.dashboardConfig?.project || "Synqra";
+      const mode = window.dashboardConfig?.mode || "Corner Snap Mode";
+
+      // Aura color mapping
+      let auraColor = "rgba(255,215,0,0.06)"; // default ghost gold
+      if (mode.includes("Corner")) auraColor = "rgba(255,0,0,0.06)";
+      if (mode.includes("Magnetic")) auraColor = "rgba(0,123,255,0.06)";
+
+      // Inject watermark
+      const wm = document.getElementById("luxury-watermark");
+      wm.innerText = `De Bear x ${project} 🖤🧸`;
+      wm.setAttribute('data-text', `De Bear x ${project} 🖤🧸`);
+      wm.style.position = "fixed";
+      wm.style.top = "40%";
+      wm.style.left = "50%";
+      wm.style.transform = "translate(-50%, -50%) rotate(-25deg)";
+      wm.style.fontSize = "4em";
+      wm.style.fontWeight = "700";
+      wm.style.letterSpacing = "0.15em";
+      wm.style.color = auraColor;
+      wm.style.pointerEvents = "none";
+      wm.style.whiteSpace = "nowrap";
+      wm.style.zIndex = "-1";
+
+      // Inject product tag (footer style)
+      const tag = document.getElementById("product-tag");
+      tag.innerText = `NØID Labs™ | Product: ${project}`;
+      tag.style.position = "fixed";
+      tag.style.bottom = "10px";
+      tag.style.right = "20px";
+      tag.style.fontSize = "0.8em";
+      tag.style.fontWeight = "400";
+      tag.style.fontStyle = "italic";
+      tag.style.letterSpacing = "0.1em";
+      tag.style.color = auraColor;
+    </script>
+
+    <style>
+      /* Shimmer Sweep Effect for Live Watermark */
+      #luxury-watermark {
+        position: fixed;
+        overflow: hidden;
+        background: linear-gradient(
+          120deg,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0.15) 40%,
+          rgba(255,255,255,0) 80%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmerSweep 6s infinite;
+      }
+
+      @keyframes shimmerSweep {
+        0% { background-position: -200% 0; }
+        50% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      /* Dynamic shimmer speed tied to heartbeat */
+      :root {
+        --pulse-speed: 6s; /* default */
+      }
+
+      body.heartbeat-slow #luxury-watermark { animation-duration: 8s; }
+      body.heartbeat-medium #luxury-watermark { animation-duration: 6s; }
+      body.heartbeat-fast #luxury-watermark { animation-duration: 3s; }
+
+      /* Watermark Reflection Effect */
+      #luxury-watermark::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform: scaleY(-1);
+        opacity: 0.1;
+        filter: blur(4px);
+        background: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        pointer-events: none;
+      }
+
+      /* Sync reflection color with heartbeat aura */
+      body.heartbeat-fast #luxury-watermark::after { opacity: 0.15; }
+      body.heartbeat-slow #luxury-watermark::after { opacity: 0.08; }
+    </style>
+
+    <script>
+      // Apply heartbeat speed class to body
+      (function(){
+        const pulse = (window.dashboardConfig && window.dashboardConfig.heartbeat) || "Medium";
+        document.body.classList.add(`heartbeat-${String(pulse).toLowerCase()}`);
+      })();
+    </script>
+    <header>
+      <h1>📊 Project Status Dashboard</h1>
+    </header>
+    <!-- Barcode Watermark -->
+    <div class="barcode-watermark" id="barcodeWatermark">
+      <span id="barcodeText">||| || ||| |||</span>
+      <div class="barcode-reflection"></div>
+      <div class="tag">De Bear x 🧸</div>
+    </div>
+    <script>
+      // Example shimmer speed mapping (linked to heartbeat speed)
+      const shimmerMap = {
+        "Fast": "Fast (3s)",
+        "Medium": "Medium (6s)",
+        "Slow": "Slow (8s)"
+      };
+
+      const shimmerSpeed = shimmerMap[window.dashboardConfig?.heartbeat] || "Medium (6s)";
+
+      // Inject shimmer speed into project subtitles
+      document.querySelectorAll(".project-subtitle").forEach(sub => {
+        const span = document.createElement("span");
+        span.innerText = ` • Shimmer: ✨ ${shimmerSpeed}`;
+        span.style.fontSize = "0.75rem";
+        span.style.marginLeft = "6px";
+        span.style.opacity = "0.85";
+        sub.appendChild(span);
+      });
+
+      // Extend tooltip content with shimmer info
+      document.querySelectorAll(".tooltip-gradient").forEach(tt => {
+        tt.innerHTML += `<div style="margin-top:4px;font-size:0.75rem;opacity:0.8;">Shimmer: ✨ ${shimmerSpeed}</div>`;
+      });
+    </script>
+
+    <script>
+      async function updateBarcode() {
+        try {
+          const res = await fetch("barcodes.json");
+          const barcodes = await res.json();
+
+          // Auto-detect project name from meta tag injected by deploy scripts
+          const meta = document.querySelector('meta[name="project-name"]');
+          const project = meta ? meta.content : (window.dashboardConfig?.project || "default");
+
+          const projectData = barcodes[project] || barcodes["default"] || { pattern: "||| ||| |||", glyphs: {} };
+          const barcode = projectData.pattern;
+          const glyphs = projectData.glyphs || {};
+
+          // Render text with glyph transformations
+          let displayText = String(project).replace(/-os$/, "").toUpperCase();
+          displayText = displayText.split("").map(char => {
+            const rule = glyphs[char];
+            if (!rule) return char;
+            switch (rule) {
+              case "barcode-vertical":
+                // Render as 4 bars with a spacer visually resembling a stylized S
+                return `
+                  <span class="glyph-barcode-s">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="space"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                  </span>`;
+              case "barcode-fill":
+                return `<span class="glyph-barcode-fill">${char}</span>`;
+              case "slash":
+                return `<span class="glyph-slash">${char}<span class="slash-overlay">/</span></span>`;
+              case "circle":
+                return `<span class="glyph-circle">${char}</span>`;
+              case "barcode-grid":
+                return `<span class="glyph-barcode-grid">${char}</span>`;
+              default:
+                return char;
+            }
+          }).join("");
+
+          document.getElementById("barcodeText").innerHTML = displayText + "<br>" + barcode;
+          console.log("[watermark] Project:", project, "| Glyphs applied:", glyphs);
+        } catch (e) {
+          console.error("[watermark] Failed to load barcode", e);
+        }
+      }
+      updateBarcode();
+    </script>
+
+    <style>
+      /* Barcode-S style */
+      .glyph-barcode-s { display:inline-flex; align-items:center; margin-right:2px; }
+      .glyph-barcode-s .bar { display:inline-block; width:2px; height:18px; background: rgba(255,255,255,0.6); margin: 0 1px; }
+      .glyph-barcode-s .space { width:3px; }
+
+      .glyph-slash { position: relative; display:inline-block; padding-right: 6px; }
+      .slash-overlay { position: absolute; left: 50%; top: -1px; color: rgba(255,215,0,0.75); transform: translateX(-50%); }
+
+      .glyph-barcode-fill {
+        background: repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.55) 0px,
+          rgba(255,255,255,0.55) 2px,
+          transparent 2px,
+          transparent 4px
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .glyph-circle { border: 1px solid rgba(255,255,255,0.55); border-radius: 50%; padding: 0 4px; display:inline-block; }
+
+      .glyph-barcode-grid {
+        background: linear-gradient(90deg, rgba(255,255,255,0.5) 50%, transparent 50%),
+                    linear-gradient(0deg, rgba(255,255,255,0.5) 50%, transparent 50%);
+        background-size: 4px 100%, 100% 4px;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    </style>
+  </body>
+</html>
+
