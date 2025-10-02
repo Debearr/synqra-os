@@ -191,6 +191,31 @@
     <header>
       <h1>📊 Project Status Dashboard</h1>
     </header>
+    <script>
+      // Example shimmer speed mapping (linked to heartbeat speed)
+      const shimmerMap = {
+        "Fast": "Fast (3s)",
+        "Medium": "Medium (6s)",
+        "Slow": "Slow (8s)"
+      };
+
+      const shimmerSpeed = shimmerMap[window.dashboardConfig?.heartbeat] || "Medium (6s)";
+
+      // Inject shimmer speed into project subtitles
+      document.querySelectorAll(".project-subtitle").forEach(sub => {
+        const span = document.createElement("span");
+        span.innerText = ` • Shimmer: ✨ ${shimmerSpeed}`;
+        span.style.fontSize = "0.75rem";
+        span.style.marginLeft = "6px";
+        span.style.opacity = "0.85";
+        sub.appendChild(span);
+      });
+
+      // Extend tooltip content with shimmer info
+      document.querySelectorAll(".tooltip-gradient").forEach(tt => {
+        tt.innerHTML += `<div style="margin-top:4px;font-size:0.75rem;opacity:0.8;">Shimmer: ✨ ${shimmerSpeed}</div>`;
+      });
+    </script>
   </body>
 </html>
 
