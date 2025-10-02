@@ -34,10 +34,13 @@
   </table>
 
   <script>
+    // Add cache-busting version hash (forces browser to fetch fresh glyphs each deploy)
+    const versionHash = Date.now();
+
     Promise.all([
-      fetch("projects.json").then(res => res.json()).catch(() => ({})),
-      fetch("DeployLog.md").then(res => res.text()),
-      fetch(".cursor/glyphs/barcodes.json").then(res => res.json()).catch(() => ({}))
+      fetch("projects.json?v=" + versionHash).then(res => res.json()).catch(() => ({})),
+      fetch("DeployLog.md?v=" + versionHash).then(res => res.text()),
+      fetch(".cursor/glyphs/barcodes.json?v=" + versionHash).then(res => res.json()).catch(() => ({}))
     ]).then(([meta, logText, glyphDefs]) => {
       const table = document.getElementById("projects-table");
 

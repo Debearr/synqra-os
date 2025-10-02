@@ -3,22 +3,17 @@
 # Utilities for deploy agents
 
 log_deploy() {
-  local service_name="$1"
-  local deploy_url="${2:-}"
-  local timestamp
-  timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-  if [ ! -f DEPLOY_LOG.md ]; then
-    {
-      echo "# Deploy Log"
-      echo ""
-    } >> DEPLOY_LOG.md
+  local project="$1"
+  local percent="$2"
+  local url="$3"
+  local glyph=""
+  if [ -f projects.json ]; then
+    glyph=$(jq -r --arg p "$project" '.[$p].barcodeGlyph // ""' projects.json 2>/dev/null)
   fi
-
-  {
-    echo "- ${timestamp} | ${service_name} | ${deploy_url}"
-  } >> DEPLOY_LOG.md
-
-  echo "Logged deploy: ${service_name} -> ${deploy_url}"
+  local glyphTag=""
+  if [ -n "$glyph" ] && [ "$glyph" != "null" ]; then
+    glyphTag="[GLYPH:$glyph]"
+  fi
+  echo "$(date '+%Y-%m-%d %H:%M:%S') | $project $glyphTag | $percent% | $url" >> DeployLog.md
 }
 
