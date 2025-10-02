@@ -1,0 +1,14 @@
+[
+  { "name": "NØID", "id": "noid-os", "percent": 95, "notes": "Pipeline live, landing page pending" },
+  { "name": "Synqra", "id": "synqra-os", "percent": 75, "notes": "Pipeline live, Styleguide wired" },
+  { "name": "AuraFX", "id": "aurafx", "percent": 70, "notes": "Trading assistant, PropFirm/voice mode ready" },
+  { "name": "Luxbridge", "id": "luxbridge", "percent": 40, "notes": "Backend partial, UI pending" },
+  { "name": "Oracle OS", "id": "oracle", "percent": 55, "notes": "Council framework wired, integrations next" },
+  { "name": "LumenFX", "id": "lumen", "percent": 60, "notes": "No-code builder scaffolding ready" },
+  { "name": "AuraOS", "id": "auraos", "percent": 35, "notes": "Initial scaffolding" },
+  { "name": "NY7 Coffee", "id": "ny7", "percent": 50, "notes": "E-comm concept, R&D required" },
+  { "name": "LuxGrid UI", "id": "luxgrid", "percent": 80, "notes": "Feeding into NØID and Synqra" },
+  { "name": "VANTA Grid", "id": "vanta", "percent": 0, "notes": "Not yet built" },
+  { "name": "LuxLabs", "id": "luxlabs", "percent": 0, "notes": "Not yet built" },
+  { "name": "Crew Companion / SetPower", "id": "crew", "percent": 10, "notes": "Draft only" }
+]
