@@ -49,6 +49,25 @@ update_dashboard() {
     .bar-yellow { background: linear-gradient(90deg, #ffc107, #ff9800); }
     .bar-red { background: linear-gradient(90deg, #f44336, #c62828); }
   </style>
+  <style>
+    /* --- Responsive tweaks --- */
+    @media (max-width: 700px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { display: none; }
+      tr { margin: 0 0 1rem 0; background: #1b1b1b; border-radius: 8px; padding: 10px; }
+      td { border: none; padding: 6px 10px; text-align: left; }
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 2px;
+        color: #00ffcc;
+      }
+      .progress-container {
+        width: 100%;
+      }
+    }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:,">
 </head>
@@ -80,10 +99,10 @@ EOL
     tooltip="${name} — ${percent}% (Last deployed: ${last_deploy:-N/A})"
 
     echo "    <tr>" >> dashboard.html
-    echo "      <td>${name}</td>" >> dashboard.html
-    echo "      <td><div class=\"progress-container\"><div class=\"progress-bar ${bar_class}\" style=\"width:${percent}%;\" title=\"${tooltip}\">${percent}%</div></div></td>" >> dashboard.html
-    echo "      <td>${last_deploy}</td>" >> dashboard.html
-    echo "      <td>${notes}</td>" >> dashboard.html
+    echo "      <td data-label=\"Project\">${name}</td>" >> dashboard.html
+    echo "      <td data-label=\"Status %\"><div class=\"progress-container\"><div class=\"progress-bar ${bar_class}\" style=\"width:${percent}%;\" title=\"${tooltip}\">${percent}%</div></div></td>" >> dashboard.html
+    echo "      <td data-label=\"Last Deployed\">${last_deploy}</td>" >> dashboard.html
+    echo "      <td data-label=\"Notes\">${notes}</td>" >> dashboard.html
     echo "    </tr>" >> dashboard.html
   done
 
