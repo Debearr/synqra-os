@@ -14,6 +14,8 @@ set -euo pipefail
 
 LOG_LINES=${LOG_LINES:-200}
 LOG_SINCE=${LOG_SINCE:-30m}
+# Resolved deployment URL (set during probe) used for auto-open
+RESOLVED_URL=""
 
 echo "[verify] Starting deployment verification"
 
@@ -88,8 +90,26 @@ derive_url_from_cli() {
   return 1
 }
 
+# Derive URL using `railway status --service <name> --json | jq -r '.url'`
+derive_url_from_status() {
+  if ! have_cmd railway; then return 1; fi
+  if ! have_cmd jq; then return 1; fi
+  local service
+  service=${RAILWAY_SERVICE_NAME:-synqra-os}
+  local url
+  url=$(railway status --service "$service" --json 2>/dev/null | jq -r '.url // empty' || true)
+  if [[ -n "$url" && "$url" =~ ^https?:// ]]; then
+    echo "$url"
+    return 0
+  fi
+  return 1
+}
+
 probe_url() {
   local url="${DEPLOY_URL:-${PUBLIC_URL:-}}"
+  if [[ -z "$url" ]]; then
+    url=$(derive_url_from_status || true)
+  fi
   if [[ -z "$url" ]]; then
     url=$(derive_url_from_cli || true)
   fi
@@ -110,6 +130,34 @@ probe_url() {
   else
     echo "[verify] Warning: non-success status from $url" >&2
   fi
+  RESOLVED_URL="$url"
+}
+
+# Attempt to open the resolved URL in the default browser
+open_in_browser() {
+  # Allow opt-out via NO_OPEN=1
+  if [[ "${NO_OPEN:-0}" == "1" ]]; then
+    return 0
+  fi
+  local url="$RESOLVED_URL"
+  if [[ -z "$url" ]]; then
+    url=$(derive_url_from_status || derive_url_from_cli || true)
+  fi
+  if [[ -z "$url" ]]; then
+    echo "[verify] No URL to open." >&2
+    return 0
+  fi
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 && echo "[verify] Opened in browser: $url" && return 0
+  fi
+  if command -v open >/dev/null 2>&1; then
+    open "$url" >/dev/null 2>&1 && echo "[verify] Opened in browser: $url" && return 0
+  fi
+  # Windows (Git Bash / Cygwin) best-effort
+  if command -v start >/dev/null 2>&1; then
+    start "$url" >/dev/null 2>&1 && echo "[verify] Opened in browser: $url" && return 0
+  fi
+  echo "[verify] Could not auto-open browser. URL: $url"
 }
 
 main() {
@@ -118,6 +166,7 @@ main() {
   select_context || true
   print_logs || true
   probe_url || true
+  open_in_browser || true
   echo "[verify] Done"
 }
 
