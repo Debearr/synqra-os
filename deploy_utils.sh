@@ -109,6 +109,12 @@ log_deploy() {
   ts=$(date +"%Y-%m-%d %H:%M:%S")
   day=$(date +"%Y-%m-%d")
 
+  # Special GOLD marker if URL starts with 🆕
+  local gold_suffix=""
+  if [[ "$url" == 🆕* ]]; then
+    gold_suffix=" [GOLD]"
+  fi
+
   # Colored increment mode label for log entry
   local modeColor
   if [[ "$mode" == "fixed" ]]; then
@@ -147,7 +153,7 @@ log_deploy() {
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseGradient • ✨ $tooltipSync"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseGradient • ✨ $tooltipSync$gold_suffix"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
