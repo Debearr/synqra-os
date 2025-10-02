@@ -237,6 +237,7 @@ render_dashboard() {
   <header id="dashboard-header" class="corner-mode" data-pulse>
     <h1 class="$title_class">📊 Project Status Dashboard $title_emoji</h1>
     <p>Last updated: $(date +"%Y-%m-%d %H:%M:%S")</p>
+    <div id="header-mode" style="margin-top:4px; font-size:13px; opacity:0.85;"></div>
   </header>
   <aside id="dashboard-sidebar" class="corner-mode" style="margin-top:10px;"></aside>
   <h2>🔥 Progress Trend Snapshot</h2>
