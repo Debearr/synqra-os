@@ -28,5 +28,10 @@ log_deploy() {
   fi
 
   echo "$deploy_line" >> DeployLog.md
+
+  # Record heartbeat speed for dashboard/PDF sync
+  if [ -n "$HEARTBEAT_SPEED" ]; then
+    echo "  💓 Heartbeat: $HEARTBEAT_SPEED" >> DeployLog.md
+  fi
 }
 
