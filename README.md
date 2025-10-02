@@ -43,3 +43,20 @@ Notes:
 - Requires Railway CLI available via `npx` and Node.js at runtime
 - If `jq` is not present, Node is used to parse JSON
 - Uses current Railway context; ensure the project/env is selected
+
+## Unified deploy flow
+
+Run a single command to verify, open the site, update README, and push:
+
+```bash
+# Optional non-interactive Railway auth
+export RAILWAY_TOKEN=<your_token>
+
+scripts/synqra_deploy.sh
+```
+
+This orchestrates:
+- Verification via `scripts/verify_deploy.sh` (no auto-open)
+- Fetches the live URL via `npx @railway/cli status --json`
+- Opens the URL in your default browser
+- Updates README via `scripts/update_readme_live_url.sh` and commits/pushes
