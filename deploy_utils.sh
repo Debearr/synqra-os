@@ -48,6 +48,15 @@ update_dashboard() {
     .bar-green { background: linear-gradient(90deg, #4caf50, #2e7d32); }
     .bar-yellow { background: linear-gradient(90deg, #ffc107, #ff9800); }
     .bar-red { background: linear-gradient(90deg, #f44336, #c62828); }
+
+    /* --- Animation --- */
+    .progress-bar {
+      width: 0;
+      transition: width 1.2s ease-out;
+    }
+    .progress-bar.loaded {
+      /* final width is set via inline style or JS */
+    }
   </style>
   <style>
     /* --- Responsive tweaks --- */
@@ -70,6 +79,16 @@ update_dashboard() {
   </style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:,">
+  <script>
+    // Animate bars after page load
+    window.addEventListener("load", () => {
+      document.querySelectorAll(".progress-bar").forEach(bar => {
+        const targetWidth = bar.getAttribute("data-width");
+        if (targetWidth) bar.style.width = targetWidth;
+        bar.classList.add("loaded");
+      });
+    });
+  </script>
 </head>
 <body>
   <h1>📊 Project Status Dashboard</h1>
@@ -100,7 +119,7 @@ EOL
 
     echo "    <tr>" >> dashboard.html
     echo "      <td data-label=\"Project\">${name}</td>" >> dashboard.html
-    echo "      <td data-label=\"Status %\"><div class=\"progress-container\"><div class=\"progress-bar ${bar_class}\" style=\"width:${percent}%;\" title=\"${tooltip}\">${percent}%</div></div></td>" >> dashboard.html
+    echo "      <td data-label=\"Status %\"><div class=\"progress-container\"><div class=\"progress-bar ${bar_class}\" data-width=\"${percent}%\" title=\"${tooltip}\">${percent}%</div></div></td>" >> dashboard.html
     echo "      <td data-label=\"Last Deployed\">${last_deploy}</td>" >> dashboard.html
     echo "      <td data-label=\"Notes\">${notes}</td>" >> dashboard.html
     echo "    </tr>" >> dashboard.html
