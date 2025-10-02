@@ -4,9 +4,17 @@ from reportlab.lib import colors
 from reportlab.platypus import Table
 from reportlab.pdfgen.canvas import Canvas
 
-def draw_barcode_watermark(canvas, doc, project_name: str = "Generic"):
+def _hb_color(hb_label: str):
+    hb = (hb_label or "Medium").lower()
+    if hb == "fast":   return colors.Color(0.055, 0.64, 0.41, alpha=0.14)
+    if hb == "slow":   return colors.Color(0.56, 0.18, 0.18, alpha=0.14)
+    if hb == "black":  return colors.Color(0.07, 0.07, 0.07, alpha=0.14)
+    return colors.Color(0.78, 0.65, 0.39, alpha=0.14)
+
+def draw_barcode_watermark(canvas, doc, project_name: str = "Generic", hb_label: str = "Medium"):
     canvas.saveState()
-    canvas.setFillColorRGB(0.9, 0.8, 0.2, alpha=0.12)
+    col = _hb_color(hb_label)
+    canvas.setFillColor(col)
     canvas.setFont("Courier-Bold", 32)
 
     name_lower = project_name.lower()
@@ -36,6 +44,7 @@ def render_pdf_from_log(log_file: str, pdf_file: str) -> None:
         lines = f.readlines()
 
     project_hint = "Generic"
+    heartbeat_hint = "Medium"
     for line in lines:
         # detect project in log line if available
         if "Synqra" in line:
@@ -44,6 +53,12 @@ def render_pdf_from_log(log_file: str, pdf_file: str) -> None:
             project_hint = "NØID"
         elif "AuraFX" in line:
             project_hint = "AuraFX"
+        # detect heartbeat label
+        if "Heartbeat:" in line:
+            try:
+                heartbeat_hint = line.split("Heartbeat:")[1].strip().split()[0]
+            except Exception:
+                pass
         if "[GLOBAL WARNING BANNER]" in line:
             warning_text = line.strip().replace("[GLOBAL WARNING BANNER]", "⚠️ Global Warning:")
             table = Table([[warning_text]], colWidths=[450])
@@ -63,8 +78,8 @@ def render_pdf_from_log(log_file: str, pdf_file: str) -> None:
 
     doc.build(
         story,
-        onFirstPage=lambda c, d: draw_barcode_watermark(c, d, project_hint),
-        onLaterPages=lambda c, d: draw_barcode_watermark(c, d, project_hint)
+        onFirstPage=lambda c, d: draw_barcode_watermark(c, d, project_hint, heartbeat_hint),
+        onLaterPages=lambda c, d: draw_barcode_watermark(c, d, project_hint, heartbeat_hint)
     )
 
 
