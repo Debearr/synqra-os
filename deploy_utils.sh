@@ -14,8 +14,17 @@ log_deploy() {
   if [ -n "$glyph" ] && [ "$glyph" != "null" ]; then
     glyphTag="[GLYPH:$glyph]"
   fi
-  # Build deploy line
-  local deploy_line="$(date '+%Y-%m-%d %H:%M:%S') | $project $glyphTag | $percent% | $url"
+  # Build deploy line with heartbeat label for downstream tinting
+  local hb_label="Medium"
+  if [ -n "${HEARTBEAT_SPEED:-}" ]; then
+    case "${HEARTBEAT_SPEED,,}" in
+      fast) hb_label="Fast" ;;
+      slow) hb_label="Slow" ;;
+      black) hb_label="Black" ;;
+      *) hb_label="Medium" ;;
+    esac
+  fi
+  local deploy_line="$(date '+%Y-%m-%d %H:%M:%S') | $project $glyphTag | $percent% | $url | Heartbeat: $hb_label"
 
   # Check global warning toggle
   local showWarnings=$(jq -r '.showGlyphWarnings // false' projects.json 2>/dev/null || echo "false")
