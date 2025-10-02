@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deploy Dashboard</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+    .progress-bar { height: 8px; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 4px; }
+
+    /* 🏆 Podium tints */
+    .row-gold   { background-color: #FFD70022; }
+    .row-silver { background-color: #C0C0C022; }
+    .row-bronze { background-color: #CD7F3222; }
+    .row-gold:hover   { background-color: #FFD70044; }
+    .row-silver:hover { background-color: #C0C0C044; }
+    .row-bronze:hover { background-color: #CD7F3244; }
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header id="global-header">
+    <h1>📊 Project Status Dashboard</h1>
+  </header>
+  <div id="warning-banner" class="hidden">
+    <div id="warning-barcode"></div>
+    <span id="warning-text"></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th>Progress</th>
+        <th>%</th>
+        <th>Last Deploy</th>
+      </tr>
+    </thead>
+    <tbody id="projects-table"></tbody>
+  </table>
+
+  <script>
+    // Add cache-busting version hash (forces browser to fetch fresh glyphs each deploy)
+    const versionHash = Date.now();
+
+    Promise.all([
+      fetch("projects.json?v=" + versionHash).then(res => res.json()).catch(() => ({})),
+      fetch("DeployLog.md?v=" + versionHash).then(res => res.text()),
+      fetch(".cursor/glyphs/barcodes.json?v=" + versionHash).then(res => res.json()).catch(() => ({}))
+    ]).then(([meta, logText, glyphDefs]) => {
+      const table = document.getElementById("projects-table");
+
+      // Build a map of latest % and timestamp from log (log-driven)
+      const projects = {};
+      const lineRegex = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*?\s(🥇|🥈|🥉)?\s*([a-zA-Z0-9_-]+)\s.*?(\d+)%.*https:\/\//gm;
+      let m;
+      while ((m = lineRegex.exec(logText)) !== null) {
+        const ts = m[1];
+        const podium = m[2] || "";
+        const name = m[3];
+        const prog = parseInt(m[4], 10);
+        projects[name] = { name, progress: prog, lastDeploy: ts, podium };
+      }
+
+      // Check if warnings should be shown
+      const showGlyphWarnings = !!meta.showGlyphWarnings;
+
+      // Helper: return SVG string for this project/glyph, or empty if none
+      const getGlyphSVG = (projectName) => {
+        const metaEntry = meta[projectName] || {};
+        const glyphChar = metaEntry.barcodeGlyph || metaEntry.glyph || ""; // e.g., "S" or "Ø"
+        if (!glyphChar) return "";
+        // Prefer per-project map: glyphDefs[BrandOrProject].glyphs[glyphChar]
+        const projectGlyphs =
+          (glyphDefs[projectName] && glyphDefs[projectName].glyphs) ||
+          (glyphDefs[(metaEntry.brand || "")] && glyphDefs[(metaEntry.brand || "")].glyphs) ||
+          null;
+        if (projectGlyphs && projectGlyphs[glyphChar]) return projectGlyphs[glyphChar];
+        // Fallback: global top-level glyphs table (optional future structure)
+        if (glyphDefs.glyphs && glyphDefs.glyphs[glyphChar]) return glyphDefs.glyphs[glyphChar];
+        return "";
+      };
+
+      // Render rows
+      Object.values(projects).forEach(p => {
+        const row = document.createElement("tr");
+        // 🏆 Podium tint from log
+        let podiumClass = "", podiumEmoji = "";
+        if (p.podium === "🥇") { podiumClass = "row-gold"; podiumEmoji = "🥇 "; }
+        else if (p.podium === "🥈") { podiumClass = "row-silver"; podiumEmoji = "🥈 "; }
+        else if (p.podium === "🥉") { podiumClass = "row-bronze"; podiumEmoji = "🥉 "; }
+        row.className = podiumClass;
+
+        // Brand label + inline SVG glyph
+        const metaEntry = meta[p.name] || {};
+        const brandLabel = metaEntry.brand || p.name;
+        const svg = getGlyphSVG(p.name); // SVG string or ""
+        let warningBadge = "";
+        if (!svg && showGlyphWarnings) {
+          warningBadge = `<span style="color:#c00; font-size:0.8em;" title="⚠️ Missing SVG glyph, showing fallback.">⚠️</span>`;
+        }
+
+        const brandCell = svg
+          ? `<span class="glyph">${svg}</span><span>${brandLabel}</span>${warningBadge}`
+          : `<span>${brandLabel}</span>${warningBadge}`;
+
+        row.innerHTML = `
+          <td class="brand-cell">${podiumEmoji}${brandCell}</td>
+          <td>
+            <div class="progress-bar" style="--progress:${p.progress}%">
+              <div class="progress-fill" style="width:${p.progress}%"></div>
+            </div>
+          </td>
+          <td>${p.progress}%</td>
+          <td>${p.lastDeploy || "—"}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      // Show global warning banner if any missing glyphs
+      if (typeof showWarningBanner === 'function' && Object.values(projects).length > 0) {
+        let missingCount = 0;
+        for (const p of Object.values(projects)) {
+          const metaEntry = meta[p.name] || {};
+          const glyphChar = metaEntry.barcodeGlyph || metaEntry.glyph || "";
+          if (showGlyphWarnings && !glyphChar) missingCount++;
+        }
+        if (missingCount > 0 && showGlyphWarnings) {
+          const firstProject = Object.keys(projects)[0] || "Generic";
+          showWarningBanner("⚠️ Some projects missing SVG glyphs, fallback used.", firstProject);
+        }
+      }
+    });
+  </script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
+

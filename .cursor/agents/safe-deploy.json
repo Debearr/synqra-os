@@ -1,0 +1,6 @@
+{
+  "name": "\ud83d\ude80 Safe Deploy",
+  "description": "One-click safe deploy agent. Runs safeguard, auto-deploy, logs, and echoes final URL.",
+  "type": "background",
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\nsource ./scripts/deploy_utils.sh\n\nREPO_NAME=$(basename $(git rev-parse --show-toplevel))\n\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n"
+}

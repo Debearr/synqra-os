@@ -1,0 +1,6 @@
+{
+  "name": "📦 Deploy Any Repo",
+  "description": "Deploy any repo with safeguard + auto-generated start.sh (Node/Python smart detection, Node fallback). Always echoes final Railway URL at the end.",
+  "type": "background",
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\nsource ./scripts/deploy_utils.sh\n\nREPO_NAME=\"$1\"\n\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n"
+}
