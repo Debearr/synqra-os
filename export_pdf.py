@@ -2,6 +2,7 @@ import os
 import re
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 
@@ -53,8 +54,25 @@ def generate_pdf():
                     story.append(Paragraph(f"⚠️ Missing SVG for glyph '{glyph_char}', fallback used.", style_normal))
 
         if line.strip():
-            p = Paragraph(line, style_normal)
-            story.append(p)
+            if line.startswith("[GLOBAL WARNING]") or "GLOBAL WARNING" in line:
+                # Render warning line with red background + gold text
+                warn_style = style_normal.clone('warn_style')
+                warn_style.textColor = colors.gold
+                from reportlab.platypus import Table, TableStyle
+                table = Table([[f"{line}"]], colWidths=[500])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,-1), colors.lightcoral),
+                    ('TEXTCOLOR', (0,0), (-1,-1), colors.gold),
+                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                    ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0,0), (-1,-1), 11),
+                    ('TOPPADDING', (0,0), (-1,-1), 6),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                ]))
+                story.append(table)
+            else:
+                p = Paragraph(line, style_normal)
+                story.append(p)
         story.append(Spacer(1, 6))
 
     doc = SimpleDocTemplate("DeployLog.pdf", pagesize=letter)
