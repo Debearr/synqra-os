@@ -83,6 +83,17 @@ update_dashboard() {
     .progress-bar.loaded {
       /* final width is set via inline style or JS */
     }
+    /* Sparkline styling */
+    .sparkline {
+      stroke: #00ffcc;
+      stroke-width: 2;
+      fill: none;
+    }
+    .sparkline-bg {
+      stroke: #333;
+      stroke-width: 1;
+      fill: none;
+    }
   </style>
   <style>
     /* --- Responsive tweaks --- */
@@ -120,7 +131,7 @@ update_dashboard() {
   <h1>📊 Project Status Dashboard</h1>
   <p>Last updated: $(date +"%Y-%m-%d %H:%M:%S")</p>
   <table>
-    <tr><th>Project</th><th>Status %</th><th>Last Deployed</th><th>Notes</th></tr>
+    <tr><th>Project</th><th>Status %</th><th>Trend</th><th>Last Deployed</th><th>Notes</th></tr>
 EOL
 
   # Loop through projects.json
@@ -143,9 +154,32 @@ EOL
 
     tooltip="${name} — ${percent}% (Last deployed: ${last_deploy:-N/A})"
 
+    # --- Generate sparkline data (last 5 logged percentages for this project) ---
+    history=$(grep "\[PROJECT: ${id}\]" DEPLOY_LOG.md 2>/dev/null | head -n5 | awk -F '—' '{print $3}' | tr -d ' %' | tac | tr '\n' ' ')
+    points=""
+    idx=0
+    for val in $history; do
+      if [ -n "$val" ]; then
+        x=$((idx * 25))
+        y=$((100 - val))
+        points="$points $x,$y"
+        idx=$((idx+1))
+      fi
+    done
+
+    if [ -n "$points" ]; then
+      sparkline="<svg width='120' height='40' viewBox='0 0 120 100'>
+                   <polyline class='sparkline-bg' points='0,100 120,100'/>
+                   <polyline class='sparkline' points='${points}'/>
+                 </svg>"
+    else
+      sparkline="N/A"
+    fi
+
     echo "    <tr>" >> dashboard.html
     echo "      <td data-label=\"Project\">${name}</td>" >> dashboard.html
     echo "      <td data-label=\"Status %\"><div class=\"progress-container\"><div class=\"progress-bar ${bar_class}\" data-width=\"${percent}%\" title=\"${tooltip}\">${percent}%</div></div></td>" >> dashboard.html
+    echo "      <td data-label=\"Trend\">${sparkline}</td>" >> dashboard.html
     echo "      <td data-label=\"Last Deployed\">${last_deploy}</td>" >> dashboard.html
     echo "      <td data-label=\"Notes\">${notes}</td>" >> dashboard.html
     echo "    </tr>" >> dashboard.html
