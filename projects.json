@@ -1,0 +1,14 @@
+{
+  "synqra-os": {
+    "mode": "Adaptive",
+    "brand": "Synqra",
+    "themeColor": "#00f",
+    "barcodeGlyph": "S"
+  },
+  "noid-os": {
+    "mode": "Fixed",
+    "brand": "NØID",
+    "themeColor": "#000",
+    "barcodeGlyph": "Ø"
+  }
+}
