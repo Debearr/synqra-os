@@ -1,0 +1,6 @@
+{
+  "name": "🚀 Universal Deploy",
+  "description": "One button deploy for any repo. If inside a repo, deploys it. If given a name, deploys that repo. Auto-start + logging built-in.",
+  "type": "background",
+  "script": "#!/usr/bin/env bash\nset -euo pipefail\n\n# Import utils\nsource ./scripts/deploy_utils.sh\n\n# Decide repo name\nif [ $# -gt 0 ]; then\n  REPO_NAME=\"$1\"\nelse\n  REPO_NAME=$(basename $(git rev-parse --show-toplevel))\nfi\n\n# Smart auto-start + deploy\nensure_start_script\nfinalize_deploy \"$REPO_NAME\"\n"
+}
