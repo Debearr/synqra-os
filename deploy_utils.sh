@@ -137,10 +137,17 @@ log_deploy() {
     *) pulseGradient="$pulseLabel" ;;
   esac
 
+  # Tooltip shimmer sync state
+  local tooltipSync
+  tooltipSync="Synced"
+  if [[ "${INDEPENDENT_SHIMMER:-0}" -eq 1 ]]; then
+    tooltipSync="Independent"
+  fi
+
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseGradient"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseGradient • ✨ $tooltipSync"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
