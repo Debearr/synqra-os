@@ -148,6 +148,29 @@
       tag.style.letterSpacing = "0.1em";
       tag.style.color = auraColor;
     </script>
+
+    <style>
+      /* Shimmer Sweep Effect for Live Watermark */
+      #luxury-watermark {
+        position: fixed;
+        overflow: hidden;
+        background: linear-gradient(
+          120deg,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0.15) 40%,
+          rgba(255,255,255,0) 80%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmerSweep 6s infinite;
+      }
+
+      @keyframes shimmerSweep {
+        0% { background-position: -200% 0; }
+        50% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    </style>
     <header>
       <h1>📊 Project Status Dashboard</h1>
     </header>
