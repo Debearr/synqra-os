@@ -18,6 +18,18 @@ def generate_pdf():
     from svglib.svglib import svg2rlg
     from reportlab.graphics import renderPDF
 
+    # Load warning toggle (default: false = clean mode)
+    show_glyph_warnings = False
+    if os.path.exists("projects.json"):
+        try:
+            import json
+            with open("projects.json") as f:
+                pj = json.load(f)
+                if pj.get("showGlyphWarnings", False):
+                    show_glyph_warnings = True
+        except Exception:
+            pass
+
     for line in log_text.splitlines():
         m = glyph_pattern.search(line)
         if m:
@@ -29,12 +41,16 @@ def generate_pdf():
                     story.append(drawing)
                     # Strip tag for clean text display
                     line = glyph_pattern.sub("", line)
-                except Exception:
+                except Exception as e:
                     # Graceful fallback if SVG parse fails
                     line = line.replace(f"[GLYPH:{glyph_char}]", f"<b>{glyph_char}</b>")
+                    if show_glyph_warnings:
+                        story.append(Paragraph(f"⚠️ Missing SVG for glyph '{glyph_char}', fallback used.", style_normal))
             else:
                 # Fallback if no SVG exists
                 line = line.replace(f"[GLYPH:{glyph_char}]", f"<b>{glyph_char}</b>")
+                if show_glyph_warnings:
+                    story.append(Paragraph(f"⚠️ Missing SVG for glyph '{glyph_char}', fallback used.", style_normal))
 
         if line.strip():
             p = Paragraph(line, style_normal)
