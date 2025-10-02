@@ -76,6 +76,33 @@
         background: rgba(255,215,0,0.05);
         transition: background 0.3s ease;
       }
+
+      /* Pulse glow */
+      @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 8px rgba(255,215,0,0.2); } 50% { box-shadow: 0 0 18px rgba(255,215,0,0.6); } }
+
+      /* Progress bar fill + shimmer */
+      .progress-bar-fill {
+        animation: fillBar 1.8s ease forwards, goldShimmer 2.5s infinite linear;
+        background: linear-gradient(90deg, #FFD700, #FFF3B0, #FFD700);
+        background-size: 200% 100%;
+      }
+      @keyframes fillBar { from { width: 0%; } to { width: var(--progress); } }
+      @keyframes goldShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+      /* Sparkline draw */
+      .sparkline path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 2s ease forwards; }
+      @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+      /* Row hover lift */
+      tr:hover { transform: translateY(-2px); background: rgba(255,215,0,0.07); transition: all 0.25s ease; }
+
+      /* Tooltip reveal */
+      .tooltip-gradient { opacity: 0; transform: translateY(5px); transition: all 0.25s cubic-bezier(.25,.8,.25,1); }
+      .tooltip-gradient.show { opacity: 1; transform: translateY(0); }
+
+      /* Deploy reward spark */
+      @keyframes deploySpark { 0% { opacity: 0; transform: scale(0.5) rotate(15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(0deg); } 100% { opacity: 0; transform: scale(0.8) rotate(-15deg); } }
+      .deploy-reward { animation: deploySpark 1s ease; }
     </style>
   </head>
   <body>
