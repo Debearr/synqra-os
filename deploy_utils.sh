@@ -288,6 +288,31 @@ render_dashboard() {
     margin-top: 3px;
     transition: all 0.3s ease;
   }
+
+  /* NØID Product Tag */
+  footer::before {
+    content: "NØID Labs™ | Product: Synqra";
+    display: block;
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    font-size: 0.75em;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    font-style: italic;
+    color: rgba(255,215,0,0.15);
+  }
+
+  /* Optional: left-side QR/Barcode balance */
+  footer::after {
+    content: "◼︎◻︎▮▯ | Scan for Live Dashboard";
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    font-size: 0.7em;
+    font-family: monospace;
+    color: rgba(255,255,255,0.1);
+  }
 </style>
 </head>
 <body>
@@ -445,6 +470,7 @@ ROW
     pulseSlider.value = localStorage.getItem('pulseSpeed') || 3; setPulseSpeed(pulseSlider.value); pulseSlider.addEventListener('input', () => setPulseSpeed(pulseSlider.value));
   </script>
   </body>
+  <footer style="position:relative; height:40px;"></footer>
   </html>
 EOL
 }
