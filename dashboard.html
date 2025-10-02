@@ -170,7 +170,24 @@
         50% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
       }
+
+      /* Dynamic shimmer speed tied to heartbeat */
+      :root {
+        --pulse-speed: 6s; /* default */
+      }
+
+      body.heartbeat-slow #luxury-watermark { animation-duration: 8s; }
+      body.heartbeat-medium #luxury-watermark { animation-duration: 6s; }
+      body.heartbeat-fast #luxury-watermark { animation-duration: 3s; }
     </style>
+
+    <script>
+      // Apply heartbeat speed class to body
+      (function(){
+        const pulse = (window.dashboardConfig && window.dashboardConfig.heartbeat) || "Medium";
+        document.body.classList.add(`heartbeat-${String(pulse).toLowerCase()}`);
+      })();
+    </script>
     <header>
       <h1>📊 Project Status Dashboard</h1>
     </header>
