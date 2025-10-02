@@ -6,6 +6,7 @@ from reportlab.platypus import Image as RLImage
 
 import json
 import os
+import hashlib
 import tempfile
 
 try:
@@ -44,10 +45,14 @@ def render_with_glyphs(cell_text: str, project: str):
                     # Fallback when cairosvg not available
                     return f"[{ch} BARCODE] {cell_text}"
                 svg_str = defs[ch]
-                tmp_png = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                tmp_png.close()
-                cairosvg.svg2png(bytestring=svg_str.encode("utf-8"), write_to=tmp_png.name)
-                return RLImage(tmp_png.name, width=20, height=20)
+                # Cache rendered PNG by hash of project+glyph+svg
+                cache_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.cache/glyphs"))
+                os.makedirs(cache_dir, exist_ok=True)
+                cache_key = hashlib.md5((project + ch + svg_str).encode("utf-8")).hexdigest()
+                cache_path = os.path.join(cache_dir, f"{cache_key}.png")
+                if not os.path.exists(cache_path):
+                    cairosvg.svg2png(bytestring=svg_str.encode("utf-8"), write_to=cache_path)
+                return RLImage(cache_path, width=20, height=20)
 
         return cell_text
     except Exception:
