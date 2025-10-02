@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Import safeguard
+# Import shared safeguard
 source "$(dirname "$0")/safeguard.sh"
 safeguard_check
 
