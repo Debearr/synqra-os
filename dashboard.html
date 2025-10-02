@@ -56,6 +56,9 @@
         projects[name] = { name, progress: prog, lastDeploy: ts, podium };
       }
 
+      // Check if warnings should be shown
+      const showGlyphWarnings = !!meta.showGlyphWarnings;
+
       // Helper: return SVG string for this project/glyph, or empty if none
       const getGlyphSVG = (projectName) => {
         const metaEntry = meta[projectName] || {};
@@ -86,9 +89,14 @@
         const metaEntry = meta[p.name] || {};
         const brandLabel = metaEntry.brand || p.name;
         const svg = getGlyphSVG(p.name); // SVG string or ""
+        let warningBadge = "";
+        if (!svg && showGlyphWarnings) {
+          warningBadge = `<span style="color:#c00; font-size:0.8em;" title="⚠️ Missing SVG glyph, showing fallback.">⚠️</span>`;
+        }
+
         const brandCell = svg
-          ? `<span class="glyph">${svg}</span><span>${brandLabel}</span>`
-          : `<span>${brandLabel}</span>`;
+          ? `<span class="glyph">${svg}</span><span>${brandLabel}</span>${warningBadge}`
+          : `<span>${brandLabel}</span>${warningBadge}`;
 
         row.innerHTML = `
           <td class="brand-cell">${podiumEmoji}${brandCell}</td>
