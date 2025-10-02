@@ -4,7 +4,51 @@ set -euo pipefail
 log_deploy() {
   local project="$1"
   local url="$2"
-  local percent="$3"
+
+  # --- Determine progress increment automatically ---
+  local percent
+  if [ -f "projects.json" ]; then
+    local current mode increment
+    current=$(jq -r --arg proj "$project" '.[] | select(.name==$proj) | .progress' projects.json)
+    mode=$(jq -r --arg proj "$project" '.[] | select(.name==$proj) | .mode // "Adaptive"' projects.json)
+
+    if [ "$mode" = "Fixed" ]; then
+      increment=2
+    else
+      if command -v bc >/dev/null 2>&1; then
+        if (( $(echo "$current < 50" | bc -l) )); then
+          increment=5
+        elif (( $(echo "$current < 80" | bc -l) )); then
+          increment=3
+        elif (( $(echo "$current < 95" | bc -l) )); then
+          increment=1
+        else
+          increment=0.5
+        fi
+      else
+        # bc missing: fallback simple tiers
+        if [ "$current" -lt 50 ]; then
+          increment=5
+        elif [ "$current" -lt 80 ]; then
+          increment=3
+        elif [ "$current" -lt 95 ]; then
+          increment=1
+        else
+          increment=1
+        fi
+      fi
+    fi
+
+    if command -v bc >/dev/null 2>&1; then
+      percent=$(echo "$current + $increment" | bc -l)
+      if (( $(echo "$percent > 100" | bc -l) )); then percent=100; fi
+    else
+      percent=$(( current + increment ))
+      if [ "$percent" -gt 100 ]; then percent=100; fi
+    fi
+  else
+    percent=1
+  fi
 
   # Insert glyph rendering inline (for PDF + logs)
   local logName
