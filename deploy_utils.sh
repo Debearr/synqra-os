@@ -117,10 +117,20 @@ log_deploy() {
     modeColor="<span style='color:#2196F3'>⚙️ Adaptive Increment</span>"
   fi
 
+  # Colored heartbeat label for log entry
+  local pulseColor
+  case "$pulseLabel" in
+    "Fast"|"Fast Heartbeat") pulseColor="<span style='color:#4CAF50'>Fast</span>" ;;
+    "Medium"|"Medium Heartbeat") pulseColor="<span style='color:#FFC107'>Medium</span>" ;;
+    "Slow"|"Slow Heartbeat") pulseColor="<span style='color:#F44336'>Slow</span>" ;;
+    "Critical") pulseColor="<span style='color:#F44336'>🔴💔 CRITICAL</span>" ;;
+    *) pulseColor="$pulseLabel" ;;
+  esac
+
   # Prepend entry to DEPLOY_LOG.md
   {
     echo "### $day"
-    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseLabel"
+    echo "- [$ts] [PROJECT: $project] — Live: $url — ${percent}% — Global: $global_icon $global_emoji | Project: $proj_icon $proj_emoji | Mode: $modeEmoji $modeLabel • $modeColor • 🖤 $pulseColor"
     echo ""
   } | { [ -f DEPLOY_LOG.md ] && cat - DEPLOY_LOG.md || cat -; } > .DEPLOY_LOG.tmp && mv .DEPLOY_LOG.tmp DEPLOY_LOG.md
 
