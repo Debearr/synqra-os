@@ -1,0 +1,37 @@
+{
+  "services": {
+    "orchestrator": {
+      "start": "n8n start --tunnel",
+      "env": {
+        "N8N_EXECUTIONS_MODE": "queue",
+        "N8N_QUEUE_BULL_REDIS_HOST": "redis",
+        "N8N_CONCURRENCY_PRODUCTION_LIMIT": "10",
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
+        "IG_GRAPH_VERSION": "v19.0",
+        "FB_ACCESS_TOKEN": "${FB_ACCESS_TOKEN}"
+      }
+    },
+    "worker": {
+      "start": "n8n worker --concurrency=10",
+      "env": {
+        "N8N_EXECUTIONS_MODE": "queue",
+        "N8N_QUEUE_BULL_REDIS_HOST": "redis",
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+      },
+      "scale": {
+        "min": 1,
+        "max": 5
+      }
+    },
+    "metrics": {
+      "start": "node metrics/logUploader.js",
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+      }
+    }
+  }
+}
+
