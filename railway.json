@@ -1,0 +1,46 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "project": "synqra-automation",
+  "services": {
+    "orchestrator": {
+      "source": "./",
+      "start": "n8n start --tunnel",
+      "envGroups": ["core", "supabase", "instagram"]
+    },
+    "worker": {
+      "source": "./",
+      "start": "n8n worker --concurrency=10",
+      "envGroups": ["core", "supabase"],
+      "scale": {
+        "min": 1,
+        "max": 5
+      }
+    },
+    "metrics": {
+      "source": "./metrics",
+      "start": "node logUploader.js",
+      "envGroups": ["core", "supabase"]
+    },
+    "redis": {
+      "source": "railwayapp/redis",
+      "version": "7"
+    }
+  },
+  "envGroups": {
+    "core": {
+      "N8N_EXECUTIONS_MODE": "queue",
+      "N8N_QUEUE_BULL_REDIS_HOST": "redis",
+      "N8N_CONCURRENCY_PRODUCTION_LIMIT": "10"
+    },
+    "supabase": {
+      "SUPABASE_URL": "${SUPABASE_URL}",
+      "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+    },
+    "instagram": {
+      "IG_GRAPH_VERSION": "v19.0",
+      "IG_USER_ID": "${IG_USER_ID}",
+      "FB_ACCESS_TOKEN": "${FB_ACCESS_TOKEN}"
+    }
+  }
+}
+
