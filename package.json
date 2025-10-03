@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "prepare": "node -e 'process.exit(0)'"
+    "prepare": "node -e 'process.exit(0)'",
+    "enqueue:test": "node dist/scripts/enqueue-one.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10"
