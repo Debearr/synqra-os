@@ -1,2 +1,5 @@
-declare module "sharp";
+declare module "sharp" {
+  const sharp: any;
+  export default sharp;
+}
 
