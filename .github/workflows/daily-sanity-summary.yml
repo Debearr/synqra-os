@@ -2,7 +2,7 @@ name: Daily Sanity Summary (24h)
 
 on:
   schedule:
-    - cron: "0 14 * * *"  # Runs daily at 14:00 UTC (~10:00 ET). Adjust as needed.
+    - cron: "0 14 * * *"  # 14:00 UTC = 10:00 Toronto (EDT/EST auto-adjusts)
   workflow_dispatch: {}
 
 jobs:
@@ -62,8 +62,18 @@ jobs:
             core.setOutput("lastFailures", lastFailures || "None in the last 24h.");
             core.setOutput("repo", `${context.repo.owner}/${context.repo.repo}`);
 
+      - name: Check quiet hours (Toronto)
+        id: timecheck
+        run: |
+          CURRENT_HOUR=$(TZ=America/Toronto date +%H)
+          if [ $CURRENT_HOUR -lt 8 ] || [ $CURRENT_HOUR -ge 20 ]; then
+            echo "quiet=true" >> $GITHUB_OUTPUT
+          else
+            echo "quiet=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Post DAILY summary to Slack/Discord
-        if: always()
+        if: steps.timecheck.outputs.quiet == 'false'
         env:
           ALERT_WEBHOOK: ${{ secrets.ALERT_WEBHOOK }}
           REPO: ${{ steps.collect.outputs.repo }}
@@ -114,4 +124,8 @@ jobs:
           PAYLOAD="${PAYLOAD//LASTFAILS_REPLACE/$ESCAPED_LASTFAILS}"
 
           curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$ALERT_WEBHOOK"
+
+      - name: Log skip if quiet hours
+        if: steps.timecheck.outputs.quiet == 'true'
+        run: echo "⏸️ Skipping alert — quiet hours active."
 
