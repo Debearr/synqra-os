@@ -2,7 +2,7 @@ name: Sanity Check (Railway Deploy)
 
 on:
   workflow_run:
-    workflows: ["CI"]   # 👈 Change if your main deploy workflow is named differently
+    workflows: ["CI"]   # 👈 Change this to match your deploy workflow name
     types:
       - completed
 
@@ -33,23 +33,17 @@ jobs:
           chmod +x ./check.sh
           ./check.sh
 
-      - name: Send Slack/Discord Alert on Failure
+      - name: Send Success Alert
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\n            \"username\": \"Synqra Bot\",\n            \"avatar_url\": \"https://i.imgur.com/bL0x2qT.png\",\n            \"embeds\": [{\n              \"title\": \"✅ Synqra Sanity Check Passed\",\n              \"description\": \"All post-deploy checks completed successfully.\",\n              \"color\": 3066993,\n              \"fields\": [\n                {\"name\": \"Repo\", \"value\": \"${{ github.repository }}\", \"inline\": true},\n                {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},\n                {\"name\": \"Workflow Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}\n              ]\n            }]\n          }" \
+          ${{ secrets.ALERT_WEBHOOK }}
+
+      - name: Send Failure Alert
         if: failure()
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data "{
-            \"username\": \"Synqra Bot\",
-            \"avatar_url\": \"https://i.imgur.com/bL0x2qT.png\",
-            \"embeds\": [{
-              \"title\": \"🚨 Synqra Sanity Check Failed\",
-              \"description\": \"The sanity check after Railway deploy has failed.\",
-              \"color\": 16711680,
-              \"fields\": [
-                {\"name\": \"Repo\", \"value\": \"${{ github.repository }}\", \"inline\": true},
-                {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},
-                {\"name\": \"Workflow Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}
-              ]
-            }]
-          }" \
+          --data "{\n            \"username\": \"Synqra Bot\",\n            \"avatar_url\": \"https://i.imgur.com/bL0x2qT.png\",\n            \"embeds\": [{\n              \"title\": \"🚨 Synqra Sanity Check Failed\",\n              \"description\": \"The sanity check after Railway deploy has failed.\",\n              \"color\": 15158332,\n              \"fields\": [\n                {\"name\": \"Repo\", \"value\": \"${{ github.repository }}\", \"inline\": true},\n                {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},\n                {\"name\": \"Workflow Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}\n              ]\n            }]\n          }" \
           ${{ secrets.ALERT_WEBHOOK }}
 
