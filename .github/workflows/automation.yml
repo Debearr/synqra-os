@@ -1,0 +1,222 @@
+name: synqra-automation-pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  setup-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Copy Env
+        run: |
+          cp .env.example .env.local || true
+
+  # 1) Composer Macro
+  composer:
+    runs-on: ubuntu-latest
+    needs: setup-environment
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Copy Env
+        run: |
+          cp .env.example .env.local || true
+
+      - name: Generate IG-Safe JPEGs
+        run: |
+          node dist/composer/prepareForInstagram.js
+
+  # 2) Publisher Macro
+  publisher:
+    runs-on: ubuntu-latest
+    needs: composer
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Create & Publish IG Container
+        run: |
+          node dist/publisher/instagram.js
+
+  # 3) Governor Macro
+  governor:
+    runs-on: ubuntu-latest
+    needs: publisher
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Token Bucket Check
+        run: |
+          node dist/governor/rateGovernor.js
+
+  # 4) Orchestrator Macro
+  orchestrator:
+    runs-on: ubuntu-latest
+    needs: governor
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Enqueue Job
+        run: |
+          node dist/orchestrator/enqueue.js
+
+  # 5) Worker Macro
+  worker:
+    runs-on: ubuntu-latest
+    needs: orchestrator
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Worker Placeholder
+        run: |
+          node dist/worker/run.js
+
+  # 6) Retry/Backoff Macro
+  retry:
+    runs-on: ubuntu-latest
+    needs: worker
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Retry Handler
+        run: |
+          node dist/retry/retry.js
+
+  # 7) Observability
+  observability:
+    runs-on: ubuntu-latest
+    needs: retry
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Log Metrics
+        run: |
+          node dist/metrics/updateMetrics.js
+      - name: Upload Logs to Supabase
+        run: |
+          node dist/metrics/logUploader.js
+
+  # 8) Smoke Test (Optional)
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: observability
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Enqueue Test Job
+        run: |
+          node dist/scripts/enqueue-one.js
+      - name: Verify IG Publish
+        run: |
+          node dist/scripts/check-status.js
+
