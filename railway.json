@@ -1,29 +1,33 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "project": "synqra-automation",
+  "plugins": {
+    "redis": {
+      "source": "railwayapp/redis",
+      "version": "7"
+    }
+  },
   "services": {
     "orchestrator": {
-      "source": "./",
+      "path": "./",
       "start": "n8n start --tunnel",
-      "envGroups": ["core", "supabase", "instagram"]
+      "envGroups": ["core", "supabase", "instagram"],
+      "dependencies": ["redis"]
     },
     "worker": {
-      "source": "./",
+      "path": "./",
       "start": "n8n worker --concurrency=10",
       "envGroups": ["core", "supabase"],
+      "dependencies": ["redis"],
       "scale": {
         "min": 1,
         "max": 5
       }
     },
     "metrics": {
-      "source": "./metrics",
+      "path": "./metrics",
       "start": "node logUploader.js",
       "envGroups": ["core", "supabase"]
-    },
-    "redis": {
-      "source": "railwayapp/redis",
-      "version": "7"
     }
   },
   "envGroups": {
