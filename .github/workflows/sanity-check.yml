@@ -26,9 +26,30 @@ jobs:
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
       - name: Run Sanity Check Script
+        id: sanity
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           chmod +x ./check.sh
           ./check.sh
+
+      - name: Send Slack/Discord Alert on Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"username\": \"Synqra Bot\",
+            \"avatar_url\": \"https://i.imgur.com/bL0x2qT.png\",
+            \"embeds\": [{
+              \"title\": \"🚨 Synqra Sanity Check Failed\",
+              \"description\": \"The sanity check after Railway deploy has failed.\",
+              \"color\": 16711680,
+              \"fields\": [
+                {\"name\": \"Repo\", \"value\": \"${{ github.repository }}\", \"inline\": true},
+                {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},
+                {\"name\": \"Workflow Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}
+              ]
+            }]
+          }" \
+          ${{ secrets.ALERT_WEBHOOK }}
 
