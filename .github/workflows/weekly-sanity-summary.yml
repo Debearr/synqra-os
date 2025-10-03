@@ -1,0 +1,159 @@
+name: Weekly Sanity Summary (7d Roll-Up)
+
+on:
+  schedule:
+    # Sunday 10:00 America/Toronto ≈ 14:00 UTC (handles DST automatically)
+    - cron: "0 14 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  weekly-summary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Compute 7d metrics & trends
+        id: compute
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const WORKFLOW_FILE = "sanity-check.yml"; // update if your file is named differently
+            const now = Date.now();
+            const DAY = 24 * 60 * 60 * 1000;
+
+            // Periods
+            const startCurrent = new Date(now - 7 * DAY);      // last 7 days
+            const startPrevious = new Date(now - 14 * DAY);     // previous 7 days
+
+            // Fetch runs for the workflow (max 200 for the last weeks)
+            const runsResp = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: WORKFLOW_FILE,
+              per_page: 200
+            });
+            const runs = runsResp.data.workflow_runs;
+
+            // Helper
+            const inRange = (r, from, to) => {
+              const t = new Date(r.created_at).getTime();
+              return t >= from.getTime() && t < to.getTime();
+            };
+            const minutesBetween = (a, b) => Math.max(0, (new Date(b) - new Date(a)) / 60000);
+
+            function summarize(periodRuns) {
+              const completed = periodRuns.filter(r => r.status === "completed");
+              const total = periodRuns.length;
+              const success = periodRuns.filter(r => r.conclusion === "success").length;
+              const failure = periodRuns.filter(r => r.conclusion === "failure").length;
+              const cancelled = periodRuns.filter(r => r.conclusion === "cancelled").length;
+              const avgDuration = completed.length
+                ? (completed.reduce((acc, r) => acc + minutesBetween(r.created_at, r.updated_at), 0) / completed.length)
+                : 0;
+              const successRate = total ? (success / total) * 100 : 0;
+              const lastFailures = periodRuns
+                .filter(r => r.conclusion === "failure")
+                .slice(0, 5)
+                .map(r => `• ${r.head_branch} — #${r.run_number} → ${r.html_url}`)
+                .join("\\n") || "None";
+              return { total, success, failure, cancelled, avgDuration, successRate, lastFailures };
+            }
+
+            const currentRuns = runs.filter(r => inRange(r, startCurrent, new Date()));
+            const previousRuns = runs.filter(r => inRange(r, startPrevious, startCurrent));
+
+            const curr = summarize(currentRuns);
+            const prev = summarize(previousRuns);
+
+            // Deltas
+            function delta(currVal, prevVal, digits = 1) {
+              if (prevVal === 0) return currVal === 0 ? "0.0" : "∞";
+              return (currVal - prevVal).toFixed(digits);
+            }
+            function pctDelta(currPct, prevPct, digits = 1) {
+              if (prevPct === 0) return currPct === 0 ? "0.0" : "∞";
+              return (currPct - prevPct).toFixed(digits);
+            }
+
+            const successRateDelta = pctDelta(curr.successRate, prev.successRate);
+            const avgDurationDelta = delta(curr.avgDuration, prev.avgDuration);
+
+            core.setOutput("repo", `${context.repo.owner}/${context.repo.repo}`);
+            core.setOutput("curr_total", String(curr.total));
+            core.setOutput("curr_success", String(curr.success));
+            core.setOutput("curr_failure", String(curr.failure));
+            core.setOutput("curr_cancelled", String(curr.cancelled));
+            core.setOutput("curr_avg", curr.avgDuration.toFixed(1));
+            core.setOutput("curr_srate", curr.successRate.toFixed(1));
+            core.setOutput("prev_total", String(prev.total));
+            core.setOutput("prev_srate", prev.successRate.toFixed(1));
+            core.setOutput("prev_avg", prev.avgDuration.toFixed(1));
+            core.setOutput("srate_delta", successRateDelta);
+            core.setOutput("avg_delta", avgDurationDelta);
+            core.setOutput("last_failures", curr.lastFailures);
+
+      - name: Post WEEKLY summary to Slack/Discord
+        env:
+          ALERT_WEBHOOK: ${{ secrets.ALERT_WEBHOOK }}
+          REPO: ${{ steps.compute.outputs.repo }}
+          CTOTAL: ${{ steps.compute.outputs.curr_total }}
+          CSUCCESS: ${{ steps.compute.outputs.curr_success }}
+          CFAILURE: ${{ steps.compute.outputs.curr_failure }}
+          CCANCELLED: ${{ steps.compute.outputs.curr_cancelled }}
+          CAVG: ${{ steps.compute.outputs.curr_avg }}
+          CSRATE: ${{ steps.compute.outputs.curr_srate }}
+          PTOTAL: ${{ steps.compute.outputs.prev_total }}
+          PSRATE: ${{ steps.compute.outputs.prev_srate }}
+          PAVG: ${{ steps.compute.outputs.prev_avg }}
+          SRATE_DELTA: ${{ steps.compute.outputs.srate_delta }}
+          AVG_DELTA: ${{ steps.compute.outputs.avg_delta }}
+          LASTFAILS: ${{ steps.compute.outputs.last_failures }}
+        run: |
+          # Color: red if any failures this week, green if some runs and no failures, grey if no runs
+          if [ "$CFAILURE" -gt 0 ]; then COLOR=15158332; TITLE="📊 Weekly Sanity Summary — Issues Detected";
+          elif [ "$CTOTAL" -gt 0 ]; then COLOR=3066993; TITLE="📊 Weekly Sanity Summary — All Good";
+          else COLOR=9807270; TITLE="📊 Weekly Sanity Summary — No Runs";
+          fi
+
+          PAYLOAD=$(cat <<'JSON'
+          {
+            "username": "Synqra Bot",
+            "avatar_url": "https://i.imgur.com/bL0x2qT.png",
+            "embeds": [{
+              "title": "TITLE_REPLACE",
+              "description": "Repo: REPO_REPLACE",
+              "color": COLOR_REPLACE,
+              "fields": [
+                {"name": "Runs (This Week)", "value": "CTOTAL_REPLACE", "inline": true},
+                {"name": "Success / Failure / Cancel", "value": "CSUCCESS_REPLACE / CFAILURE_REPLACE / CCANCELLED_REPLACE", "inline": true},
+                {"name": "Success Rate (This / Prev)", "value": "CSRATE_REPLACE% (Δ CSRATEDELTA_REPLACE%) vs PREV_SRATE_REPLACE%", "inline": false},
+                {"name": "Avg Duration min (This / Prev)", "value": "CAVG_REPLACE (Δ AVGDELTA_REPLACE) vs PREV_AVG_REPLACE", "inline": false},
+                {"name": "Last Failures", "value": "LASTFAILS_REPLACE"}
+              ]
+            }]
+          }
+          JSON
+          )
+
+          # Inject values
+          PAYLOAD="${PAYLOAD//TITLE_REPLACE/$TITLE}"
+          PAYLOAD="${PAYLOAD//REPO_REPLACE/$REPO}"
+          PAYLOAD="${PAYLOAD//COLOR_REPLACE/$COLOR}"
+          PAYLOAD="${PAYLOAD//CTOTAL_REPLACE/$CTOTAL}"
+          PAYLOAD="${PAYLOAD//CSUCCESS_REPLACE/$CSUCCESS}"
+          PAYLOAD="${PAYLOAD//CFAILURE_REPLACE/$CFAILURE}"
+          PAYLOAD="${PAYLOAD//CCANCELLED_REPLACE/$CCANCELLED}"
+          PAYLOAD="${PAYLOAD//CSRATE_REPLACE/$CSRATE}"
+          PAYLOAD="${PAYLOAD//PREV_SRATE_REPLACE/$PSRATE}"
+          PAYLOAD="${PAYLOAD//CSRATEDELTA_REPLACE/$SRATE_DELTA}"
+          PAYLOAD="${PAYLOAD//CAVG_REPLACE/$CAVG}"
+          PAYLOAD="${PAYLOAD//PREV_AVG_REPLACE/$PAVG}"
+          PAYLOAD="${PAYLOAD//AVGDELTA_REPLACE/$AVG_DELTA}"
+
+          # Escape newlines in LASTFAILS for JSON
+          ESCAPED_LASTFAILS=$(echo "$LASTFAILS" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read())[1:-1])')
+          PAYLOAD="${PAYLOAD//LASTFAILS_REPLACE/$ESCAPED_LASTFAILS}"
+
+          curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$ALERT_WEBHOOK"
