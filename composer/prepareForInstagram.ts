@@ -14,3 +14,36 @@ export async function prepareForInstagram(input: Buffer): Promise<Buffer> {
   console.log(`Image recompressed: original ${input.length}, final ${output.length}`);
   return output;
 }
+
+// Simple CLI to process all images in a directory
+// Usage: node dist/composer/prepareForInstagram.js [inputDir] [outputDir]
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const fs = await import("fs/promises");
+  const path = await import("path");
+  const inputDir = process.argv[2] || "assets/input";
+  const outputDir = process.argv[3] || "assets/output";
+
+  (async () => {
+    await fs.mkdir(outputDir, { recursive: true });
+    const entries = await fs.readdir(inputDir, { withFileTypes: true });
+    const allowed = new Set([".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"]);
+    const files = entries.filter(e => e.isFile()).map(e => e.name).filter(name => allowed.has(path.extname(name).toLowerCase()));
+
+    for (const name of files) {
+      const srcPath = path.join(inputDir, name);
+      const dstName = path.parse(name).name + ".jpg";
+      const dstPath = path.join(outputDir, dstName);
+      const buf = await fs.readFile(srcPath);
+      const out = await prepareForInstagram(buf);
+      await fs.writeFile(dstPath, out);
+      console.log(`[composer] Wrote ${dstPath}`);
+    }
+
+    if (files.length === 0) {
+      console.log(`[composer] No images found in ${inputDir}`);
+    }
+  })().catch(err => {
+    console.error("[composer] Error:", err);
+    process.exit(1);
+  });
+}

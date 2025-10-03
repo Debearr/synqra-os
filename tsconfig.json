@@ -10,7 +10,11 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["node"],
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ]
   },
   "include": ["**/*.ts", "**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
