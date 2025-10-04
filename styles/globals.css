@@ -1,0 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Helvetica+Neue&display=swap');
+
+:root { --carousel-bg: #0b0b0f; --text: #eaeaf2; --muted: #9aa0b4; }
+
+html, body, #__next { height: 100
