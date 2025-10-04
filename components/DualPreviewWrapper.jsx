@@ -1,33 +1,33 @@
 import React, { useRef } from 'react';
 import ChaosCarousel from './ChaosCarousel';
-import html2canvas from 'html2canvas';
 
 const DualPreviewWrapper = () => {
   const squareRef = useRef(null);
   const wideRef = useRef(null);
 
-  const handleExport = async () => {
+  const handleExportZip = async () => {
+    const [{ default: html2canvas }, { default: JSZip }, { saveAs }] = await Promise.all([
+      import('html2canvas'),
+      import('jszip'),
+      import('file-saver'),
+    ]);
+
+    const zip = new JSZip();
+
     if (squareRef.current) {
-      const canvas = await html2canvas(squareRef.current, {
-        backgroundColor: '#0A0A0A',
-        scale: 2,
-      });
-      const link = document.createElement('a');
-      link.download = 'chaos-carousel-square.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const canvas = await html2canvas(squareRef.current, { backgroundColor: '#0A0A0A', scale: 2 });
+      const base64 = canvas.toDataURL('image/png').split(',')[1];
+      zip.file('chaos-carousel-square.png', base64, { base64: true });
     }
 
     if (wideRef.current) {
-      const canvas = await html2canvas(wideRef.current, {
-        backgroundColor: '#0A0A0A',
-        scale: 2,
-      });
-      const link = document.createElement('a');
-      link.download = 'chaos-carousel-wide.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const canvas = await html2canvas(wideRef.current, { backgroundColor: '#0A0A0A', scale: 2 });
+      const base64 = canvas.toDataURL('image/png').split(',')[1];
+      zip.file('chaos-carousel-wide.png', base64, { base64: true });
     }
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    saveAs(blob, 'chaos-carousels.zip');
   };
 
   return (
@@ -40,10 +40,10 @@ const DualPreviewWrapper = () => {
       </h1>
 
       <button
-        onClick={handleExport}
+        onClick={handleExportZip}
         className="px-8 py-4 bg-[#D4AF37] text-black font-semibold rounded-lg shadow-lg hover:bg-[#B8941F] transition"
       >
-        📤 Export Both as PNG
+        📦 Export ZIP (Square + Wide)
       </button>
 
       <div className="flex flex-wrap gap-12 justify-center items-start">
