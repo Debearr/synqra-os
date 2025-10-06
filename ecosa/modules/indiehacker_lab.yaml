@@ -1,0 +1,13 @@
+modules:
+  indiehacker_lab:
+    inherit_from: "ecosa/macros/indiehacker/RunIndieHackerSuite.json"
+    enable_auto_tests: true
+    run_mode: "dry_run"
+    budget_guard:
+      openai: 10
+      huggingface: 5
+    share_context_with: ["Synqra","AuraFX","Lumen"]
+    fallback_models: ["HF_free","local_tiny"]
+    alerts:
+      email: "tomford46661@gmail.com"
+      threshold: 0.8

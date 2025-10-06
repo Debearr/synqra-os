@@ -1,0 +1,5 @@
+schedule:
+  freq: daily
+  hour: 9
+  task: RunIndieHackerSuite
+  mode: dry_run
