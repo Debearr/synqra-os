@@ -1,0 +1,12 @@
+{
+  "macro": "RunIndieHackerSuite",
+  "steps": [
+    "seed_viral_drop",
+    "launch_creator_invite",
+    "run_posting_burst",
+    "collect_leads",
+    "run_stress_tests"
+  ],
+  "budget_limit_usd": 1,
+  "mode": "dry_run"
+}
