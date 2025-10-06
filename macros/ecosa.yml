@@ -1,0 +1,74 @@
+macros:
+  - name: "ECOSA Build Cursor Package"
+    trigger: "on_commit"
+    source: "/cursor/agents"
+    tasks:
+      - name: "Assemble Cursor Package"
+        run: "bash scripts/cursor_packager.sh"
+      - name: "Verify Package Integrity"
+        run: "bash scripts/cursor_integrity_check.sh"
+      - name: "Deploy to Cursor"
+        run: "cursor package install --auto latest_build.zip"
+    safety:
+      retries: 3
+      timeout: 90
+      on_fail: "bash scripts/ecosa_autofix.sh"
+    notify:
+      success: "Supabase:insert build_logs {status:'success',app:'{{app_name}}'}"
+      fail: "Supabase:insert build_logs {status:'failed',app:'{{app_name}}'}"
+
+  - name: "Verify Cursor Package Integrity"
+    trigger: "scheduled"
+    schedule: "0 */6 * * *"
+    tasks:
+      - name: "Checksum Validation"
+        run: "bash scripts/cursor_integrity_check.sh"
+      - name: "Auto-Repair if Drift Detected"
+        condition: "if diff_found"
+        run: "bash scripts/ecosa_autofix.sh"
+    notify:
+      success: "Supabase:update health_status {integrity:'pass'}"
+      fail: "Supabase:update health_status {integrity:'repaired'}"
+
+  - name: "Auto-Redeploy on Failure"
+    trigger: "on_macro_fail"
+    tasks:
+      - name: "Rebuild & Redeploy"
+        run: "bash scripts/cursor_packager.sh && cursor package install --force latest_build.zip"
+      - name: "Post-Repair Verification"
+        run: "bash scripts/cursor_integrity_check.sh"
+    safety:
+      retries: 2
+      cooldown: 60
+    notify:
+      success: "Supabase:insert recovery_logs {event:'auto_redeploy_success'}"
+      fail: "Supabase:insert recovery_logs {event:'manual_attention_required'}"
+
+  - name: "Sync ECOSA Logs to Supabase"
+    trigger: "scheduled"
+    schedule: "*/15 * * * *"
+    tasks:
+      - name: "Pull ECOSA Local Logs"
+        run: "tail -n 100 /ecosa/logs/build.log > temp_build.log"
+      - name: "Push to Supabase"
+        run: "curl -X POST $SUPABASE_URL/rest/v1/ecosa_logs \
+              -H 'apikey: $SUPABASE_KEY' \
+              -H 'Content-Type: application/json' \
+              -d @temp_build.log"
+    safety:
+      retries: 3
+      on_fail: "bash scripts/ecosa_autofix.sh"
+
+  - name: "ECOSA QA Self-Check"
+    trigger: "scheduled"
+    schedule: "0 */12 * * *"
+    tasks:
+      - name: "Run Syntax Validation"
+        run: "yamllint macros/*.yml"
+      - name: "Validate Bash Scripts"
+        run: "shellcheck scripts/*.sh"
+      - name: "Rebuild Drift Detection"
+        run: "bash scripts/cursor_integrity_check.sh"
+    notify:
+      success: "Supabase:insert qa_reports {result:'pass',timestamp:'{{timestamp}}'}"
+      fail: "Supabase:insert qa_reports {result:'fix_applied',timestamp:'{{timestamp}}'}"
