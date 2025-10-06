@@ -1,0 +1,18 @@
+<div class="grid grid-cols-3 gap-4 p-6 bg-black text-gold font-sans">
+  <div class="col-span-3 text-2xl mb-4">⚡ Synqra / NØID Performance Board</div>
+  <div><h3>Daily Runs</h3><div id="runCount">--</div></div>
+  <div><h3>Stress Results (OK / Fail)</h3><div id="stressStats">--</div></div>
+  <div><h3>Council Status</h3><div id="councilVerdict">--</div></div>
+</div>
+<script type="module">
+  import { createClient } from "@supabase/supabase-js";
+  const supabase = createClient("https://YOUR_PROJECT.supabase.co","YOUR_ANON_KEY");
+  const update = async()=>{
+    const { data } = await supabase.from("stress_results").select("*").order("timestamp",{ascending:false}).limit(1);
+    const council = await supabase.from("council_events").select("*").order("timestamp",{ascending:false}).limit(1);
+    document.getElementById("runCount").textContent = data[0]?.run_id || "N/A";
+    document.getElementById("stressStats").textContent = data[0]?.pass_rate + "% OK";
+    document.getElementById("councilVerdict").textContent = council[0]?.merged?.status || "Pending";
+  };
+  update(); setInterval(update,60000);
+</script>
