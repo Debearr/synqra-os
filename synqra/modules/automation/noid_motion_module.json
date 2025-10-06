@@ -1,0 +1,38 @@
+{
+  "module_name": "NOID_Motion_Module",
+  "trigger": "on_motion_plan_json",
+  "actions": [
+    {
+      "type": "import_voai_plan",
+      "source": "supabase.content_library.motion_plan",
+      "parse_fields": ["motion_sequence", "export_notes"]
+    },
+    {
+      "type": "auto_render_motion",
+      "tool": "leonardo",
+      "params": {
+        "animation_source": "{{motion_sequence}}",
+        "color_palette": {
+          "primary": "#FFD740",
+          "accent": "#00FFC6",
+          "background": "#000000"
+        },
+        "duration": 5000,
+        "output_formats": ["mp4", "gif"]
+      },
+      "output": "motion_assets"
+    },
+    {
+      "type": "queue_social_post",
+      "platforms": ["linkedin", "instagram"],
+      "caption_source": "claude.caption_best",
+      "media_source": "{{motion_assets.mp4}}",
+      "schedule": "auto",
+      "tracking": "supabase.analytics"
+    },
+    {
+      "type": "notify_log",
+      "message": "Motion Drop posted successfully: {{campaign_id}}"
+    }
+  ]
+}

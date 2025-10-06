@@ -34,12 +34,26 @@ function toAbsoluteFromRoot(p) {
   return path.join(ROOT_DIR, p);
 }
 
-async function linkAgents(dirArg) {
-  const agentsDir = toAbsoluteFromRoot(dirArg);
-  const stat = await fs.stat(agentsDir).catch(() => null);
-  if (!stat || !stat.isDirectory()) {
-    throw new Error(`Agents directory not found: ${agentsDir}`);
+async function resolveDirArg(dirArg) {
+  // Try absolute, CWD, ROOT, then AGENTS_BASE_DIR
+  const candidates = [];
+  if (dirArg) {
+    if (path.isAbsolute(dirArg)) candidates.push(dirArg);
+    candidates.push(path.resolve(process.cwd(), dirArg));
+    candidates.push(path.join(ROOT_DIR, dirArg));
+    candidates.push(path.join(AGENTS_BASE_DIR, dirArg));
+  } else {
+    candidates.push(process.cwd());
   }
+  for (const candidate of candidates) {
+    const stat = await fs.stat(candidate).catch(() => null);
+    if (stat && stat.isDirectory()) return candidate;
+  }
+  throw new Error(`Directory not found: ${dirArg || '(cwd)'}`);
+}
+
+async function linkAgents(dirArg) {
+  const agentsDir = await resolveDirArg(dirArg);
   const entries = await fs.readdir(agentsDir, { withFileTypes: true });
   const agentFiles = entries.filter(e => e.isFile() && e.name.endsWith('.json'));
   if (agentFiles.length === 0) {
@@ -68,6 +82,66 @@ async function linkAgents(dirArg) {
   await ensureDirectory(AGENTS_BASE_DIR);
   await writeJsonFile(LINKED_REGISTRY_PATH, registry);
   console.log(`Linked ${Object.keys(registry.agents).length} agents from ${agentsDir}`);
+}
+
+async function createPackage(dirArg) {
+  const dir = await resolveDirArg(dirArg);
+  const manifestPath = path.join(dir, 'package.json');
+  const exists = await fs.stat(manifestPath).catch(() => null);
+  if (exists) {
+    const manifest = await readJsonFile(manifestPath).catch(() => ({}));
+    console.log(`Package already exists at ${manifestPath}`);
+    return manifest;
+  }
+  // Derive a minimal manifest from directory contents
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const agentFiles = entries.filter(e => e.isFile() && e.name.endsWith('.json'));
+  const agents = {};
+  for (const file of agentFiles) {
+    const filePath = path.join(dir, file.name);
+    try {
+      const json = await readJsonFile(filePath);
+      if (json && typeof json.agent_name === 'string') {
+        agents[json.agent_name] = file.name;
+      }
+    } catch {}
+  }
+  const pkg = {
+    package_name: path.basename(dir),
+    version: '1.0.0',
+    author: '',
+    description: '',
+    entrypoints: {
+      on_asset_upload: Object.keys(agents)[0] || '',
+    },
+    automation_mode: 'manual'
+  };
+  await writeJsonFile(manifestPath, pkg);
+  console.log(`Package created at ${manifestPath}`);
+  return pkg;
+}
+
+async function agentsStatus(targetArg) {
+  const dir = await resolveDirArg(targetArg);
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const agentFiles = entries.filter(e => e.isFile() && e.name.endsWith('.json'));
+  const names = [];
+  for (const f of agentFiles) {
+    try {
+      const json = await readJsonFile(path.join(dir, f.name));
+      if (json && typeof json.agent_name === 'string') names.push(json.agent_name);
+    } catch {}
+  }
+  const registry = await loadLinkedRegistry();
+  const linked = names.filter(n => Boolean(registry.agents[n]));
+  const status = {
+    directory: dir,
+    count: names.length,
+    agents: names,
+    linked_count: linked.length,
+    linked_agents: linked
+  };
+  console.log(JSON.stringify(status, null, 2));
 }
 
 async function loadLinkedRegistry() {
@@ -259,6 +333,32 @@ async function runActions(agentName, actions, initialContext) {
       continue;
     }
 
+    if (type === 'fetch_analytics') {
+      // Stub: return deterministic top 5 performers
+      const rows = Array.from({ length: 5 }).map((_, i) => ({
+        id: `campaign_${i + 1}`,
+        engagement_rate: 0.25 - i * 0.03,
+        caption: `Sample caption ${i + 1}`,
+        posted_at: new Date(Date.now() - i * 86400000).toISOString()
+      }));
+      const outputKey = action.output || 'top5';
+      context[outputKey] = rows;
+      lastOutputKey = outputKey;
+      continue;
+    }
+
+    if (type === 'update_prompt_templates') {
+      const sourceKey = action.params?.learn_from || 'top5';
+      const top = context[sourceKey] || [];
+      const templates = (Array.isArray(top) ? top : []).map((row, i) => `{{theme}} — refined v${i + 1}`);
+      const outputKey = action.output || 'caption_templates';
+      context[outputKey] = templates;
+      lastOutputKey = outputKey;
+      const filePath = await saveFile('templates', 'caption_templates.json', JSON.stringify(templates, null, 2));
+      context.last_templates_file = filePath;
+      continue;
+    }
+
     if (type === 'generate_audio_prompt') {
       const prompt = `Audio cues for ${context.asset_id || 'asset'} — ${context.campaign_theme || ''}`.trim();
       const outputKey = action.output || 'audio_prompt';
@@ -321,12 +421,22 @@ async function triggerAgentByName(agentName, initialContext = {}) {
   return resultContext;
 }
 
+async function scheduleAgent(agentName, cronExpr) {
+  const schedulesDir = path.join(OUT_BASE_DIR, 'schedules');
+  await ensureDirectory(schedulesDir);
+  const file = path.join(schedulesDir, `${agentName}.json`);
+  const data = { agent: agentName, cron: cronExpr, createdAt: new Date().toISOString() };
+  await writeJsonFile(file, data);
+  console.log(`Scheduled ${agentName} at '${cronExpr}' -> ${file}`);
+}
+
 async function handleTrigger(args) {
   const [agentName, ...rest] = args;
   if (!agentName) {
     throw new Error('Missing agent name. Usage: trigger <AGENT_NAME> [--data JSON]');
   }
   let data = {};
+  let schedule = null;
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
     if (token === '--data') {
@@ -334,7 +444,14 @@ async function handleTrigger(args) {
       if (!jsonString) throw new Error('Expected JSON after --data');
       data = JSON.parse(jsonString);
       i += 1;
+    } else if (token === '--schedule') {
+      schedule = rest[i + 1];
+      if (!schedule) throw new Error('Expected CRON after --schedule');
+      i += 1;
     }
+  }
+  if (schedule) {
+    await scheduleAgent(agentName, schedule);
   }
   const context = await triggerAgentByName(agentName, data);
   console.log(JSON.stringify({ ok: true, agent: agentName, context }, null, 2));
@@ -345,14 +462,26 @@ async function main() {
   const [command, subcommand, ...rest] = args;
 
   if (!command) {
-    console.log('Usage:\n  agents link <DIR>\n  trigger <AGENT_NAME> [--data JSON]');
+    console.log('Usage:\n  package --create [DIR]\n  agents link <DIR>\n  agents status [DIR]\n  trigger <AGENT_NAME> [--data JSON] [--schedule CRON]');
     process.exit(1);
+  }
+
+  if (command === 'package' && subcommand === '--create') {
+    const dirArg = rest[0];
+    await createPackage(dirArg);
+    return;
   }
 
   if (command === 'agents' && subcommand === 'link') {
     const dirArg = rest[0];
     if (!dirArg) throw new Error('Usage: agents link <DIR>');
     await linkAgents(dirArg);
+    return;
+  }
+
+  if (command === 'agents' && subcommand === 'status') {
+    const dirArg = rest[0];
+    await agentsStatus(dirArg);
     return;
   }
 
