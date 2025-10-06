@@ -1,0 +1,151 @@
+{
+  "name": "DALL·E Connector for Synqra",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "synqra-dalle",
+        "methods": [
+          "POST"
+        ],
+        "responseMode": "lastNode"
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "jsonParameters": true,
+        "headerParametersJson": "={{ { 'Authorization': 'Bearer ' + $env.OPENAI_API_KEY, 'Content-Type': 'application/json' } }}",
+        "bodyParametersJson": "={{ { model: 'gpt-image-1', prompt: $json.prompt, size: '1024x1024', n: 4, response_format: 'url' } }}"
+      },
+      "id": "2",
+      "name": "Generate Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "json": [
+            {
+              "name": "dalle_images",
+              "value": "={{ $('Generate Images').item.json.data.map(i => i.url) }}"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $('Webhook').item.json.campaign_id }}"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $('Webhook').item.json.prompt }}"
+            },
+            {
+              "name": "campaign_theme",
+              "value": "={{ $('Webhook').item.json.campaign_theme }}"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Map URLs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -110,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => ({\\n  json: {\\n    campaign_id: item.json.campaign_id,\\n    source: 'DALL·E',\\n    urls: item.json.dalle_images,\\n    created_at: new Date().toISOString()\\n  }\\n}));"
+      },
+      "id": "4",
+      "name": "Tag Metadata",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        150,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/campaign_images' }}",
+        "jsonParameters": true,
+        "headerParametersJson": "={{ { 'apikey': $env.SUPABASE_SERVICE_ROLE_KEY || $env.SUPABASE_KEY, 'Authorization': 'Bearer ' + ($env.SUPABASE_SERVICE_ROLE_KEY || $env.SUPABASE_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=representation' } }}",
+        "bodyParametersJson": "={{ $json }}"
+      },
+      "id": "5",
+      "name": "Supabase Insert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        430,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Images": {
+      "main": [
+        [
+          {
+            "node": "Map URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map URLs": {
+      "main": [
+        [
+          {
+            "node": "Tag Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Metadata": {
+      "main": [
+        [
+          {
+            "node": "Supabase Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "staticData": {}
+}
