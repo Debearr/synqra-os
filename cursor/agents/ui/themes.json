@@ -1,0 +1,7 @@
+{
+  "active_theme": "atelier",
+  "themes": {
+    "atelier": { "style": "black_white_luxury", "accent": "gold", "fonts": "Inter, Playfair Display" },
+    "progress": { "style": "tier_color_ladder", "accent": "blue_gold", "fonts": "Inter, Lato" }
+  }
+}
