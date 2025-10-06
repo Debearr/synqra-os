@@ -1,0 +1,60 @@
+{
+  "agent_name": "Synqra_Posting_Agent",
+  "trigger": "on_motion_plan_ready",
+  "actions": [
+    {
+      "type": "generate_captions",
+      "tool": "claude",
+      "params": {
+        "theme_field": "campaign_theme",
+        "tone": "luxury tech, calm authority, witty precision",
+        "max_length": 150,
+        "variants": 3
+      },
+      "output": "captions_json"
+    },
+    {
+      "type": "queue_render",
+      "tool": "leonardo",
+      "params": {
+        "visual_prompt": "{{campaign_theme}}",
+        "style": "matte black, gold typography, teal accents",
+        "resolution": "1080x1080"
+      },
+      "output": "rendered_asset"
+    },
+    {
+      "type": "apply_motion",
+      "tool": "voai",
+      "input": "rendered_asset",
+      "motion_plan": "motion_plan_json",
+      "output": "animated_asset"
+    },
+    {
+      "type": "upload_storage",
+      "tool": "supabase",
+      "table": "content_library",
+      "fields": {
+        "campaign_id": "{{campaign_id}}",
+        "captions": "{{captions_json}}",
+        "motion_asset": "{{animated_asset}}",
+        "status": "ready_to_post"
+      }
+    },
+    {
+      "type": "auto_post",
+      "tool": "synqra",
+      "platforms": ["linkedin", "instagram"],
+      "payload": {
+        "asset": "{{animated_asset}}",
+        "caption": "{{best_caption}}",
+        "schedule": "auto"
+      }
+    },
+    {
+      "type": "log_performance",
+      "tool": "n8n",
+      "workflow": "weekly_analytics_analysis"
+    }
+  ]
+}

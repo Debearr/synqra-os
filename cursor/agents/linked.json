@@ -1,0 +1,19 @@
+{
+  "directories": [
+    "noid_synqra_automation"
+  ],
+  "agents": {
+    "Audio_Layer_Agent": {
+      "path": "cursor/agents/noid_synqra_automation/audio_layer_agent.json"
+    },
+    "VOAI_Motion_Plan": {
+      "path": "cursor/agents/noid_synqra_automation/motion_plan_agent.json"
+    },
+    "Self_Learn_Agent": {
+      "path": "cursor/agents/noid_synqra_automation/self_learn_agent.json"
+    },
+    "Synqra_Posting_Agent": {
+      "path": "cursor/agents/noid_synqra_automation/synqra_posting_agent.json"
+    }
+  }
+}

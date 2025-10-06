@@ -1,0 +1,56 @@
+{
+  "agent_name": "Audio_Layer_Agent",
+  "trigger": "Generate Audio Layer",
+  "actions": [
+    {
+      "type": "generate_audio_prompt",
+      "tool": "voai",
+      "input": "motion_plan_json",
+      "output": "audio_prompt"
+    },
+    {
+      "type": "synthesize_audio",
+      "tool": "voai",
+      "params": {
+        "voice": "brand_default",
+        "style": "luxury tech, calm authority, witty precision"
+      },
+      "input": "audio_prompt",
+      "output": "audio_track"
+    },
+    {
+      "type": "export_video",
+      "tool": "ffmpeg",
+      "input": "animated_asset",
+      "params": {
+        "format": "mp4",
+        "audio": false
+      },
+      "output": "silent_mp4"
+    },
+    {
+      "type": "merge_audio",
+      "tool": "ffmpeg",
+      "input": {
+        "video": "animated_asset",
+        "audio": "audio_track"
+      },
+      "params": {
+        "format": "mp4"
+      },
+      "output": "audio_mp4"
+    },
+    {
+      "type": "store_file",
+      "path": "Supabase > content_library.motion_variants",
+      "filename": "noid_drop001_silent.mp4",
+      "input": "silent_mp4"
+    },
+    {
+      "type": "store_file",
+      "path": "Supabase > content_library.motion_variants",
+      "filename": "noid_drop001_audio.mp4",
+      "input": "audio_mp4"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "agent_name": "VOAI_Motion_Plan",
+  "trigger": "on_new_asset",
+  "actions": [
+    {
+      "type": "analyze_image",
+      "tool": "voai",
+      "input": "Leonardo output asset",
+      "output": "motion_plan_json"
+    },
+    {
+      "type": "store_file",
+      "path": "Supabase > content_library.motion_plan",
+      "filename": "noid_drop001_motion_plan.json"
+    },
+    {
+      "type": "notify_agent",
+      "target": "Synqra_Posting_Agent",
+      "data": "motion_plan_json"
+    }
+  ]
+}

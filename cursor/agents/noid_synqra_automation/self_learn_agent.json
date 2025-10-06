@@ -1,0 +1,19 @@
+{
+  "agent_name": "Self_Learn_Agent",
+  "trigger": "on_weekly_batch_complete",
+  "actions": [
+    {
+      "type": "fetch_analytics",
+      "tool": "supabase",
+      "query": "SELECT * FROM content_library WHERE status='posted' ORDER BY engagement_rate DESC LIMIT 5"
+    },
+    {
+      "type": "update_prompt_templates",
+      "tool": "claude",
+      "params": {
+        "learn_from": "top5",
+        "update_target": "caption_templates"
+      }
+    }
+  ]
+}
