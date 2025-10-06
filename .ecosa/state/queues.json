@@ -1,0 +1,9 @@
+{
+  "queues": [
+    {
+      "name": "NOID_CulturalFlagMode",
+      "createdAt": "2025-10-06T19:35:12.927Z",
+      "path": "/workspace/.ecosa/queues/NOID_CulturalFlagMode.yaml"
+    }
+  ]
+}

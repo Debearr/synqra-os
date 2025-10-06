@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_DIR="/workspace/.ecosa"
+QUEUES_DIR="$BASE_DIR/queues"
+JOBS_DIR="$BASE_DIR/jobs"
+LOGS_DIR="$BASE_DIR/logs"
+
+usage() {
+  echo "Usage: ecosa queue create <name> | ecosa job create <queueName>" >&2
+}
+
+ensure_dirs() {
+  mkdir -p "$QUEUES_DIR" "$JOBS_DIR" "$LOGS_DIR"
+}
+
+require_stdin() {
+  if [ -t 0 ]; then
+    echo "Error: This command expects YAML via STDIN (heredoc)." >&2
+    exit 10
+  fi
+}
+
+cmd=${1:-}
+sub=${2:-}
+arg=${3:-}
+
+case "$cmd" in
+  queue)
+    case "$sub" in
+      create)
+        name=${arg:-}
+        if [ -z "$name" ]; then
+          echo "Error: Missing queue name" >&2
+          usage
+          exit 2
+        fi
+        ensure_dirs
+        outfile="$QUEUES_DIR/${name}.yaml"
+        require_stdin
+        tmpfile="$(mktemp)"
+        cat > "$tmpfile"
+        mv "$tmpfile" "$outfile"
+        echo "Queue '$name' created at $outfile"
+        ;;
+      *)
+        usage; exit 1;
+        ;;
+    esac
+    ;;
+  job)
+    case "$sub" in
+      create)
+        queue=${arg:-}
+        if [ -z "$queue" ]; then
+          echo "Error: Missing queue name for job creation" >&2
+          usage
+          exit 3
+        fi
+        ensure_dirs
+        if [ ! -f "$QUEUES_DIR/${queue}.yaml" ]; then
+          echo "Error: Queue '$queue' not found. Create it first." >&2
+          exit 4
+        fi
+        ts="$(date -u +%Y%m%dT%H%M%SZ)"
+        jobdir="$JOBS_DIR/${queue}"
+        mkdir -p "$jobdir"
+        outfile="$jobdir/job_${ts}.yaml"
+        require_stdin
+        tmpfile="$(mktemp)"
+        cat > "$tmpfile"
+        mv "$tmpfile" "$outfile"
+        echo "Job created for queue '$queue' at $outfile"
+        ;;
+      *)
+        usage; exit 1;
+        ;;
+    esac
+    ;;
+  *)
+    usage; exit 1;
+    ;;
+ esac

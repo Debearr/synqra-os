@@ -1,0 +1,22 @@
+analyze_track:
+  title: "Kitchen"
+  artist: "Westside Gunn"
+  target_emotion: "Luxury grind, boss calm, street prestige"
+  extract:
+    - rhythm_signature
+    - mood_curve (tension → release)
+    - lyrical_energy_style
+    - pacing_beats_per_section
+  output_format: "concept_map.json"
+create_original_audio:
+  reference: "concept_map.json"
+  tempo: 85
+  vibe: "Dark luxury + street symphony"
+  layers:
+    - sub_bass: "clean 808"
+    - percussion: "vinyl crack snare + hi-hat rolls"
+    - ambient_texture: "neon-teal pads"
+    - melodic_lead: "muted brass + AI vocal hums"
+  output:
+    format: "mp3,wav"
+    path: "/synqra/assets/audio/noid_drop001_theme"

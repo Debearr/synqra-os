@@ -1,0 +1,34 @@
+workflow:
+  - phase: 1
+    name: "Cultural Signal Extraction"
+    run:
+      - bash /ecosa/scripts/analyze_vibe_signature.sh --track "J Dilla - People"
+      - bash /ecosa/scripts/map_cultural_tone.sh --regions "NA,EU,AF,AS"
+    summary: "Extracted rhythm + emotional tone blueprint from reference track."
+  - phase: 2
+    name: "Create Global Sound Variants"
+    run:
+      - bash /ecosa/scripts/generate_original_audio.sh --vibe_map /data/vibe_signature.json
+      - bash /ecosa/scripts/add_regional_instruments.sh --regions "SAF,JP,UK,US"
+    summary: "Generated unique, royalty-free audio variations for each region."
+  - phase: 3
+    name: "Motion & Flag Sync"
+    run:
+      - bash /ecosa/scripts/render_motion_assets.sh --theme "FlagPulse"
+      - bash /ecosa/scripts/embed_brand_signature.sh --logo "NOID"
+    summary: "Produced visual sequences that blend brand + national motifs."
+  - phase: 4
+    name: "Campaign Deployment"
+    run:
+      - bash /ecosa/scripts/schedule_synqra_posts.sh --category "Global Flag Drops"
+      - bash /ecosa/scripts/track_performance.sh --interval "daily"
+    summary: "Auto-scheduled multi-region drops with performance tracking."
+  - phase: 5
+    name: "Evolve + Learn"
+    run:
+      - bash /ecosa/scripts/analyze_regional_feedback.sh
+      - bash /ecosa/scripts/refine_audio_tone.sh --feedback /logs/performance.json
+    summary: "Refined tone and style based on audience feedback — system self-evolves."
+logging:
+  destination: "supabase:cultural_flag_mode_logs"
+  notify: "daily 23:59"
