@@ -1,0 +1,16 @@
+{
+  "inherit_from": "noid_council_harmony_v1.2",
+  "applies_to": ["synqra", "aurafx", "lumen", "ny7coffee"],
+  "qa_mode": "auto_sync",
+  "conflict_resolution": {
+    "enabled": true,
+    "steps": [
+      "verify_factual_timestamp",
+      "prefer_evidence_backed",
+      "harmonize_wording"
+    ]
+  },
+  "escalation": {
+    "on_need_evidence": ["escalate_to_router", "schedule_research"]
+  }
+}
