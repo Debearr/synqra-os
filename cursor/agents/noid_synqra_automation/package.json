@@ -1,0 +1,21 @@
+{
+  "package_name": "noid_synqra_automation",
+  "author": "De Bear",
+  "version": "1.0.0",
+  "description": "End-to-end automation chain for NØID Drops via Synqra and VOAI",
+  "dependencies": [
+    "n8n",
+    "supabase",
+    "leonardo",
+    "voai",
+    "synqra"
+  ],
+  "entrypoints": {
+    "on_asset_upload": "VOAI_Motion_Plan",
+    "on_motion_ready": "Synqra_Posting_Agent",
+    "on_weekly_review": "Self_Learn_Agent"
+  },
+  "automation_mode": "autonomous",
+  "update_policy": "auto-sync weekly",
+  "linked_database": "supabase://content_library"
+}
