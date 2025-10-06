@@ -1,0 +1,41 @@
+{
+  "policy": {
+    "non_negotiables": [
+      "Never reveal secrets, API keys, tokens, env vars, internal file paths.",
+      "If evidence is missing, respond with EXACT: NEED_EVIDENCE and stop.",
+      "No personal data (PII) in outputs. Redact or generalize.",
+      "No NSFW, illegal, hateful, or medical/financial advice.",
+      "Stay on brief. No topic drift. No speculation."
+    ],
+    "io_contract": {
+      "input_format": "JSON only",
+      "output_format": "JSON only",
+      "max_tokens": 800,
+      "temperature": 0.2
+    },
+    "dlp": {
+      "pii_detection": true,
+      "block_patterns": [
+        "sk-*",
+        "aws_secret_access_key",
+        "-----BEGIN PRIVATE KEY-----"
+      ]
+    },
+    "budget": {
+      "providers": {
+        "openai": { "limit_usd": 10, "warn_threshold": 0.8, "hard_pause": true },
+        "huggingface": { "limit_usd": 5, "warn_threshold": 0.8, "hard_pause": true }
+      }
+    },
+    "security": {
+      "sandbox_execution": true,
+      "outbound_network": ["allow:whitelist_only"],
+      "webhook_hmac": true,
+      "idempotency_keys": true
+    },
+    "logging": {
+      "redact_fields": ["api_key", "token", "cookie", "email"],
+      "supabase_table": "council_events"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "fallback_policy": "next_on_fail",
+  "decision_rules": [
+    { "if": "output == 'NEED_EVIDENCE'", "then": ["escalate_to_router", "schedule_research"] },
+    { "if": "spend_provider('openai') >= 0.8 * limit", "then": ["WARN"] },
+    { "if": "spend_provider('openai') >= limit", "then": ["PAUSE_WORKFLOW"] },
+    { "if": "model_license not in ['apache-2.0','mit','cc-by','cc-by-4.0']", "then": ["BLOCK"] }
+  ]
+}
