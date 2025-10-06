@@ -1,14 +1,5 @@
-macros:
-  - name: "ECOSA QA Self-Check"
-    trigger: "scheduled"
-    schedule: "0 */12 * * *"
-    tasks:
-      - name: "Run Syntax Validation"
-        run: "yamllint macros/*.yml"
-      - name: "Validate Bash Scripts"
-        run: "shellcheck scripts/*.sh"
-      - name: "Rebuild Drift Detection"
-        run: "bash scripts/cursor_integrity_check.sh"
-    notify:
-      success: "Supabase:insert qa_reports {result:'pass',timestamp:'{{timestamp}}'}"
-      fail: "Supabase:insert qa_reports {result:'fix_applied',timestamp:'{{timestamp}}'}"
+schedule:
+  weekly: Sunday 00:00
+run:
+  - bash /ecosa/scripts/check_integrity.sh
+  - bash /ecosa/scripts/self_heal.sh

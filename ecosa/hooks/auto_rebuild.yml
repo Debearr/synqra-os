@@ -1,0 +1,5 @@
+on:
+  change:
+    - /cursor/agents/*
+  run:
+    - railway up

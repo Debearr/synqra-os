@@ -1,0 +1,12 @@
+version: 1.0
+bridge_name: ECOSA_Cursor_Bridge
+status: active
+auto_register: true
+linked_services:
+  - Cursor
+  - Supabase
+  - Railway
+qa_mode: continuous
+self_heal_enabled: true
+log_pipeline: /ecosa/macros/sync_supabase_logs.yml
+checksum_validation: enabled
