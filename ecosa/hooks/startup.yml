@@ -1,0 +1,6 @@
+hook:
+  event: "startup"
+  action: "auto_install"
+  target: "/cursor/agents"
+  script: "bash scripts/build_ecosa_bridge_zip.sh && cursor package install --auto ECOSA_Cursor_Bridge_v1.zip"
+  note: "Ensures bridge auto-installs at every system boot."

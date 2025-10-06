@@ -1,0 +1,5 @@
+hook:
+  event: "git_commit"
+  action: "run_macro"
+  target: "ECOSA Build Cursor Package"
+  note: "Auto-trigger build & deploy on every commit"

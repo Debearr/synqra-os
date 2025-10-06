@@ -9,7 +9,6 @@ fi
 APP_DIR="/cursor/agents"
 OUTPUT="latest_build.zip"
 
-rm -f "$ROOT_DIR/$OUTPUT"
 if [ -d "$APP_DIR" ]; then
   echo "📦 Building Cursor package from $APP_DIR -> $ROOT_DIR/$OUTPUT"
   (cd "$APP_DIR" && zip -r "$ROOT_DIR/$OUTPUT" . -x "*.DS_Store")

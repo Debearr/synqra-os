@@ -2,14 +2,9 @@ macros:
   - name: "Sync ECOSA Logs to Supabase"
     trigger: "scheduled"
     schedule: "*/15 * * * *"
-    tasks:
-      - name: "Pull ECOSA Local Logs"
-        run: "tail -n 100 /ecosa/logs/build.log > temp_build.log"
-      - name: "Push to Supabase"
-        run: "curl -X POST $SUPABASE_URL/rest/v1/ecosa_logs \
-              -H \"apikey: $SUPABASE_KEY\" \
-              -H 'Content-Type: application/json' \
-              -d @temp_build.log"
+  tasks:
+      - name: "Push latest ECOSA logs to Supabase"
+        run: "bash scripts/push_supabase_logs.sh"
     safety:
       retries: 3
       on_fail: "bash scripts/ecosa_autofix.sh"

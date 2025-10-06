@@ -1,0 +1,18 @@
+{
+  "package_name": "ECOSA_Cursor_Bridge_v1",
+  "version": "1.0.0",
+  "author": "De Bear | LuxGrid Automation",
+  "description": "Self-healing automation bridge connecting ECOSA and Cursor Agents for auto-deployment, QA, and rollback.",
+  "includes": [
+    "macros/*.yml",
+    "scripts/*.sh",
+    "hooks/*.yml"
+  ],
+  "checksum_policy": "strict",
+  "auto_verify": true,
+  "auto_repair": true,
+  "notifications": {
+    "success": "Supabase:insert system_logs {event:'build_complete',status:'success'}",
+    "failure": "Supabase:insert system_logs {event:'build_failed',status:'auto_repair_triggered'}"
+  }
+}
