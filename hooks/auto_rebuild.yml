@@ -1,0 +1,5 @@
+schedule:
+  weekly: Sunday 00:00
+run:
+  - bash /ecosa/scripts/cursor_integrity_check.sh
+  - bash /ecosa/scripts/self_heal_cycle.sh

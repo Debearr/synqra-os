@@ -1,0 +1,9 @@
+{
+  "name": "leonardo_render_flow",
+  "version": "1.0.0",
+  "description": "Render pipeline agent for Leonardo",
+  "tasks": [
+    { "type": "render", "engine": "leonardo" },
+    { "type": "upload", "destination": "s3" }
+  ]
+}

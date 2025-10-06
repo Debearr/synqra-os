@@ -1,0 +1,9 @@
+{
+  "name": "noid_drop_001",
+  "version": "1.0.0",
+  "description": "NOID asset drop workflow agent",
+  "tasks": [
+    { "type": "fetch_assets", "source": "s3://noid/drops/001" },
+    { "type": "publish", "target": "cdn" }
+  ]
+}

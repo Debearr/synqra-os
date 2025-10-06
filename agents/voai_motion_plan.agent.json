@@ -1,0 +1,9 @@
+{
+  "name": "voai_motion_plan",
+  "version": "1.0.0",
+  "description": "Generates motion plans for VOAI sequences",
+  "tasks": [
+    { "type": "plan", "model": "gpt-motion-v1" },
+    { "type": "export", "format": "json" }
+  ]
+}

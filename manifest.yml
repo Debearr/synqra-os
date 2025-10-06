@@ -1,0 +1,11 @@
+package: ECOSA_Cursor_Bridge_v1
+version: 1.0.0
+author: De Bear // NØID Labs
+description: ECOSA ↔ Cursor automation bridge enabling end-to-end build, QA, and deployment.
+includes:
+  - macros/*.yml
+  - scripts/*.sh
+  - hooks/*.yml
+  - agents/*.json
+checksum: auto-generated
+autodeploy: true

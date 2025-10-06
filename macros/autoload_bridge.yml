@@ -1,0 +1,6 @@
+autoload:
+  on_startup:
+    - verify_paths: [/cursor/agents, /ecosa/macros]
+    - run: /ecosa/scripts/cursor_integrity_check.sh
+    - run: /ecosa/scripts/build_ecosa_bridge_zip.sh
+    - log: "Bridge autoload complete."

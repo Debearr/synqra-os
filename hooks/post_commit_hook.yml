@@ -1,0 +1,4 @@
+on:
+  commit:
+    - run: bash /ecosa/scripts/build_ecosa_bridge_zip.sh
+    - run: bash /ecosa/scripts/sync_cursor_to_supabase.sh

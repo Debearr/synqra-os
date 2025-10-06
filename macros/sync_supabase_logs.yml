@@ -4,7 +4,7 @@ macros:
     schedule: "*/15 * * * *"
   tasks:
       - name: "Push latest ECOSA logs to Supabase"
-        run: "bash scripts/push_supabase_logs.sh"
+        run: "bash scripts/sync_cursor_to_supabase.sh"
     safety:
       retries: 3
       on_fail: "bash scripts/ecosa_autofix.sh"
