@@ -1,0 +1,104 @@
+# ============================================================
+# ECOSA v2 • Cursor ↔ N8N ↔ Supabase Autonomous Bridge
+# Self-QA • Market Watch • Budget Guard • HuggingFace Audit
+# ============================================================
+
+agent:
+  name: "ECOSA_Bridge_v2"
+  version: "2.0"
+  description: >
+    Autonomous orchestration bridge connecting Cursor agents, N8N workflows,
+    Supabase data layers, and external APIs (OpenAI, Hugging Face, Leonardo, VOAI).
+    Automates QA scoring, Market Intel scraping, budget enforcement, and self-updates.
+
+core:
+  sync_interval: "5m"
+  auto_self_update: true
+  max_retry_attempts: 3
+  health_check_url: "http://localhost:5678/health"
+
+integrations:
+  n8n_webhook: "https://YOUR_N8N_DOMAIN/webhook/ecosa_v2"
+  supabase_url: "https://YOUR_SUPABASE_PROJECT.supabase.co"
+  supabase_key: "YOUR_SUPABASE_KEY"
+  openai_key: "YOUR_OPENAI_KEY"
+  huggingface_key: "YOUR_HF_TOKEN"
+  leonardo_key: "YOUR_LEONARDO_KEY"
+
+budget_guard:
+  enabled: true
+  provider: "openai"
+  limit_usd: 10
+  warn_threshold: 0.8
+  actions:
+    - type: "alert"
+      method: "dashboard_push"
+      target: "budget"
+    - type: "pause_workflows"
+      condition: "spend >= limit_usd"
+  audit_interval: "24h"
+
+qa_loop:
+  enabled: true
+  frequency: "daily"
+  sources:
+    - supabase_table: "content_library"
+  metrics:
+    - "engagement_rate"
+    - "readability_score"
+    - "brand_consistency"
+  retrain_threshold: 0.75
+  auto_update_templates: true
+  output_table: "prompt_templates_history"
+
+market_watch:
+  enabled: true
+  refresh_interval: "12h"
+  sources:
+    - "https://huggingface.co/models?sort=downloads"
+    - "https://github.com/trending"
+    - "https://www.producthunt.com/time-travel"
+  output_file: "/insights/market_intel.json"
+  notify_on_change: true
+
+huggingface_audit:
+  enabled: true
+  schedule: "weekly"
+  license_whitelist:
+    - "apache-2.0"
+    - "mit"
+    - "cc-by"
+  block_if_non_commercial: true
+  alert_on_unsafe: true
+
+learning_engine:
+  retrain_frequency: "weekly"
+  source_data: "prompt_templates_history"
+  retrain_models:
+    - "claude-sonnet-4"
+    - "gpt-4-turbo"
+    - "deepseek-coder"
+  output_dir: "/models/trained_prompts"
+
+security:
+  sandbox_execution: true
+  max_concurrent_runs: 5
+  data_retention_days: 90
+
+logging:
+  level: "info"
+  rotate: true
+  file: "/logs/ecosa_bridge_v2.log"
+
+heartbeat:
+  enabled: true
+  interval: "1m"
+  retry_on_fail: 3
+  alert_on_downtime: true
+  notify_email: "system@noid.ai"
+
+metadata:
+  owner: "De Bear"
+  ecosystem: "NØID / Synqra / Lumen / ECOSA"
+  created_at: "2025-10-06T00:00:00Z"
+  notes: "Autonomous bridge for AI Council replacement and smart automation."
