@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "export:slides": "node scripts/exportSlides.js",
     "voice:test": "node ./apps/noid-core/voice/voiceTest.js",
-    "night:backup": "node scripts/nightBackup.js"
+    "night:backup": "node scripts/nightBackup.js",
+    "report:placeholder": "node scripts/createPlaceholderReport.js"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
@@ -19,6 +20,7 @@
     "jszip": "^3.10.1",
     "next": "^14.2.7",
     "openai": "^6.2.0",
+    "pdfkit": "^0.17.2",
     "puppeteer": "^23.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
