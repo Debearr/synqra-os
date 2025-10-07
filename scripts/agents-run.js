@@ -161,6 +161,60 @@ async function run() {
     result.steps.push({ type: 'export', dir: exportDir, files: [path.relative(process.cwd(), outPath), path.relative(process.cwd(), liveSnapshotPath)] });
     result.status = 'completed';
   } else if (
+    agentName === 'LiveMetrics_Dashboard' ||
+    spec.type === 'LiveMetrics_Dashboard'
+  ) {
+    const ds = spec.data_sources || {};
+    const output = spec.output || {};
+    const logToRaw = output.log_to || '/cursor/logs/liveMetrics/';
+    const logDir = logToRaw.startsWith('/') ? path.join(process.cwd(), logToRaw.slice(1)) : path.join(process.cwd(), logToRaw);
+    ensureDirs(logDir);
+
+    // Attempt to import supabase bridge
+    let metrics = { engagement: [], brevo: [], aurafx: [], timestamp: new Date().toISOString() };
+    try {
+      if (ds.supabase) {
+        const modPath = ds.supabase.startsWith('/') ? path.join(process.cwd(), ds.supabase.slice(1)) : path.join(process.cwd(), ds.supabase);
+        const mod = await import(modPath);
+        if (typeof mod.getLiveMetrics === 'function') {
+          const live = await mod.getLiveMetrics('DefaultBrand');
+          metrics.engagement = live.engagement || [];
+          metrics.brevo = live.brevo || [];
+          metrics.timestamp = live.timestamp || metrics.timestamp;
+        }
+      }
+    } catch (_) {}
+
+    // Attempt to fetch AuraFX mock response if available
+    try {
+      const url = ds.aurafx;
+      const doFetch = (typeof fetch !== 'undefined') ? fetch : null;
+      if (url && doFetch) {
+        const res = await doFetch(url).catch(() => null);
+        if (res && res.ok) {
+          const json = await res.json();
+          metrics.aurafx = json;
+        }
+      }
+    } catch (_) {}
+
+    // Write JSON log
+    const jsonLog = path.join(logDir, `live_metrics_${Date.now()}.json`);
+    fs.writeFileSync(jsonLog, JSON.stringify(metrics, null, 2));
+
+    // Optionally export CSV
+    const files = [path.relative(process.cwd(), jsonLog)];
+    if (output.export_csv) {
+      const csvPath = path.join(logDir, `live_metrics_${Date.now()}.csv`);
+      const header = 'pillar,engagement_rate,confidence\n';
+      const rows = (metrics.engagement || []).map(r => [r.pillar, r.engagement_rate, r.confidence].join(','));
+      fs.writeFileSync(csvPath, header + rows.join('\n'));
+      files.push(path.relative(process.cwd(), csvPath));
+    }
+
+    result.steps.push({ type: 'log', dir: logDir, files });
+    result.status = 'completed';
+  } else if (
     agentName === 'Leonardo_visuals' ||
     (spec.agent_name && /Leonardo/i.test(spec.agent_name)) ||
     spec.diagram_blueprint

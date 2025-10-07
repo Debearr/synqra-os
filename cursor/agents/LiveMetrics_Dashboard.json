@@ -1,0 +1,28 @@
+{
+  "name": "LiveMetrics_Dashboard",
+  "type": "LiveMetrics_Dashboard",
+  "agent_name": "Live Metrics Dashboard",
+  "agent_role": "Real-Time Analytics Monitor",
+  "objective": "Display live engagement and forecast data from Synqra (Supabase) + Brevo + AuraFX inside Cursor UI.",
+  "data_sources": {
+    "supabase": "/cursor/backend/liveData_bridge.js",
+    "brevo": "https://api.brevo.com/v3/emailCampaigns",
+    "aurafx": "https://api.aura-fx.com/predictTrend"
+  },
+  "refresh_interval_min": 5,
+  "ui_components": {
+    "widgets": [
+      "EngagementRateChart",
+      "ConfidenceGauge",
+      "PostTimingHeatmap",
+      "CampaignPerformanceList"
+    ]
+  },
+  "output": {
+    "display_in": "Cursor Dashboard Tab",
+    "log_to": "/cursor/logs/liveMetrics/",
+    "export_csv": true
+  },
+  "status": "ready"
+}
+
