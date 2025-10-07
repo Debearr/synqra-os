@@ -13,7 +13,7 @@ export default function handler(req, res) {
   const files = entries.filter((name) => {
     const filePath = path.join(reportsDir, name);
     try {
-      return fs.statSync(filePath).isFile();
+      return fs.statSync(filePath).isFile() && name.toLowerCase().endsWith(".pdf");
     } catch {
       return false;
     }
@@ -35,6 +35,7 @@ export default function handler(req, res) {
     }
   }
 
-  const url = `/api/reports/${encodeURIComponent(latestFile)}`;
+  // Serve via Next static files from public/reports
+  const url = `/reports/${encodeURIComponent(latestFile)}`;
   res.status(200).json({ url, filename: latestFile });
 }

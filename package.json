@@ -9,7 +9,8 @@
     "export:slides": "node scripts/exportSlides.js",
     "voice:test": "node ./apps/noid-core/voice/voiceTest.js",
     "night:backup": "node scripts/nightBackup.js",
-    "report:placeholder": "node scripts/createPlaceholderReport.js"
+    "report:placeholder": "node scripts/createPlaceholderReport.js",
+    "report:get": "node scripts/reportGet.js"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
