@@ -19,6 +19,18 @@
   --accent: #2563eb;
 }
 
+[data-theme="investor"] {
+  --bg: #000000;
+  --text: #ffffff;
+  --accent: #FFD740; /* gold */
+}
+
+[data-theme="investor-dark"] {
+  --bg: #0a0a0a;
+  --text: #e5e5e5;
+  --accent: #00FFC6; /* teal */
+}
+
 html, body, #__next { height: 100%; }
 body {
   margin: 0;
