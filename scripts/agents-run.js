@@ -77,6 +77,70 @@ function run() {
       result.steps.push({ type: 'read', path: dataPath, count: Array.isArray(pillars) ? pillars.length : Object.keys(pillars).length });
       result.status = 'completed';
     }
+  } else if (
+    agentName === 'Leonardo_visuals' ||
+    (spec.agent_name && /Leonardo/i.test(spec.agent_name)) ||
+    spec.diagram_blueprint
+  ) {
+    const blueprint = spec.diagram_blueprint || {};
+    const visuals = (blueprint.visual_assets && {
+      diagrams: blueprint.visual_assets.diagrams || [],
+      slides: blueprint.visual_assets.slides || [],
+      export: blueprint.visual_assets.export || undefined,
+    }) || { diagrams: [], slides: [] };
+
+    const render = spec.render_instructions || {};
+    const exportToRaw = render.export_to || (visuals.export && visuals.export.outputDir) || '/cursor/exports/visuals/neural_bridge/';
+    const exportDir = exportToRaw.startsWith('/')
+      ? path.join(process.cwd(), exportToRaw.slice(1))
+      : path.join(process.cwd(), exportToRaw);
+    ensureDirs(exportDir);
+
+    const filesWritten = [];
+    const palette = (blueprint.color_palette) || {};
+    const svgHeader = (title) => (
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">\n` +
+      `<rect width="100%" height="100%" fill="${palette.background || '#111111'}"/>\n` +
+      `<text x="50%" y="20%" fill="${palette.primary || '#D4AF37'}" font-size="36" text-anchor="middle" font-family="Inter, Arial, sans-serif">${title || 'Neural Bridge'}</text>\n`
+    );
+    const svgFooter = `</svg>\n`;
+
+    function writeFileSafe(fileName, content) {
+      const outPath = path.join(exportDir, fileName);
+      ensureDirs(path.dirname(outPath));
+      fs.writeFileSync(outPath, content);
+      filesWritten.push(outPath);
+    }
+
+    // Write diagram placeholders
+    for (const name of visuals.diagrams || []) {
+      if (/\.svg$/i.test(name)) {
+        const content = svgHeader(blueprint.title) +
+          `<g>
+            <line x1="150" y1="340" x2="550" y2="340" stroke="${palette.accent || '#00B2A9'}" stroke-width="6"/>
+            <line x1="650" y1="340" x2="1050" y2="340" stroke="${palette.accent || '#00B2A9'}" stroke-width="6"/>
+            <circle cx="150" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>
+            <circle cx="600" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>
+            <circle cx="1050" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>
+            <text x="150" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">SYNQRA</text>
+            <text x="600" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">Bridge</text>
+            <text x="1050" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">AuraFX</text>
+          </g>\n` + svgFooter;
+        writeFileSafe(name, content);
+      } else {
+        // Non-SVG placeholders (png, etc.)
+        writeFileSafe(name, `Placeholder for ${name} generated at ${new Date().toISOString()}\n`);
+      }
+    }
+
+    // Write slides placeholders
+    for (const name of visuals.slides || []) {
+      writeFileSafe(name, `Placeholder for ${name} generated at ${new Date().toISOString()}\n`);
+    }
+
+    result.steps.push({ type: 'export', dir: exportDir, files: filesWritten.map(p => path.relative(process.cwd(), p)) });
+    result.status = 'completed';
   } else {
     result.steps.push({ type: 'noop', message: 'No-op for this agent type in local runner.' });
     result.status = 'completed';
