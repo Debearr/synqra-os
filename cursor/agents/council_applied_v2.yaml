@@ -1,0 +1,6 @@
+modules:
+  council_feedback:
+    enabled: true
+    schedule: weekly
+    seats: [DeepSeek,Copilot,Gemini,Perplexity]
+    ui_status_board: true
