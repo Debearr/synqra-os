@@ -1,0 +1,20 @@
+generate_motion_asset:
+  brand: "NØID"
+  tagline: "Drive Unseen. Earn Smart."
+  motion_style: "cinematic burst + neon particle flare"
+  duration: "5–7s"
+  soundtrack: "/synqra/assets/audio/noid_drop001_theme"
+  export:
+    - mp4_square_1080x1080
+    - mp4_vertical_1080x1920
+    - gif_loop
+deploy_campaign:
+  name: "NOID_Drop001_KitchenMode"
+  channels:
+    - LinkedIn
+    - Instagram
+    - X
+  schedule: "Tues-Thurs 8AM EST"
+  hashtags: "#LuxuryAutomation #DriveUnseen #EarnSmart #AIGrind"
+  ai_feedback: "enabled"
+  qa_loop: "auto-tune caption length & image ratio"
