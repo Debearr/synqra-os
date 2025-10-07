@@ -1,0 +1,68 @@
+{
+  "agent_name": "Leonardo Neural Bridge Visualizer",
+  "agent_role": "Visual Architect",
+  "objective": "Generate premium-grade visual assets that illustrate the data bridge between AuraFX (predictive brain) and SYNQRA (creative planner).",
+  "diagram_blueprint": {
+    "title": "Neural Bridge: Predictive ↔ Creative",
+    "color_palette": {
+      "primary": "#D4AF37",
+      "secondary": "#0A0A0A",
+      "accent": "#00B2A9",
+      "background": "#111111"
+    },
+    "nodes": [
+      {
+        "id": "synqra",
+        "label": "🕒 SYNQRA – Weekly Planner",
+        "description": "Creates, schedules, and posts brand content.",
+        "position": "left",
+        "outputs": [
+          "predictTrend_call"
+        ]
+      },
+      {
+        "id": "bridge",
+        "label": "🔗 Neural Bridge API",
+        "description": "Fetches predictive insight from AuraFX to enhance Synqra schedules.",
+        "position": "center",
+        "inputs": [
+          "predictTrend_call"
+        ],
+        "outputs": [
+          "forecast_payload"
+        ]
+      },
+      {
+        "id": "aurafx",
+        "label": "🧠 AURAFX – Forecast Engine",
+        "description": "Analyzes engagement, timing, and topic trends using ML forecasting.",
+        "position": "right",
+        "inputs": [
+          "forecast_payload"
+        ]
+      }
+    ],
+    "data_flow": [
+      "SYNQRA Scheduler → Neural Bridge API (/predictTrend)",
+      "Neural Bridge API → AURAFX Forecast Engine",
+      "AURAFX → JSON Response {best_post_times, topic_boosts, confidence}",
+      "Response → SYNQRA Weekly Planner (adjusts pillars & timing)"
+    ],
+    "visual_assets": {
+      "diagrams": [
+        "BUILD_Flywheel_PredictiveIntegration.svg",
+        "Neural_Bridge_Sequence.svg",
+        "AuraFX_to_Synqra_DataContract.png"
+      ],
+      "export": {
+        "formats": [
+          "svg",
+          "png"
+        ],
+        "background": "#111111",
+        "scale": 2
+      }
+    }
+  }
+}
+
