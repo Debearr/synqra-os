@@ -1,0 +1,17 @@
+{
+  "id": "4f58175a-19c3-41df-9166-616e63ced0be",
+  "command": "ux_sprint_24h",
+  "payload": {
+    "tasks": [
+      "HeroDemo pre-login",
+      "Voice onboarding",
+      "InsightsCard AI summary",
+      "Invite countdown",
+      "Stripe pre-auth"
+    ],
+    "deadline": "24h"
+  },
+  "status": "queued",
+  "queued_at": "2025-10-07T05:01:04.492Z",
+  "output": null
+}

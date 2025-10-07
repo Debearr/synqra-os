@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "export:slides": "node scripts/exportSlides.js",
     "claude:eval": "node scripts/claude_eval_run.js",
-    "council:merge": "node scripts/council_merge.js"
+    "council:merge": "node scripts/council_merge.js",
+    "ecosa": "node scripts/ecosa_runner.js"
   },
   "dependencies": {
     "file-saver": "^2.0.5",

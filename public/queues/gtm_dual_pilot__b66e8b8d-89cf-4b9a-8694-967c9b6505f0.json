@@ -1,0 +1,16 @@
+{
+  "id": "b66e8b8d-89cf-4b9a-8694-967c9b6505f0",
+  "command": "gtm_dual_pilot",
+  "payload": {
+    "synqra_pilot": "20 creators",
+    "noid_pilot": "25 drivers Toronto",
+    "metrics": [
+      "activation",
+      "retention",
+      "conversion"
+    ]
+  },
+  "status": "queued",
+  "queued_at": "2025-10-07T05:01:37.965Z",
+  "output": null
+}
