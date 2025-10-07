@@ -1,0 +1,62 @@
+{
+  "name": "Synqra Trial + Invite + Reminders",
+  "nodes": [
+    {
+      "name": "On_User_Signup",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": { "path": "user.signup", "httpMethod": "POST" }
+    },
+    {
+      "name": "Start_Trial",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const ends = new Date(Date.now()+7*24*60*60*1000).toISOString(); return [{ json: { tier: $json.tier||'Atelier', trial_ends_at: ends } }];"
+      }
+    },
+    {
+      "name": "DB_Insert_Trial",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "insert",
+        "table": "trials",
+        "data": "={{$json}}"
+      }
+    },
+    {
+      "name": "Create_Invite_Token",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const tok = crypto.randomUUID().replace(/-/g,''); const exp = new Date(Date.now()+7*24*60*60*1000).toISOString(); return [{ json: { token: tok, expires_at: exp } }];"
+      }
+    },
+    {
+      "name": "DB_Insert_Invite",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "insert",
+        "table": "invites",
+        "data": "{\"inviter_id\":\"={{$json.user_id}}\",\"token\":\"={{$json.token}}\",\"expires_at\":\"={{$json.expires_at}}\"}"
+      }
+    },
+    {
+      "name": "Email_Welcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.postmarkapp.com/email",
+        "options": { "headers": { "X-Postmark-Server-Token": "={{$env.POSTMARK_TOKEN}}" } },
+        "jsonParameters": true,
+        "options_json": "{\"From\":\"hello@noid.app\",\"To\":\"={{$json.email}}\",\"Subject\":\"Your 7-day trial is live\",\"TextBody\":\"Welcome to Synqra. Your trial ends {{$json.trial_ends_at}}. Invite a friend: https://synqra.app/invite/{{$json.token}}\"}"
+      }
+    },
+    {
+      "name": "Reminder_Day5",
+      "type": "n8n-nodes-base.cron",
+      "parameters": { "interval": 1440, "everyX": 5 }
+    },
+    {
+      "name": "Reminder_Day7",
+      "type": "n8n-nodes-base.cron",
+      "parameters": { "interval": 1440, "everyX": 7 }
+    }
+  ]
+}
