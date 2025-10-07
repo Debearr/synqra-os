@@ -40,7 +40,7 @@ function ensureDirs(...dirs) {
   }
 }
 
-function run() {
+async function run() {
   const agentName = process.argv.slice(2).join(' ');
   if (!agentName) {
     console.error('Usage: npm run agents:run -- <AgentName>');
@@ -90,6 +90,31 @@ function run() {
       : path.join(process.cwd(), exportToRaw);
     ensureDirs(exportDir);
 
+    // Live export subdir
+    const liveDir = path.join(exportDir, 'live');
+    ensureDirs(liveDir);
+
+    // Attempt to import live data source
+    let liveData = null;
+    if (spec.data_source && spec.data_source.type === 'live' && spec.data_source.module && spec.data_source.function) {
+      try {
+        const modPath = spec.data_source.module.startsWith('/')
+          ? path.join(process.cwd(), spec.data_source.module.slice(1))
+          : path.join(process.cwd(), spec.data_source.module);
+        const mod = await import(modPath);
+        const fn = mod[spec.data_source.function];
+        if (typeof fn === 'function') {
+          try {
+            liveData = await fn('DefaultBrand');
+          } catch (_) {
+            liveData = null;
+          }
+        }
+      } catch (_) {
+        liveData = null;
+      }
+    }
+
     const animatedSvg = `<?xml version="1.0" encoding="UTF-8"?>\n` +
       `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">\n` +
       `<rect width="100%" height="100%" fill="${palette.background || '#111111'}"/>\n` +
@@ -122,7 +147,18 @@ function run() {
     const outPath = path.join(exportDir, outName);
     fs.writeFileSync(outPath, animatedSvg);
 
-    result.steps.push({ type: 'export', dir: exportDir, files: [path.relative(process.cwd(), outPath)] });
+    // Live snapshot JSON
+    const liveSnapshotName = 'live_snapshot.json';
+    const liveSnapshotPath = path.join(liveDir, liveSnapshotName);
+    const snapshot = {
+      generatedAt: new Date().toISOString(),
+      brand: (liveData && liveData.brand) || 'DefaultBrand',
+      engagement: (liveData && liveData.engagement) || [],
+      brevo: (liveData && liveData.brevo) || [],
+    };
+    fs.writeFileSync(liveSnapshotPath, JSON.stringify(snapshot, null, 2));
+
+    result.steps.push({ type: 'export', dir: exportDir, files: [path.relative(process.cwd(), outPath), path.relative(process.cwd(), liveSnapshotPath)] });
     result.status = 'completed';
   } else if (
     agentName === 'Leonardo_visuals' ||

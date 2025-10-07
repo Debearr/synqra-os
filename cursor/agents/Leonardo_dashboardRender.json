@@ -17,6 +17,12 @@
     "format": ["SVG"],
     "export_to": "/cursor/exports/visuals/animated_bridge/"
   },
+  "data_source": {
+    "type": "live",
+    "module": "/cursor/backend/liveData_bridge.js",
+    "function": "getLiveMetrics",
+    "interval_min": 5
+  },
   "status": "Ready for generation"
 }
 
