@@ -1,0 +1,23 @@
+[
+  {
+    "pillar": "Thought Leadership",
+    "topics": ["AI in Luxury", "Efficiency as Luxury", "Brand Ops Automation"],
+    "cadencePerWeek": 3
+  },
+  {
+    "pillar": "Product Education",
+    "topics": ["1 input → 8 outputs", "Chaos Tax", "Workflows"],
+    "cadencePerWeek": 2
+  },
+  {
+    "pillar": "Social Proof",
+    "topics": ["Case Studies", "Testimonials", "Before/After"],
+    "cadencePerWeek": 1
+  },
+  {
+    "pillar": "Community & Memes",
+    "topics": ["Agency vs Synqra", "Founder Scar", "Culture"],
+    "cadencePerWeek": 1
+  }
+]
+

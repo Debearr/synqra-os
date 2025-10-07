@@ -1,0 +1,7 @@
+{
+  "name": "Synqra_ContentPillars_Deploy",
+  "type": "Synqra_ContentPillars_Deploy",
+  "description": "Deploys or validates Synqra content pillars payload for downstream systems.",
+  "version": "1.0.0"
+}
+

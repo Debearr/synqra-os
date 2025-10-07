@@ -1,0 +1,12 @@
+{
+  "name": "Council_AuraFX_Synqra",
+  "type": "Council",
+  "description": "Runs a council-style evaluation combining Synqra Scheduler, AuraFX Forecast Engine, and Feedback Layer.",
+  "version": "1.0.0",
+  "pipeline": [
+    { "id": "scheduler", "service": "Synqra Scheduler", "call": "/predictTrend" },
+    { "id": "forecast", "service": "AuraFX Forecast Engine", "input": "scheduler", "output": ["best_post_times", "topic_boosts", "confidence"] },
+    { "id": "feedback", "service": "Synqra Feedback Layer", "input": "forecast", "action": "adjust_weekly_planner" }
+  ]
+}
+

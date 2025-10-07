@@ -1,0 +1,12 @@
+{
+  "name": "AuraFX↔SYNQRA_MicroIntegration_Blueprint",
+  "type": "Blueprint",
+  "description": "Defines micro-integration handshake between AuraFX and Synqra subsystems.",
+  "version": "0.1.0",
+  "endpoints": {
+    "scheduler": "/predictTrend",
+    "forecast": "/forecast",
+    "feedback": "/planner/adjust"
+  }
+}
+
