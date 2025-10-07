@@ -9,7 +9,9 @@
     "export:slides": "node scripts/exportSlides.js",
     "claude:eval": "node scripts/claude_eval_run.js",
     "council:merge": "node scripts/council_merge.js",
-    "ecosa": "node scripts/ecosa_runner.js"
+    "ecosa": "node scripts/ecosa_runner.js",
+    "ecosa:watch": "node scripts/ecosa_watch.js",
+    "n8n": "node scripts/n8n_stub.js"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
