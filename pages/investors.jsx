@@ -3,6 +3,7 @@ import Head from "next/head";
 import DemoPreviewBanner from "@/components/investors/DemoPreviewBanner";
 import InvestorThemeToggle from "@/components/investors/InvestorThemeToggle";
 import DemoBanner from "@/components/investors/DemoBanner";
+import InvestorsHero from "@/components/investors/Hero";
 
 export default function Investors() {
   const orgSchema = {
@@ -38,10 +39,7 @@ export default function Investors() {
       </Head>
       <main className="min-h-screen bg-black text-white">
         <InvestorThemeToggle />
-        <section className="mx-auto max-w-4xl px-6 py-16">
-          <h1 className="text-3xl md:text-5xl font-serif">We don’t sell features. We sell freedom.</h1>
-          <p className="mt-4 text-neutral-300">Freedom from chaos. From manual grind. From noisy tools that don’t move the needle. NØID × SYNQRA is a luxury-grade automation stack: invisible when you want calm, powerful when you need scale.</p>
-        </section>
+        <InvestorsHero />
         <DemoPreviewBanner />
         <DemoBanner />
       </main>

@@ -1,0 +1,15 @@
+{
+  "statement": "NØID sells freedom. We eliminate the grind, the repetition, and the noise — by automating what slows people down. We’re not here just to build apps or websites. We’re building intelligent systems — made for drivers, creators, and brands — that give them time, money, and focus back. Our goal isn’t expansion for expansion’s sake. It’s precision — growing into industries where our technology fits naturally and delivers real impact. That’s the story. That’s the pitch. And that’s why it wins.",
+  "brand_core": {
+    "name": "Freedom Manifesto",
+    "version": "v2",
+    "use_in": [
+      "/investors/Hero.tsx",
+      "/about/page.tsx",
+      "/metadata.ts"
+    ],
+    "locked": true,
+    "council_status": "approved",
+    "last_review": "AI Council Consensus v2"
+  }
+}
