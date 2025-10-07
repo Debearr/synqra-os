@@ -78,6 +78,53 @@ function run() {
       result.status = 'completed';
     }
   } else if (
+    agentName === 'Leonardo_dashboardRender' ||
+    spec.type === 'Leonardo_Dashboard_Render'
+  ) {
+    const render = spec.render_instructions || {};
+    const blueprint = spec.diagram_blueprint || {};
+    const palette = blueprint.color_palette || {};
+    const exportToRaw = render.export_to || '/cursor/exports/visuals/animated_bridge/';
+    const exportDir = exportToRaw.startsWith('/')
+      ? path.join(process.cwd(), exportToRaw.slice(1))
+      : path.join(process.cwd(), exportToRaw);
+    ensureDirs(exportDir);
+
+    const animatedSvg = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">\n` +
+      `<rect width="100%" height="100%" fill="${palette.background || '#111111'}"/>\n` +
+      `<text x="50%" y="12%" fill="${palette.primary || '#D4AF37'}" font-size="36" text-anchor="middle" font-family="Inter, Arial, sans-serif">${blueprint.title || 'Neural Bridge: Live Dashboard'}</text>\n` +
+      `<defs>\n` +
+      `  <linearGradient id="pulse" x1="0%" y1="0%" x2="100%" y2="0%">\n` +
+      `    <stop offset="0%" stop-color="${palette.accent || '#00B2A9'}">\n` +
+      `      <animate attributeName="stop-color" values="${palette.accent || '#00B2A9'};${palette.primary || '#D4AF37'};${palette.accent || '#00B2A9'}" dur="3s" repeatCount="indefinite"/>\n` +
+      `    </stop>\n` +
+      `    <stop offset="100%" stop-color="${palette.primary || '#D4AF37'}"/>\n` +
+      `  </linearGradient>\n` +
+      `</defs>\n` +
+      `<g>\n` +
+      `  <circle cx="150" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>\n` +
+      `  <text x="150" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">SYNQRA</text>\n` +
+      `  <circle cx="600" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>\n` +
+      `  <text x="600" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">Bridge</text>\n` +
+      `  <circle cx="1050" cy="340" r="60" fill="${palette.secondary || '#0A0A0A'}" stroke="${palette.primary || '#D4AF37'}" stroke-width="3"/>\n` +
+      `  <text x="1050" y="345" fill="${palette.primary || '#D4AF37'}" font-size="14" text-anchor="middle">AuraFX</text>\n` +
+      `  <rect x="210" y="333" width="340" height="14" fill="url(#pulse)">\n` +
+      `    <animate attributeName="x" values="210;220;210" dur="2s" repeatCount="indefinite"/>\n` +
+      `  </rect>\n` +
+      `  <rect x="650" y="333" width="340" height="14" fill="url(#pulse)">\n` +
+      `    <animate attributeName="x" values="650;660;650" dur="2s" repeatCount="indefinite"/>\n` +
+      `  </rect>\n` +
+      `</g>\n` +
+      `</svg>\n`;
+
+    const outName = 'Animated_Neural_Bridge.svg';
+    const outPath = path.join(exportDir, outName);
+    fs.writeFileSync(outPath, animatedSvg);
+
+    result.steps.push({ type: 'export', dir: exportDir, files: [path.relative(process.cwd(), outPath)] });
+    result.status = 'completed';
+  } else if (
     agentName === 'Leonardo_visuals' ||
     (spec.agent_name && /Leonardo/i.test(spec.agent_name)) ||
     spec.diagram_blueprint

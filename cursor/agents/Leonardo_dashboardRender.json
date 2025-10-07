@@ -1,0 +1,22 @@
+{
+  "name": "Leonardo_dashboardRender",
+  "type": "Leonardo_Dashboard_Render",
+  "description": "Generates animated live dashboard visuals showing AuraFX data dynamically updating Synqra’s weekly planner.",
+  "diagram_blueprint": {
+    "title": "Neural Bridge: Predictive ↔ Creative (Live Dashboard)",
+    "color_palette": {
+      "primary": "#D4AF37",
+      "secondary": "#0A0A0A",
+      "accent": "#00B2A9",
+      "background": "#111111"
+    }
+  },
+  "render_instructions": {
+    "style": "Minimal luxury aesthetic",
+    "motion": "Subtle gold pulse animation along the bridge",
+    "format": ["SVG"],
+    "export_to": "/cursor/exports/visuals/animated_bridge/"
+  },
+  "status": "Ready for generation"
+}
+
