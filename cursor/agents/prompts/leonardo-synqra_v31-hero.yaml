@@ -1,0 +1,19 @@
+tool: Leonardo
+version: "1.0"
+model: default
+
+prompt:
+  objective: "Generate SYNQRA v3.1 hero key visual"
+  guidance:
+    - "Minimalist, high-contrast, grid-aligned composition"
+    - "Barcode signature bottom-right"
+    - "Black primary, accents #D4AF37 and #00FFF5"
+  negative:
+    - "No clutter"
+    - "No photoreal faces"
+
+params:
+  width: 3840
+  height: 2160
+  num_images: 2
+  guidance_scale: 7

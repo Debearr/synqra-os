@@ -1,0 +1,9 @@
+# Command Sequence
+
+sequence:
+  1. run_workflow "Generate Hero Image (Leonardo)"
+  2. wait_for_completion
+  3. run_workflow "Generate Motion Reveal (Pika)"
+  4. validate_assets
+  5. push_to_synqra_library
+  6. notify_team "SYNQRA v3.1 asset bundle ready for review"

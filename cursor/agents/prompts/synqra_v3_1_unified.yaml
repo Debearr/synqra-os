@@ -1,0 +1,26 @@
+schema: v1
+name: Synqra_Unified_Prompt_v3_1
+description: Unified creative prompt pulling from brand context and Gemini master prompt.
+
+sources:
+  brand_context_file: "/workspace/branding/context/noid_synqra_brand_context.md"
+  gemini_master_prompt_file: "/workspace/branding/prompts/gemini_master_prompt.md"
+
+variables:
+  campaign_input: "<insert campaign brief here>"
+
+assemble:
+  - include: brand_context_file
+  - text: "\n\n--- MASTER_PROMPT ---\n"
+  - include: gemini_master_prompt_file
+  - text: "\n\n--- CAMPAIGN_INPUT ---\n{{ campaign_input }}\n"
+
+output:
+  format: markdown
+  sections:
+    - Headline
+    - Subhead
+    - Body
+    - Primary_CTA
+    - Alt_CTA
+    - Hashtags

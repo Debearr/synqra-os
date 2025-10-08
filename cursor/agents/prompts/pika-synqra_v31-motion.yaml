@@ -1,0 +1,18 @@
+tool: Pika
+version: "1.0"
+model: default
+
+prompt:
+  objective: "Create motion reveal for SYNQRA v3.1 hero"
+  storyboard:
+    - "0-2s: barcode sweep-in from right"
+    - "2-5s: headline type animates with subtle scale"
+    - "5-7s: accent color pulse, then settle"
+  constraints:
+    - "Maintain brand colors and barcode signature"
+
+params:
+  width: 3840
+  height: 2160
+  duration_seconds: 7
+  fps: 30

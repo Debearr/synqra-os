@@ -1,0 +1,37 @@
+agent: "AutomationController"
+version: "1.0"
+description: "Automates generation of SYNQRA v3.1 launch assets across Leonardo and Pika."
+
+context:
+  project: "SYNQRA_Content_Engine"
+  brand_dna:
+    colors:
+      primary: "#000000"
+      accent_1: "#D4AF37"
+      accent_2: "#00FFF5"
+    signature: "Barcode bottom-right"
+  default_aspect_ratio: "16:9"
+  output_resolution: "3840x2160"
+
+workflows:
+  - name: "Generate Hero Image (Leonardo)"
+    tool: "Leonardo"
+    prompt_file: "/cursor/agents/prompts/leonardo-synqra_v31-hero.yaml"
+    output_path: "/assets/static/"
+    export_format: ["png", "webp"]
+
+  - name: "Generate Motion Reveal (Pika)"
+    tool: "Pika"
+    prompt_file: "/cursor/agents/prompts/pika-synqra_v31-motion.yaml"
+    output_path: "/assets/motion/"
+    export_format: ["mp4", "png"]
+
+constraints:
+  must_do:
+    - Preserve brand colors & barcode signature
+    - Verify outputs pass quality checklist
+  do_not:
+    - Overwrite approved assets without version increment
+    - Add commentary or metadata inside prompt blocks
+
+output_format: "production_bundle"
