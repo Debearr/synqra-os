@@ -1,0 +1,21 @@
+title: Drop-Ready Manifest
+version: "2.1"
+brand: "NØID / SYNQRA"
+date: "2025-10-08"
+overview: Assets and automation used to generate marketing drafts via the NØID/SYNQRA/AuraFX pipeline.
+pipeline:
+  - Ingest transcript to content_intents
+  - Parse with OpenAI
+  - Timing forecast via AuraFX
+  - Visual preview via Leonardo
+  - Draft creation in SYNQRA
+tables:
+  - content_intents (preview_url, scheduled_time)
+  - error_log
+  - service_health
+  - idempotency_keys
+prompts:
+  - SYNQRA_Visual_Prompt_LuxuryTech_v1
+notes:
+  - RLS is enabled; service access via service_role
+

@@ -1,0 +1,31 @@
+name: Auto-Manifest Build
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: '3.1'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+      - name: Convert Manifest to PDF
+        run: |
+          pandoc deploy/docs/Drop-Ready-Manifest_v2.1.md -o deploy/docs/Drop-Ready-Manifest_v2.1.pdf --standalone
+      - name: Commit + Push PDF
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "noid@system.ai"
+          git config --global user.name "NØID-AutoBot"
+          git add deploy/docs/*.pdf
+          git commit -m "auto: PDF manifest generated" || echo "No changes to commit"
+          git push
+
