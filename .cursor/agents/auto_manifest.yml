@@ -1,0 +1,42 @@
+name: NØID Auto-Manifest Generator + GitHub Sync
+on:
+  file_change:
+    path: deploy/docs/Drop-Ready-Manifest_v*.md
+
+jobs:
+  manifest:
+    runs-on: local
+
+    steps:
+      - uses: cursor/checkout@v1
+
+      - name: 🔧 Build companion files
+        run: |
+          cursor convert deploy/docs/Drop-Ready-Manifest_v2.1.md \
+            --to pdf,json,yaml \
+            --output deploy/docs/
+
+      - name: 🏷️ Tag automated release
+        run: |
+          cursor tag create v2.1-auto \
+            --message "Automated NØID manifest export"
+
+      - name: 🔒 Verify manifest integrity
+        run: |
+          cursor hash verify deploy/docs/Drop-Ready-Manifest_v2.1.md
+
+      - name: 🤖 Configure NØID-AutoBot Git identity
+        run: |
+          git config --global user.email "noid@system.ai"
+          git config --global user.name "NØID-AutoBot"
+
+      - name: 💾 Commit and push to GitHub
+        run: |
+          git add deploy/docs/Drop-Ready-Manifest_v2.1.*
+          git commit -m "auto: manifest v2.1 build + sync by NØID-AutoBot"
+          git push origin main
+
+      - name: ✅ Confirmation log
+        run: |
+          echo "🚀 Manifest v2.1 successfully generated, verified, and synced to GitHub via NØID-AutoBot."
+
