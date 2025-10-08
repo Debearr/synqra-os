@@ -6,19 +6,16 @@ import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { mirrorToSheets } from "./sheets-mirror-log";
+import ffmpegPathImport from "ffmpeg-static";
+import ffprobeImport from "ffprobe-static";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function commandExists(command: string): boolean {
-  try {
-    execSync(`command -v ${command}`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
+// Resolve static binary paths (fallback to system if not available)
+const ffmpegPath = (ffmpegPathImport as unknown as string) || "ffmpeg";
+const ffprobePath = (ffprobeImport as { path?: string } | undefined)?.path || "ffprobe";
 
 export async function generateThumbnail(filePath: string) {
   const ext = path.extname(filePath).toLowerCase();
@@ -40,12 +37,9 @@ export async function generateThumbnail(filePath: string) {
         .jpeg({ quality: 80 })
         .toFile(thumbPath);
     } else if ([".mp4", ".mov"].includes(ext)) {
-      if (!commandExists("ffmpeg") || !commandExists("ffprobe")) {
-        throw new Error("ffmpeg/ffprobe not installed; cannot create thumbnails for video");
-      }
-      execSync(`ffmpeg -y -i "${filePath}" -vframes 1 -vf scale=100:-1 "${thumbPath}"`);
+      execSync(`"${ffmpegPath}" -y -i "${filePath}" -vframes 1 -vf scale=100:-1 "${thumbPath}"`);
       const dim = execSync(
-        `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "${filePath}"`
+        `"${ffprobePath}" -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "${filePath}"`
       )
         .toString()
         .trim();

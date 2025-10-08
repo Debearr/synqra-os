@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { mirrorToSheets } from "./sheets-mirror-log";
+import { generateThumbnail } from "./generate-thumbnails";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
@@ -59,6 +60,7 @@ async function logAsset(filePath: string) {
     } else {
       console.log(`✅ Logged asset: ${fileName} (${folderName})`);
       await mirrorToSheets(data as any);
+      await generateThumbnail(filePath);
     }
   } catch (err) {
     console.error("⚠️ logAsset error:", err);
