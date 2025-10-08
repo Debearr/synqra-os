@@ -1,4 +1,4 @@
-name: NØID Auto-Manifest Generator + GitHub Sync
+name: NØID Auto-Manifest Generator + GitHub + Railway Sync
 on:
   file_change:
     path: deploy/docs/Drop-Ready-Manifest_v*.md
@@ -6,10 +6,12 @@ on:
 jobs:
   manifest:
     runs-on: local
-
     steps:
       - uses: cursor/checkout@v1
 
+      # -------------------------------
+      # 🔧 BUILD PHASE
+      # -------------------------------
       - name: 🔧 Build companion files
         run: |
           cursor convert deploy/docs/Drop-Ready-Manifest_v2.1.md \
@@ -25,18 +27,47 @@ jobs:
         run: |
           cursor hash verify deploy/docs/Drop-Ready-Manifest_v2.1.md
 
-      - name: 🤖 Configure NØID-AutoBot Git identity
+      # -------------------------------
+      # 🤖 GITHUB COMMIT + PUSH
+      # -------------------------------
+      - name: 🔑 Configure GitHub Token
         run: |
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "⚠️  Missing GITHUB_TOKEN. Add via Cursor secrets."
+            cursor secrets add GITHUB_TOKEN ghp_xxxxxxxxxxxxxxxxxxxxxx
+          fi
           git config --global user.email "noid@system.ai"
           git config --global user.name "NØID-AutoBot"
+          git config --global credential.helper store
 
       - name: 💾 Commit and push to GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add deploy/docs/Drop-Ready-Manifest_v2.1.*
-          git commit -m "auto: manifest v2.1 build + sync by NØID-AutoBot"
-          git push origin main
+          git commit -m "auto: manifest v2.1 build + sync by NØID-AutoBot" || echo "No new changes."
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/YOUR_USERNAME/YOUR_REPO.git main
 
+      # -------------------------------
+      # 🚄 RAILWAY DEPLOYMENT FALLBACK
+      # -------------------------------
+      - name: 🌐 Railway Deploy Fallback
+        if: success()
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "🚄 Triggering Railway deployment..."
+          curl -X POST \
+            -H "Authorization: Bearer ${RAILWAY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch": "main"}' \
+            https://backboard.railway.app/graphql?query=mutation%20{triggerDeploy(projectId:%22YOUR_PROJECT_ID%22)} \
+          && echo "✅ Railway deploy triggered successfully."
+
+      # -------------------------------
+      # ✅ CONFIRMATION LOG
+      # -------------------------------
       - name: ✅ Confirmation log
         run: |
-          echo "🚀 Manifest v2.1 successfully generated, verified, and synced to GitHub via NØID-AutoBot."
+          echo "🚀 Manifest v2.1 successfully generated, verified, pushed, and deployed via NØID-AutoBot."
 
