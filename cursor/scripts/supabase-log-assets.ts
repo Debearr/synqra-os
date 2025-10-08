@@ -7,7 +7,14 @@ import dayjs from "dayjs";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
+const SUPABASE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const SHEETS_WEBHOOK_URL = process.env.SHEETS_WEBHOOK_URL;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error(
+    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY",
+  );
+}
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const watchDirs = ["./assets/static", "./assets/motion"];
@@ -42,6 +49,26 @@ async function logToSupabase(filePath: string) {
 
   await supabase.from("asset_logs").insert([payload]);
   console.log(`📦 Logged → ${file} | ${validation}`);
+
+  // optional: mirror basic info to Google Sheets webhook
+  if (SHEETS_WEBHOOK_URL) {
+    try {
+      await fetch(SHEETS_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file,
+          validation: validation.startsWith("✅") ? "✅" : "❌",
+          size_kb: Number(sizeKB),
+          timestamp: createdAt,
+          file_type: type,
+        }),
+      });
+      console.log("📊 Sheets mirror posted");
+    } catch (err) {
+      console.warn("⚠️ Sheets mirror failed:", err);
+    }
+  }
 }
 
 watchDirs.forEach(dir => {

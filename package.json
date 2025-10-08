@@ -8,6 +8,9 @@
     "start": "next start -p 3000",
     "export:slides": "node scripts/exportSlides.js",
     "log:assets": "tsx cursor/scripts/supabase-log-assets.ts",
+    "inspect:visual": "python3 cursor/agents/visual_inspector.py",
+    "sync:inspector": "python3 cursor/agents/visual_inspector_sync.py",
+    "pipeline:visual": "npm run inspect:visual && npm run sync:inspector"
     "mirror:sheets": "tsx cursor/scripts/sheets-mirror.ts"
   },
   "dependencies": {
