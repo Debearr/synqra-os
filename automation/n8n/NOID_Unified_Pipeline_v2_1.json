@@ -1,0 +1,188 @@
+{
+  "name": "NØID_Unified_Pipeline_v2_1",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, transcript, platform, audience FROM content_intents WHERE status='pending' ORDER BY created_at ASC LIMIT 1;"
+      },
+      "id": "FetchIntent",
+      "name": "Supabase: Fetch Intent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 460]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "jsonParameters": true,
+        "headerParametersJson": "{\"Authorization\":\"Bearer {{$env.OPENAI_API_KEY}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"system\",\"content\":\"You extract marketing intent from transcripts. Return strict JSON: {platform, tone, cta, preview_prompt, variables}. Keep answers short.\"},{\"role\":\"user\",\"content\":\"={{$json.transcript}}\"}],\"temperature\":0.2}"
+      },
+      "id": "ParseIntent",
+      "name": "Copilot/GPT: Parse Intent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1060, 460]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT is_disabled FROM service_health WHERE service='aurafx';"
+      },
+      "id": "CheckAuraFXCircuit",
+      "name": "Supabase: Check AuraFX Circuit",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1210, 380]
+    },
+    {
+      "parameters": {
+        "url": "https://api.aurafx.ai/v1/forecast/timing",
+        "sendBody": true,
+        "jsonParameters": true,
+        "headerParametersJson": "{\"Authorization\":\"Bearer {{$env.AURAFX_API_KEY}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "{\"platform\":\"={{$json.platform || $node[\\\"FetchIntent\\\"].json.platform}}\",\"region\":\"NA\",\"target_audience\":\"={{$json.audience || $node[\\\"FetchIntent\\\"].json.audience}}\",\"content_type\":\"marketing\"}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "AuraFX_Timing",
+      "name": "AuraFX: Timing Bridge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 380],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT is_disabled FROM service_health WHERE service='leonardo';"
+      },
+      "id": "CheckLeonardoCircuit",
+      "name": "Supabase: Check Leonardo Circuit",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1210, 540]
+    },
+    {
+      "parameters": {
+        "url": "https://cloud.leonardo.ai/api/rest/v1/generations",
+        "sendBody": true,
+        "jsonParameters": true,
+        "headerParametersJson": "{\"Authorization\":\"Bearer {{$env.LEONARDO_API_KEY}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "{\"prompt\":\"={{$json.preview_prompt}}\",\"modelId\":\"6bef9f1b-29cb-40c7-b9df-32b51c1f67d3\",\"width\":1024,\"height\":1024,\"photoReal\":false,\"num_images\":1}"
+      },
+      "id": "RenderPreview",
+      "name": "Leonardo: Render Preview",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 540],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://cloud.leonardo.ai/api/rest/v1/generations/{{$json.sdGenerationJob.generationId}}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "PollLeonardo",
+      "name": "Leonardo: Poll Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 540],
+      "retryOnFail": true,
+      "maxTries": 10,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "url": "https://api.synqra.ai/v1/drafts",
+        "sendBody": true,
+        "jsonParameters": true,
+        "headerParametersJson": "{\"Authorization\":\"Bearer {{$env.SYNQRA_API_KEY}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "{\"brand\":\"NØID\",\"platform\":\"={{$json.platform || $node[\\\"FetchIntent\\\"].json.platform}}\",\"tone\":\"={{$json.tone}}\",\"cta\":\"={{$json.cta}}\",\"preview_url\":\"={{$json.generations_by_pk?.generated_images[0]?.url || $json?.images?.[0]?.url || ''}}\",\"scheduled_time\":\"={{$json.best_post_time || (new Date().toISOString())}}\",\"variables\": {{ $json.variables || {} }} }"
+      },
+      "id": "CreateDraft",
+      "name": "SYNQRA: Create Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1700, 460],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "content_intents",
+        "filterType": "manual",
+        "matchBy": "id",
+        "valueId": "={{$node['FetchIntent'].json.id}}",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldName": "status", "fieldValue": "completed" },
+            { "fieldName": "updated_at", "fieldValue": "={{$now}}"}
+          ]
+        }
+      },
+      "id": "MarkComplete",
+      "name": "Supabase: Mark Complete",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1860, 460]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "error_log",
+        "columns": "intent_id, step, payload, reason, retryable",
+        "values": "={{$node['FetchIntent'].json.id}},'Leonardo',{{$json}}, 'render_or_poll_failed', true"
+      },
+      "id": "LogLeonardoError",
+      "name": "Supabase: Log Leonardo Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1700, 620]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "error_log",
+        "columns": "intent_id, step, payload, reason, retryable",
+        "values": "={{$node['FetchIntent'].json.id}},'AuraFX',{{$json}}, 'timing_failed_or_skipped', true"
+      },
+      "id": "LogAuraError",
+      "name": "Supabase: Log AuraFX Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1540, 360]
+    }
+  ],
+  "connections": {
+    "FetchIntent": { "main": [[{ "node": "ParseIntent", "type": "main", "index": 0 }]] },
+    "ParseIntent": {
+      "main": [[
+        { "node": "CheckAuraFXCircuit", "type": "main", "index": 0 },
+        { "node": "CheckLeonardoCircuit", "type": "main", "index": 0 }
+      ]]
+    },
+    "CheckAuraFXCircuit": {
+      "main": [[{ "node": "AuraFX_Timing", "type": "main", "index": 0 }]]
+    },
+    "AuraFX_Timing": {
+      "main": [[{ "node": "RenderPreview", "type": "main", "index": 0 }]],
+      "error": [[{ "node": "LogAuraError", "type": "main", "index": 0 }]]
+    },
+    "CheckLeonardoCircuit": {
+      "main": [[{ "node": "RenderPreview", "type": "main", "index": 0 }]]
+    },
+    "RenderPreview": {
+      "main": [[{ "node": "PollLeonardo", "type": "main", "index": 0 }]],
+      "error": [[{ "node": "LogLeonardoError", "type": "main", "index": 0 }]]
+    },
+    "PollLeonardo": {
+      "main": [[{ "node": "CreateDraft", "type": "main", "index": 0 }]],
+      "error": [[{ "node": "LogLeonardoError", "type": "main", "index": 0 }]]
+    },
+    "CreateDraft": { "main": [[{ "node": "MarkComplete", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionTimeout": 240, "saveExecutionProgress": true }
+}
+
