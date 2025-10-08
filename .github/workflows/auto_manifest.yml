@@ -25,7 +25,37 @@ jobs:
         run: |
           git config --global user.email "noid@system.ai"
           git config --global user.name "NØID-AutoBot"
+          if [ -z "${GITHUB_TOKEN}" ]; then echo "GITHUB_TOKEN not set in env"; fi
           git add deploy/docs/*.pdf
           git commit -m "auto: PDF manifest generated" || echo "No changes to commit"
           git push
+
+      - name: Configure GitHub Token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "${GITHUB_TOKEN}" ]; then
+            echo "⚠️  Missing GITHUB_TOKEN in repository secrets. Skipping token config."
+          else
+            git config --global credential.helper store
+            echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+          fi
+
+      - name: Railway Deploy Fallback
+        if: success()
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ] || [ -z "${RAILWAY_PROJECT_ID}" ]; then
+            echo "Skipping Railway deploy: missing RAILWAY_TOKEN or RAILWAY_PROJECT_ID secrets."
+            exit 0
+          fi
+          echo "🚄 Triggering Railway deployment..."
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${RAILWAY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch":"main"}' \
+            "https://backboard.railway.app/graphql?query=mutation%20{triggerDeploy(projectId:\"${RAILWAY_PROJECT_ID}\")}" \
+            && echo "✅ Railway deploy triggered successfully."
 
