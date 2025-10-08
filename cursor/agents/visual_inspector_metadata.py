@@ -26,7 +26,11 @@ from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-ASSET_PATHS = ["./assets/static", "./assets/motion"]
+ASSET_PATHS = [
+    "./assets/static",
+    "./assets/motion",
+    "./assets/motions",  # support alternate naming
+]
 LOG_JSON = "./logs/visual_inspector_log.json"
 LOG_CSV = "./logs/visual_inspector_log.csv"
 SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".mp4", ".webp", ".gif", ".svg")
