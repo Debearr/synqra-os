@@ -118,6 +118,8 @@
         "fieldsUi": {
           "fieldValues": [
             { "fieldName": "status", "fieldValue": "completed" },
+            { "fieldName": "preview_url", "fieldValue": "={{$node['PollLeonardo'].json?.generations_by_pk?.generated_images?.[0]?.url || $node['PollLeonardo'].json?.images?.[0]?.url || ''}}" },
+            { "fieldName": "scheduled_time", "fieldValue": "={{$node['AuraFX_Timing'].json?.best_post_time || (new Date().toISOString())}}" },
             { "fieldName": "updated_at", "fieldValue": "={{$now}}"}
           ]
         }
