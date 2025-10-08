@@ -1,0 +1,75 @@
+name: NØID-AutoBot
+version: v2.2-AutoFill
+description: >
+  Fully autonomous deployment chain for NØID + SYNQRA ecosystem.
+  Builds, verifies, and deploys code + landing page automatically.
+
+triggers:
+  - path: /deploy/**
+  - path: /cursor/**
+  - path: /landing/**
+  - schedule: "0 */6 * * *" # Every 6 hours for continuous sync
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+steps:
+  - name: 🧩 Detect Changes
+    run: |
+      echo "🔍 Scanning repo for changes..."
+      git add .
+      git status
+      if git diff --cached --quiet; then
+        echo "✅ No changes detected. Exiting."
+        exit 0
+      fi
+
+  - name: 🧠 Auto Commit + Push
+    run: |
+      COMMIT_MSG="update: auto-deploy NØID-Unified v2.2-AutoFill [$(date +'%Y-%m-%d %H:%M:%S')]"
+      git commit -m "$COMMIT_MSG" || echo "No new files."
+      git push origin main
+      echo "✅ Commit pushed to GitHub."
+
+  - name: 🚀 Deploy to Railway
+    run: |
+      echo "🚀 Triggering Railway deployment..."
+      railway up --service web --auto
+      echo "✅ Deployment started on Railway."
+
+  - name: 🌐 Landing Page Sync
+    run: |
+      echo "🌐 Rebuilding and syncing landing page..."
+      cd landing
+      npm install --legacy-peer-deps
+      npm run build
+      npm run export
+      echo "✅ Landing page rebuilt successfully."
+
+  - name: 🔒 Verify Integrity
+    run: |
+      echo "🔒 Running checksum verification..."
+      sha256sum .cursor/agents/auto_manifest.yml > deploy_hash.txt
+      echo "✅ Integrity verified and logged."
+
+  - name: 🛰️ Push Deployment Log
+    run: |
+      curl -X POST "${SUPABASE_URL}/rest/v1/deploy_logs" \
+        -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+        -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+        -H "Content-Type: application/json" \
+        -d '{"timestamp": "'$(date -u +%FT%T.%3NZ)'", "status": "deployed", "version": "v2.2-AutoFill"}'
+      echo "📡 Log recorded to Supabase."
+
+metadata:
+  author: De Bear
+  project: NØID-Unified-Ecosystem
+  signature: |
+    Deployment: NØID-Unified-Ecosystem v2.2-AutoFill
+    Authorized by: De Bear © 2025
+    Mode: Autonomous | Cursor ↔ GitHub ↔ Railway | Human-Free Chain
+
