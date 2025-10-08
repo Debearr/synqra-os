@@ -13,7 +13,7 @@ async function readPrompt() {
   return "<PASTE THE FULL CHAT PROMPT FROM SECTION A HERE>";
 }
 
-async function callAnthropic(promptText) {
+async function callAnthropic(promptText, { maxTokensLimit } = {}) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.warn("Skipping Anthropic call: missing ANTHROPIC_API_KEY");
@@ -22,7 +22,7 @@ async function callAnthropic(promptText) {
 
   const payload = {
     model: "claude-3-5-sonnet-20241022",
-    max_tokens: 2000,
+    max_tokens: Math.min(Number(maxTokensLimit || 2000), 2000),
     system: "JSON-only output. No secrets. If uncertain, return NEED_EVIDENCE.",
     messages: [{ role: "user", content: promptText }]
   };
@@ -44,6 +44,51 @@ async function callAnthropic(promptText) {
 
   const data = await response.json();
   return data;
+}
+
+function getUsagePaths() {
+  const dataDir = path.resolve(process.cwd(), "scripts", ".data");
+  const usagePath = path.join(dataDir, "claude_usage.json");
+  return { dataDir, usagePath };
+}
+
+async function readLimitsConfig() {
+  const limitsPath = path.resolve(process.cwd(), "scripts", "claude_limits.json");
+  try {
+    const raw = await fs.readFile(limitsPath, "utf8");
+    const json = JSON.parse(raw);
+    return {
+      max_calls_per_day: Number(json.max_calls_per_day) || 50,
+      max_tokens_per_call: Number(json.max_tokens_per_call) || 1000,
+      stop_on_quota_exceeded: Boolean(json.stop_on_quota_exceeded)
+    };
+  } catch {
+    return { max_calls_per_day: 50, max_tokens_per_call: 1000, stop_on_quota_exceeded: true };
+  }
+}
+
+function formatDateKey(date = new Date()) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+async function readUsage() {
+  const { dataDir, usagePath } = getUsagePaths();
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+    const raw = await fs.readFile(usagePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+async function writeUsage(usage) {
+  const { dataDir, usagePath } = getUsagePaths();
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(usagePath, JSON.stringify(usage, null, 2), "utf8");
 }
 
 function normalizeBaseUrl(url) {
@@ -116,12 +161,27 @@ async function notifyUpgradeCta(updatedRows) {
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const promptText = await readPrompt();
+  const limits = await readLimitsConfig();
+  const usage = await readUsage();
+  const todayKey = formatDateKey();
+  const callsToday = Number(usage[todayKey]?.calls || 0);
+  const remaining = Math.max(0, limits.max_calls_per_day - callsToday);
 
   try {
     if (isDryRun) {
       console.log("[dry-run] Skipping Anthropic call.");
     } else {
-      const claude = await callAnthropic(promptText);
+      if (remaining <= 0) {
+        const message = `Quota exceeded: 0/${limits.max_calls_per_day} calls remaining for ${todayKey}`;
+        if (limits.stop_on_quota_exceeded) throw new Error(message);
+        console.warn(message);
+      } else {
+        // increment usage before the call to avoid race conditions in simple setups
+        usage[todayKey] = { calls: callsToday + 1 };
+        await writeUsage(usage);
+      }
+
+      const claude = await callAnthropic(promptText, { maxTokensLimit: limits.max_tokens_per_call });
       console.log("✅ Claude eval received.");
       console.log(JSON.stringify(claude, null, 2));
     }
