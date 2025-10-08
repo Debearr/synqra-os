@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3000",
     "export:slides": "node scripts/exportSlides.js",
-    "log:assets": "tsx cursor/scripts/supabase-log-assets.ts"
+    "log:assets": "tsx cursor/scripts/supabase-log-assets.ts",
+    "mirror:sheets": "tsx cursor/scripts/sheets-mirror.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.74.0",
@@ -17,9 +18,11 @@
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "next": "^14.2.7",
+    "node-fetch": "^3.3.2",
     "puppeteer": "^23.7.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
