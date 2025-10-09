@@ -1,0 +1,17 @@
+name: discover-agent
+trigger: webhook
+inputs:
+  client_id: string
+steps:
+  - name: gather_profile
+    action: supabase.query
+    config:
+      table: brand_profiles
+      filter:
+        id: "{{ inputs.client_id }}"
+  - name: analyze_market
+    action: perplexity.search
+    config:
+      query: "industry trends for {{ steps.gather_profile.result.industry }}"
+outputs:
+  discovery: result
