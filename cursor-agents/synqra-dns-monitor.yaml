@@ -1,0 +1,108 @@
+name: synqra-dns-monitor
+description: Continuous DNS + SSL monitor for Synqra.co with Supabase logging, retry loop, and failure alerts
+model: claude-3-sonnet-20250514
+temperature: 0.1
+
+system_prompt: |
+  You are the SYNQRA Infrastructure Guardian.
+  Every 5 minutes you:
+  - Check DNS + HTTPS.
+  - Detect if SSL and HTTP are online.
+  - Log every attempt to Supabase.
+  - Notify De Bear when the site becomes LIVE or if it fails 12 times consecutively.
+  - Auto-recover after transient errors.
+
+env:
+  SUPABASE_URL: https://[YOUR_PROJECT].supabase.co
+  SUPABASE_KEY: [YOUR_SERVICE_ROLE_KEY]
+
+workflow:
+  - step: check_dns
+    description: Perform DNS lookup
+    command: |
+      nslookup synqra.co
+      nslookup www.synqra.co
+
+  - step: check_https
+    description: Verify HTTPS response
+    command: |
+      curl -I https://synqra.co --max-time 30
+
+  - step: analyze
+    description: Classify site status
+    logic: |
+      if output from curl contains "HTTP/2 200" or "HTTP/1.1 200":
+          status = "✅ LIVE"
+      elif output from curl contains "certificate" or "SSL":
+          status = "🔐 SSL provisioning..."
+      elif output from curl contains "Failed to connect":
+          status = "❌ Connection failed"
+      else:
+          status = "⌛ Waiting for DNS propagation..."
+      Log("🛰️ SYNQRA STATUS: " + status + " @ " + timestamp())
+
+  - step: update_counters
+    description: Maintain retry counter and escalation flag
+    logic: |
+      if status == "❌ Connection failed":
+          retry_failures += 1
+      else:
+          retry_failures = 0
+      if retry_failures >= 12:
+          escalate = true
+
+  - step: log_to_supabase
+    description: Store all events in Supabase
+    tool: supabase_insert
+    params:
+      table: dns_logs
+      record:
+        timestamp: "[timestamp()]"
+        domain: "synqra.co"
+        status: "[status]"
+        details: "[curl header summary]"
+        dns_output: "[nslookup output summary]"
+        retries: "[retry_failures]"
+
+  - step: notify_success
+    description: Send success alert
+    trigger: status == "✅ LIVE"
+    actions:
+      - show_notification: "✅ Synqra.co is LIVE! SSL verified."
+      - send_email:
+          to: "tomford46661@gmail.com"
+          subject: "✅ Synqra.co is LIVE"
+          body: |
+            Synqra.co is now reachable and SSL certified.
+            Verified at [timestamp()].
+            DNS + HTTPS checks confirmed HTTP/2 200 OK.
+
+  - step: notify_failure
+    description: Escalate if site fails for 1 hour (12×5 min)
+    trigger: escalate == true
+    actions:
+      - show_notification: "⚠️ Synqra.co still unreachable after 1 hour."
+      - send_email:
+          to: "tomford46661@gmail.com"
+          subject: "⚠️ Synqra.co SSL Delay / Outage"
+          body: |
+            Synqra.co has failed connectivity for 1 hour.
+            Last status: [status].
+            DNS: [nslookup output summary]
+            Please check Railway → Domains or SSL provisioning.
+
+  - step: repeat
+    description: Repeat every 5 minutes until LIVE or failure alert sent
+    schedule:
+      every: 5m
+      stop_condition: status == "✅ LIVE"
+
+output_format: |
+  🛰️ SYNQRA DNS + SSL MONITOR REPORT
+  Status: [status]
+  Time: [timestamp]
+  Retries: [retry_failures]
+  DNS: [nslookup output summary]
+  HTTPS: [curl header summary]
+  Logged: ✅ Supabase (dns_logs)
+  Alert: [triggered if LIVE or FAILURE]
