@@ -1,0 +1,42 @@
+{
+  "system_id": "noid_council_symphony_v1",
+  "owner": "NØID Labs Inc.",
+  "watch_paths": {
+    "claude_report": "evaluations/claude_investor_report.json",
+    "deepseek_brief": "evaluations/deepseek_technical_audit_brief.json",
+    "deepseek_output": "evaluations/deepseek_technical_audit.json",
+    "gemini_brief": "evaluations/gemini_financial_forecast_brief.json",
+    "gemini_output": "evaluations/gemini_financial_validation.json",
+    "copilot_output": "evaluations/copilot_packaged_assets.json"
+  },
+  "sequence": [
+    {
+      "name": "Claude → DeepSeek handoff",
+      "requires": ["evaluations/claude_investor_report.json", "evaluations/deepseek_technical_audit_brief.json"],
+      "produces": "evaluations/deepseek_technical_audit.json",
+      "command": "node orchestrator/hooks/run_deepseek.js"
+    },
+    {
+      "name": "DeepSeek → Gemini handoff",
+      "requires": ["evaluations/deepseek_technical_audit.json", "evaluations/gemini_financial_forecast_brief.json"],
+      "produces": "evaluations/gemini_financial_validation.json",
+      "command": "node orchestrator/hooks/run_gemini.js"
+    },
+    {
+      "name": "Gemini → Copilot packaging",
+      "requires": ["evaluations/gemini_financial_validation.json"],
+      "produces": "evaluations/copilot_packaged_assets.json",
+      "command": "node orchestrator/hooks/run_copilot.js"
+    }
+  ],
+  "logging": {
+    "audit_log": "logs/symphony_log.json",
+    "level": "info"
+  },
+  "gitops": {
+    "enable_prs": true,
+    "branch_prefix": "council/auto/",
+    "commit_message_template": "chore(council): ${step} output committed by Orchestrator",
+    "open_pr_command": "bash scripts/open_pr.sh \"${branch}\" \"${title}\""
+  }
+}
