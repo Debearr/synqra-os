@@ -1,0 +1,36 @@
+{
+  "agent": "Microsoft Copilot – Visual Composer",
+  "role": "Design & Documentation Agent",
+  "project": "NØID Labs – Symphony Protocol",
+  "objective": "Render a polished visual blueprint PDF showing the Symphony Protocol stack and data flow.",
+  "context": {
+    "visual_theme": "Matte black background, gold foil typography, teal data-flow lines, barcode signature footer",
+    "sections": [
+      "AI Council Layer (Perplexity • Claude • DeepSeek • Gemini • Copilot)",
+      "Orchestration Layer (n8n workflows and triggers)",
+      "Infrastructure Layer (Supabase databases and logging)",
+      "Build & Deploy Layer (Cursor + GitHub + Railway)",
+      "Frontend Products (Synqra • NØID • AuraFX with LuxGrid UI)"
+    ],
+    "diagram_style": "Top-down flow with labeled arrows and iconography; include feedback loop arrows from Frontend → AI Council",
+    "annotations": [
+      "Shared Infrastructure Reuse",
+      "Automation Hand-off Logic",
+      "Learning Loop Feedback",
+      "Zero-Friction Architecture"
+    ],
+    "explanatory_notes": "Provide plain-English callouts beside each layer describing its purpose and interaction."
+  },
+  "deliverables": {
+    "format": "PDF",
+    "output_path": "/deliverables/Symphony_Protocol_Blueprint.pdf",
+    "quality": "Investor-grade, vector resolution for print and digital",
+    "include_brand_signature": "Yes – De Bear signature watermark"
+  },
+  "success_criteria": {
+    "clarity": "Non-technical viewers can instantly grasp system flow",
+    "aesthetic": "Matches NØID Labs luxury × automation identity",
+    "accuracy": "Reflects the latest DeepSeek and Gemini validated architecture"
+  },
+  "closing_instructions": "Generate and export the final PDF diagram to /deliverables/Symphony_Protocol_Blueprint.pdf. Maintain consistent labeling with Council documents and include brief legend for color codes (gold=logic, teal=data, white=AI control)."
+}
