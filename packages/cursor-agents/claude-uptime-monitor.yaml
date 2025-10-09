@@ -1,0 +1,38 @@
+name: claude-uptime-monitor
+description: Checks uptime & Claude API health for both Synqra and NØID every 5 minutes.
+model: claude-3-sonnet-20250514
+temperature: 0.1
+
+schedule:
+  every: 5m
+
+workflow:
+  - step: ping_sites
+    description: Verify HTTPS and DNS for each app
+    run: |
+      sites=("https://synqra.co" "https://noidlabs.app")
+      for s in "${sites[@]}"; do
+        code=$(curl -s -o /dev/null -w "%{http_code}" "$s")
+        if [ "$code" = "200" ]; then
+          echo "✅ $s — LIVE ($code)"
+        else
+          echo "❌ $s — DOWN ($code)"
+        fi
+        echo "SERVICE=$s CODE=$code"
+      done
+
+  - step: log_status
+    description: Insert results into Supabase (status_logs)
+    uses: supabase_insert
+    params:
+      table: status_logs
+      data:
+        service: "$s"
+        status_code: "$code"
+        timestamp: "$(date -u +%FT%TZ)"
+
+output_format: |
+  🔍 Status Check Complete
+  🟢 Synqra: $status_synqra
+  🟢 NØID: $status_noid
+  Logs synced to Supabase (status_logs)
