@@ -1,0 +1,10 @@
+name: define-agent
+trigger: on_success(discover-agent)
+steps:
+  - name: tone_synthesis
+    action: claude.completion
+    config:
+      model: claude-3-sonnet-20250514
+      prompt: "Generate brand voice, tone, and mission from discovery data."
+outputs:
+  dna: result

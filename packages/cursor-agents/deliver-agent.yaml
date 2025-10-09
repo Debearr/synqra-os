@@ -1,0 +1,14 @@
+name: deliver-agent
+trigger: on_success(develop-agent)
+steps:
+  - name: deploy_site
+    action: copilot.deploy
+    config:
+      provider: railway
+      port: 3000
+  - name: verify_ssl
+    action: gemini.check
+    config:
+      url: "{{ deployment_url }}"
+outputs:
+  live_url: result

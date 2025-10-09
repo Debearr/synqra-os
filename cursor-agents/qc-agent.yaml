@@ -1,0 +1,9 @@
+name: qc-agent
+trigger: on_success(deliver-agent)
+steps:
+  - name: audit
+    action: grok.validate
+    config:
+      prompt: "Run final QC. Detect AI slop or off-brand language."
+outputs:
+  qc_report: result

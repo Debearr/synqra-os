@@ -1,0 +1,14 @@
+name: develop-agent
+trigger: on_success(define-agent)
+steps:
+  - name: design_assets
+    action: claude.completion
+    config:
+      model: claude-3-sonnet-20250514
+      prompt: "Create stylescape, typography, and color palette."
+  - name: generate_tokens
+    action: deepseek.script
+    config:
+      code: "build_design_tokens(assets)"
+outputs:
+  design_package: result
