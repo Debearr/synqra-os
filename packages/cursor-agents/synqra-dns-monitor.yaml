@@ -1,0 +1,79 @@
+name: synqra-dns-monitor
+description: Automated DNS + SSL monitor for Synqra.co with Supabase logging
+model: claude-sonnet-4-20250514
+temperature: 0.1
+
+system_prompt: |
+  You are the SYNQRA DNS + SSL Monitor Agent.
+  Every 5 minutes:
+  1. Run DNS + HTTPS checks.
+  2. Interpret whether the site is LIVE, SSL provisioning, or still propagating.
+  3. Log all results to Supabase for audit and uptime tracking.
+  4. Notify De Bear when LIVE.
+
+env:
+  SUPABASE_URL: https://[YOUR_PROJECT].supabase.co
+  SUPABASE_KEY: [YOUR_SERVICE_ROLE_KEY]
+
+workflow:
+  - step: check_dns
+    description: Perform DNS lookup
+    command: |
+      nslookup synqra.co
+      nslookup www.synqra.co
+
+  - step: check_https
+    description: Verify HTTPS response
+    command: |
+      curl -I https://synqra.co
+
+  - step: analyze
+    description: Determine site status and create a status object
+    logic: |
+      if output from curl contains "HTTP/2 200" or "HTTP/1.1 200":
+          status = "✅ LIVE"
+      elif output from curl contains "certificate" or "SSL":
+          status = "🔐 SSL provisioning..."
+      else:
+          status = "⌛ Waiting for DNS propagation..."
+      Log("🛰️ SYNQRA STATUS: " + status + " @ " + timestamp())
+
+  - step: log_to_supabase
+    description: Insert record into Supabase table
+    tool: supabase_insert
+    params:
+      table: dns_logs
+      record:
+        timestamp: "[timestamp()]"
+        domain: "synqra.co"
+        status: "[status]"
+        details: "[curl header summary]"
+        dns_output: "[nslookup output summary]"
+
+  - step: notify
+    description: Notify De Bear once site is LIVE
+    trigger: status == "✅ LIVE"
+    actions:
+      - show_notification: "✅ Synqra.co is LIVE! SSL Verified."
+      - send_email:
+          to: "tomford46661@gmail.com"
+          subject: "✅ Synqra.co is LIVE"
+          body: |
+            SSL certificate active.
+            HTTP/2 200 OK confirmed at [timestamp()].
+            Domain: https://synqra.co
+
+  - step: repeat
+    description: Repeat check every 5 minutes until success
+    schedule:
+      every: 5m
+      stop_condition: status == "✅ LIVE"
+
+output_format: |
+  🛰️ SYNQRA DNS + SSL MONITOR
+  Status: [status]
+  Time: [timestamp]
+  DNS Result: [nslookup output summary]
+  HTTPS Header: [curl header result]
+  Logged → Supabase: dns_logs
+  Notification: [sent if LIVE]
