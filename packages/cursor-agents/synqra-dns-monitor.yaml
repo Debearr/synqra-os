@@ -1,0 +1,48 @@
+name: synqra-dns-monitor
+description: Monitor Synqra DNS and SSL readiness. Runs every 5 minutes until HTTPS is live.
+model: claude-sonnet-4-20250514
+temperature: 0.1
+
+system_prompt: |
+  You are a DNS and SSL verification agent for the Synqra platform.
+  Your job:
+  - Check if https://synqra.co resolves correctly.
+  - Confirm if SSL is active and returns HTTP 200.
+  - Log results with timestamps.
+  - Stop once the site is verified LIVE.
+
+workflow:
+  - step: check_dns
+    description: Perform DNS lookup for synqra.co and www.synqra.co
+    command: |
+      nslookup synqra.co
+      nslookup www.synqra.co
+
+  - step: check_https
+    description: Check HTTPS response status
+    command: |
+      curl -I https://synqra.co
+
+  - step: analyze
+    description: Evaluate if HTTPS is active and log outcome
+    logic: |
+      If output from curl contains "HTTP/2 200" or "HTTP/1.1 200":
+        status = "✅ LIVE"
+      Else if output contains "SSL" or "certificate":
+        status = "🔐 SSL provisioning..."
+      Else:
+        status = "⌛ Waiting for DNS propagation..."
+      Log("Synqra DNS Monitor: " + status + " @ " + timestamp())
+
+  - step: repeat
+    description: Re-run every 5 minutes until LIVE
+    schedule:
+      every: 5m
+      stop_condition: status == "✅ LIVE"
+
+output_format: |
+  🛰️ SYNQRA DNS MONITOR REPORT
+  Status: [status]
+  Time: [timestamp]
+  DNS: [nslookup output summary]
+  HTTPS: [curl header result]
