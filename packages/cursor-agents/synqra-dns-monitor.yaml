@@ -34,6 +34,16 @@ workflow:
         status = "⌛ Waiting for DNS propagation..."
       Log("Synqra DNS Monitor: " + status + " @ " + timestamp())
 
+  - step: notify
+    description: Send alert when site is verified LIVE
+    trigger: status == "✅ LIVE"
+    actions:
+      - show_notification: "Synqra.co is LIVE! SSL verified and responding 200 OK."
+      - send_email:
+          to: "tomford46661@gmail.com"
+          subject: "✅ Synqra.co is LIVE"
+          body: "SSL certificate active. HTTP/2 200 confirmed at [timestamp()]."
+
   - step: repeat
     description: Re-run every 5 minutes until LIVE
     schedule:
