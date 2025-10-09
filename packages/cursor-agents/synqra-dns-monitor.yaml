@@ -1,6 +1,6 @@
 name: synqra-dns-monitor
 description: Continuous DNS + SSL monitor for Synqra.co with Supabase logging, retry loop, and failure alerts
-model: claude-sonnet-4-20250514
+model: claude-3-sonnet-20250514
 temperature: 0.1
 
 system_prompt: |
