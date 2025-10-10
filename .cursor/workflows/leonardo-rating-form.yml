@@ -1,0 +1,69 @@
+name: leonardo-rating-form
+version: 1.0.0
+trigger:
+  - manual
+  - webhook
+
+inputs:
+  project_id:
+    type: string
+    required: true
+  asset_id:
+    type: string
+    required: true
+  rating:
+    type: integer
+    required: true
+    description: "1–5 stars"
+  feedback:
+    type: string
+    default: "N/A"
+
+steps:
+  - name: validate_rating
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const r = {{ inputs.rating }};
+        if (r < 1 || r > 5) throw new Error("Invalid rating. Use 1–5.");
+        return { valid: true };
+    outputs:
+      validated: result
+
+  - name: log_feedback
+    action: supabase.insert
+    config:
+      table: visual_feedback
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          asset_id: "{{ inputs.asset_id }}"
+          rating: "{{ inputs.rating }}"
+          feedback: "{{ inputs.feedback }}"
+          created_at: "{{ now() }}"
+
+  - name: adjust_threshold_hint
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const rating = {{ inputs.rating }};
+        let adjustment = 0;
+        if (rating >= 4) adjustment = 5;     // good image → higher threshold
+        else if (rating <= 2) adjustment = -10; // poor image → lower threshold
+        return { adjustment };
+    outputs:
+      threshold_hint: result
+
+  - name: update_threshold_hint
+    action: supabase.update
+    config:
+      table: leonardo_thresholds
+      filter:
+        project_id: "{{ inputs.project_id }}"
+      data:
+        min_word_threshold: "min_word_threshold + {{ steps.adjust_threshold_hint.threshold_hint.adjustment }}"
+        updated_at: "{{ now() }}"
+
+outputs:
+  message: "⭐ Feedback logged. Threshold auto-adjusted by {{ steps.adjust_threshold_hint.threshold_hint.adjustment }}."
