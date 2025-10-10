@@ -1,5 +1,5 @@
 name: leonardo-smartgate
-version: 1.0.0
+version: 2.1.0
 trigger:
   - manual
   - on_success(mcp-bridge)
@@ -16,6 +16,16 @@ inputs:
     default: 80
 
 steps:
+  - name: get_last_threshold
+    action: supabase.query
+    config:
+      table: leonardo_thresholds
+      filter:
+        project_id: "{{ inputs.project_id }}"
+      single: true
+    outputs:
+      last_data: result
+
   - name: count_words
     action: script.run
     config:
@@ -32,13 +42,13 @@ steps:
     config:
       language: javascript
       code: |
-        const threshold = {{ inputs.min_word_threshold }};
+        const lastThreshold = {{ steps.get_last_threshold.last_data.min_word_threshold || inputs.min_word_threshold }};
         const count = {{ steps.count_words.word_analysis.word_count }};
-        const decision = count >= threshold;
-        const reason = decision
-          ? `✅ Proceed — prompt has ${count} words (≥ ${threshold}).`
-          : `❌ Skipped — prompt too short (${count} < ${threshold}).`;
-        return { proceed: decision, reason };
+        const proceed = count >= lastThreshold;
+        const reason = proceed
+          ? `✅ Proceed — ${count} words (≥ ${lastThreshold}).`
+          : `❌ Skipped — ${count} words (< ${lastThreshold}).`;
+        return { proceed, reason, used_threshold: lastThreshold };
     outputs:
       gate_result: result
 
@@ -55,18 +65,44 @@ steps:
     outputs:
       render_result: result
 
-  - name: log_decision
+  - name: record_feedback
     action: supabase.insert
     config:
       table: leonardo_logs
       records:
         - project_id: "{{ inputs.project_id }}"
           word_count: "{{ steps.count_words.word_analysis.word_count }}"
-          threshold: "{{ inputs.min_word_threshold }}"
+          threshold: "{{ steps.decision_gate.gate_result.used_threshold }}"
           executed: "{{ steps.decision_gate.gate_result.proceed }}"
           decision_note: "{{ steps.decision_gate.gate_result.reason }}"
           created_at: "{{ now() }}"
 
+  - name: update_threshold
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const executed = {{ steps.decision_gate.gate_result.proceed }};
+        const current = {{ steps.decision_gate.gate_result.used_threshold }};
+        let newThreshold = current;
+
+        if (!executed && current > 50) newThreshold -= 10; // too strict → loosen
+        if (executed && current < 120) newThreshold += 5;  // successful → tighten a bit
+
+        return { newThreshold };
+    outputs:
+      new_threshold_data: result
+
+  - name: save_new_threshold
+    action: supabase.upsert
+    config:
+      table: leonardo_thresholds
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          min_word_threshold: "{{ steps.update_threshold.new_threshold_data.newThreshold }}"
+          updated_at: "{{ now() }}"
+
 outputs:
   summary: "{{ steps.decision_gate.gate_result.reason }}"
+  adaptive_threshold: "{{ steps.update_threshold.new_threshold_data.newThreshold }}"
   result: "{{ steps.conditional_generate.render_result }}"
