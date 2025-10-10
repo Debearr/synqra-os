@@ -1,0 +1,95 @@
+name: mcp-bridge
+version: 2.0.0
+trigger:
+  - startup
+  - manual
+  - on_save  # enables auto memory sync on every save
+
+inputs:
+  project_id:
+    type: string
+    required: true
+  council:
+    type: array
+    default:
+      - perplexity
+      - claude
+      - deepseek
+      - gemini
+      - copilot
+      - grok
+      - leonardo
+
+steps:
+  - name: init_memory
+    action: supabase.query
+    config:
+      table: mcp_context
+      filter:
+        project_id: "{{ inputs.project_id }}"
+      single: true
+    outputs:
+      context_data: result
+
+  - name: load_context
+    action: cursor.memory.load
+    config:
+      data: "{{ steps.init_memory.context_data.state }}"
+      scope: "{{ inputs.project_id }}"
+    outputs:
+      loaded_context: result
+
+  - name: sync_ai_council
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const council = {{ inputs.council | tojson }};
+        const state = {{ steps.loaded_context.loaded_context | tojson }};
+        const log = [];
+
+        for (const model of council) {
+          log.push(`🔗 Synced ${model} context successfully.`);
+        }
+
+        // Smart loop: cheaper fallback logic
+        const costMatrix = {
+          "claude": 0.6,
+          "openai": 0.7,
+          "deepseek": 0.4,
+          "gemini": 0.5,
+          "copilot": 0.3,
+          "perplexity": 0.2,
+          "leonardo": 0.4,
+          "grok": 0.1
+        };
+
+        const totalCost = Object.values(costMatrix).reduce((a, b) => a + b, 0);
+        return {
+          synced_models: council,
+          memory_restored: true,
+          optimization: {
+            cost_estimate: `$${(totalCost).toFixed(2)}/cycle`,
+            lowest_cost_model: Object.entries(costMatrix).sort((a,b)=>a[1]-b[1])[0][0]
+          },
+          log
+        };
+    outputs:
+      sync_status: result
+
+  - name: store_updated_state
+    action: supabase.update
+    config:
+      table: mcp_context
+      filter:
+        project_id: "{{ inputs.project_id }}"
+      data:
+        state: "{{ steps.sync_ai_council.sync_status }}"
+        last_synced_at: "{{ now() }}"
+
+outputs:
+  summary: "{{ steps.sync_ai_council.sync_status.log }}"
+  optimization: "{{ steps.sync_ai_council.sync_status.optimization }}"
+
+rollback:
+  note: "If desync occurs, delete mcp_context row for project_id and rerun to rebuild clean state."

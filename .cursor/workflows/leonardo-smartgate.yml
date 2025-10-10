@@ -1,0 +1,72 @@
+name: leonardo-smartgate
+version: 1.0.0
+trigger:
+  - manual
+  - on_success(mcp-bridge)
+
+inputs:
+  project_id:
+    type: string
+    required: true
+  prompt_text:
+    type: string
+    required: true
+  min_word_threshold:
+    type: integer
+    default: 80
+
+steps:
+  - name: count_words
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const text = `{{ inputs.prompt_text }}`;
+        const words = text.trim().split(/\s+/).length;
+        return { word_count: words };
+    outputs:
+      word_analysis: result
+
+  - name: decision_gate
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const threshold = {{ inputs.min_word_threshold }};
+        const count = {{ steps.count_words.word_analysis.word_count }};
+        const decision = count >= threshold;
+        const reason = decision
+          ? `✅ Proceed — prompt has ${count} words (≥ ${threshold}).`
+          : `❌ Skipped — prompt too short (${count} < ${threshold}).`;
+        return { proceed: decision, reason };
+    outputs:
+      gate_result: result
+
+  - name: conditional_generate
+    condition: "{{ steps.decision_gate.gate_result.proceed }}"
+    action: leonardo.generate
+    config:
+      model: "Leonardo Phoenix"
+      prompt: "{{ inputs.prompt_text }}"
+      width: 1792
+      height: 1024
+      guidance_scale: 7
+      num_images: 1
+    outputs:
+      render_result: result
+
+  - name: log_decision
+    action: supabase.insert
+    config:
+      table: leonardo_logs
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          word_count: "{{ steps.count_words.word_analysis.word_count }}"
+          threshold: "{{ inputs.min_word_threshold }}"
+          executed: "{{ steps.decision_gate.gate_result.proceed }}"
+          decision_note: "{{ steps.decision_gate.gate_result.reason }}"
+          created_at: "{{ now() }}"
+
+outputs:
+  summary: "{{ steps.decision_gate.gate_result.reason }}"
+  result: "{{ steps.conditional_generate.render_result }}"
