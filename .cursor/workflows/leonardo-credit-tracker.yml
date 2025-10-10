@@ -1,0 +1,53 @@
+name: leonardo-credit-tracker
+version: 1.0.0
+trigger:
+  - on_success(leonardo-smartgate)
+  - manual
+
+inputs:
+  project_id:
+    type: string
+    required: true
+  image_cost_usd:
+    type: float
+    default: 0.12
+
+steps:
+  - name: fetch_latest_cost
+    action: supabase.query
+    config:
+      table: credit_usage
+      filter:
+        project_id: "{{ inputs.project_id }}"
+      order_by:
+        field: created_at
+        direction: desc
+      limit: 1
+    outputs:
+      last_entry: result
+
+  - name: calculate_new_total
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const prev = {{ steps.fetch_latest_cost.last_entry.total_spent_usd || 0 }};
+        const added = {{ inputs.image_cost_usd }};
+        const newTotal = (prev + added).toFixed(2);
+        return { newTotal };
+    outputs:
+      total_data: result
+
+  - name: log_usage
+    action: supabase.insert
+    config:
+      table: credit_usage
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          cost_usd: "{{ inputs.image_cost_usd }}"
+          total_spent_usd: "{{ steps.calculate_new_total.total_data.newTotal }}"
+          created_at: "{{ now() }}"
+
+outputs:
+  total_spent_usd: "{{ steps.calculate_new_total.total_data.newTotal }}"
+  message: "💳 Leonardo credit usage updated successfully."
