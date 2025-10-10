@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    { "name": "Develop Agent", "type": "httpRequest", "parameters": { "url": "https://cursor/agents/develop", "method": "POST" } },
+    { "name": "Validate Agent", "type": "httpRequest", "parameters": { "url": "https://cursor/agents/validate", "method": "POST" } },
+    { "name": "Deliver Agent", "type": "httpRequest", "parameters": { "url": "https://cursor/agents/deliver", "method": "POST" } },
+    { "name": "Join Gate", "type": "merge", "parameters": { "mode": "wait" } },
+    { "name": "Certify Agent", "type": "httpRequest", "parameters": { "url": "https://cursor/agents/certify", "method": "POST" } }
+  ],
+  "connections": {
+    "Develop Agent": { "main": [[ { "node": "Validate Agent" }, { "node": "Deliver Agent" } ]] },
+    "Validate Agent": { "main": [[ { "node": "Join Gate" } ]] },
+    "Deliver Agent": { "main": [[ { "node": "Join Gate" } ]] },
+    "Join Gate": { "main": [[ { "node": "Certify Agent" } ]] }
+  }
+}

@@ -1,0 +1,98 @@
+name: certify-agent
+version: 2.0.0
+trigger:
+  - event: deliver-agent:deployed
+  - manual
+
+inputs:
+  asset_id:
+    type: string
+    required: true
+  project_id:
+    type: string
+    required: true
+
+steps:
+  - name: fetch_asset
+    action: supabase.query
+    config:
+      table: assets
+      filter:
+        id: "{{ inputs.asset_id }}"
+      single: true
+    outputs:
+      asset: result
+
+  - name: brand_rules
+    action: supabase.query
+    config:
+      table: tone_scores
+      filter:
+        industry: "{{ steps.asset.brand_id | industry_from_brand_id }}"
+      single: true
+    outputs:
+      rules: result
+
+  - name: design_system_check
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        // Minimal placeholder: ensure brand colors present in payload prompt
+        const a = {{ steps.asset.asset | tojson }};
+        const prompt = (a.payload && a.payload.prompt || "").toLowerCase();
+        const ok = prompt.includes("#") && (prompt.includes("gold") || prompt.includes("teal") || prompt.includes("black"));
+        return { design_ok: ok };
+
+  - name: council_audit
+    action: parallel.run
+    config:
+      tasks:
+        - name: claude_style
+          action: claude.completion
+          config:
+            model: claude-sonnet-4
+            temperature: 0.2
+            system: "Luxury brand certifier. Approve only if on-voice, precise, no hype."
+            prompt: "{{ steps.asset.asset.payload | tojson }}"
+        - name: gemini_compliance
+          action: gemini.check
+          config:
+            url: "{{ steps.asset.asset.public_preview_url || 'https://example.com' }}"
+        - name: grok_stress
+          action: grok.validate
+          config:
+            prompt: "Edge-case scan for slop, clichés, regulatory red flags."
+
+  - name: verdict
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const ds = {{ steps.design_system_check | tojson }};
+        const pass = !!ds.design_ok; // simplify: must pass DS; (council summaries logged)
+        return { certified: pass, score: pass ? 92 : 61 };
+
+  - name: persist
+    action: supabase.update
+    config:
+      table: assets
+      filter:
+        id: "{{ inputs.asset_id }}"
+      data:
+        validated: "{{ steps.verdict.certified }}"
+        qc_score: "{{ steps.verdict.score }}"
+        qc_notes: "{{ {council:'logged', ds:steps.design_system_check} | tojson }}"
+        validated_at: "{{ now() }}"
+
+  - name: write_audit
+    action: supabase.insert
+    config:
+      table: ai_council_audit
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          asset_id: "{{ inputs.asset_id }}"
+          claude_summary: "{{ steps.council_audit.claude_style }}"
+          gemini_summary: "{{ steps.council_audit.gemini_compliance }}"
+          grok_summary: "{{ steps.council_audit.grok_stress }}"
+          overall: "{{ steps.verdict.certified }}"

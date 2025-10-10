@@ -1,0 +1,108 @@
+name: validate-agent
+version: 2.0.0
+trigger:
+  - webhook
+  - event: develop-agent:artifact_ready   # fired by develop-agent when assets/copy are generated
+
+inputs:
+  project_id:
+    type: string
+    required: true
+  template_id:
+    type: string
+    required: true
+  artifact_type:
+    type: enum
+    values: [copy, prompt, image, video, bundle]
+    required: true
+  locale:
+    type: string
+    default: "en-US"
+
+steps:
+  - name: fetch_template
+    action: supabase.query
+    config:
+      table: post_templates
+      filter:
+        id: "{{ inputs.template_id }}"
+      single: true
+    outputs:
+      tpl: result
+
+  - name: fetch_brand
+    action: supabase.query
+    config:
+      table: brand_profiles
+      filter:
+        id: "{{ steps.tpl.brand_id }}"
+      single: true
+    outputs:
+      brand: result
+
+  - name: fetch_rules
+    action: supabase.query
+    config:
+      table: tone_scores
+      filter:
+        industry: "{{ steps.brand.brand.industry }}"
+      single: true
+    outputs:
+      rules: result
+
+  - name: ai_council_check
+    action: parallel.run
+    config:
+      tasks:
+        - name: perplexity_factcheck
+          action: perplexity.search
+          config:
+            query: "Validate claims in: {{ steps.tpl.option_1 | tojson }}"
+        - name: claude_voice
+          action: claude.completion
+          config:
+            model: claude-sonnet-4
+            temperature: 0.2
+            system: "Check tone vs. luxury, confident, no-slop. Flag avoid_terms."
+            prompt: "{{ steps.tpl.option_1 | tojson }}"
+        - name: deepseek_static
+          action: script.run
+          config:
+            language: javascript
+            code: |
+              const avoid = {{ steps.rules.avoid_terms | tojson }};
+              const cap = {{ steps.tpl.option_1 | tojson }};
+              const full = `${cap.headline} ${cap.body} ${cap.cta}`.toLowerCase();
+              const hits = avoid.filter(t => full.includes(t.toLowerCase()));
+              return { avoid_hits: hits, pass: hits.length === 0 };
+
+  - name: decide
+    action: script.run
+    config:
+      language: javascript
+      code: |
+        const council = {{ steps.ai_council_check | tojson }};
+        const avoidOK = council.deepseek_static.pass;
+        const claudeText = (council.claude_voice || "").toString().toLowerCase();
+        const toneOK = !claudeText.includes("off-brand") && !claudeText.includes("slop");
+        return { mid_validation_pass: (avoidOK && toneOK) };
+
+  - name: write_validation_run
+    action: supabase.insert
+    config:
+      table: validation_runs
+      records:
+        - project_id: "{{ inputs.project_id }}"
+          template_id: "{{ inputs.template_id }}"
+          stage: "develop"
+          passed: "{{ steps.decide.mid_validation_pass }}"
+          details: "{{ steps.ai_council_check | tojson }}"
+
+  - name: emit_result
+    action: events.emit
+    config:
+      event: "validate-agent:completed"
+      payload:
+        project_id: "{{ inputs.project_id }}"
+        template_id: "{{ inputs.template_id }}"
+        passed: "{{ steps.decide.mid_validation_pass }}"
