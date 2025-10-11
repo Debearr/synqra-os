@@ -1,0 +1,15 @@
+name: postDeploy
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [postDeploy]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          echo "Post-deploy workflow triggered"
+          # Run the Cursor task manually
+          bash .cursor/tasks/auto-homepage-guardian.yaml || true
