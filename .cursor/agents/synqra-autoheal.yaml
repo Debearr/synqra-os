@@ -1,0 +1,24 @@
+name: Synqra Auto-Heal Guardian
+trigger:
+  - manual
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+steps:
+  - name: Health-check Synqra
+    run: |
+      STATUS=$(curl -Is https://synqra.co | head -n 1 | grep "200")
+      if [ -z "$STATUS" ]; then
+        echo "⚠️  Synqra not responding — initiating redeploy..."
+        railway redeploy --service=synqra-os
+      else
+        echo "✅  Synqra healthy (HTTP 200)."
+      fi
+
+  - name: Notify status
+    uses: supabase/send-email
+    with:
+      to: "tomford46661@gmail.com"
+      subject: "Synqra Auto-Heal Report"
+      body: |
+        Status Check: ${{ steps.Health-check Synqra.output }}
+        Time: ${{ now }}
