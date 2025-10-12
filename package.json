@@ -6,13 +6,17 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "export:slides": "node scripts/exportSlides.js"
+    "export:slides": "node scripts/exportSlides.js",
+    "closer": "node scripts/closerAgent.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.26.1",
+    "@supabase/supabase-js": "^2.46.0",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "next": "^14.2.7",
+    "openai": "^4.60.1",
     "puppeteer": "^23.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
