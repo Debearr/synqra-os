@@ -1,0 +1,63 @@
+name: Railway Domain Linker – NoID Labs
+trigger: manual
+description: >
+  Links noidlabs.co to the deployed Railway service, creates DNS records, and verifies propagation.
+steps:
+  - name: 🧭 Ensure Railway CLI and authenticate
+    run: |
+      set -e
+      if ! command -v railway >/dev/null 2>&1; then
+        npm install -g railway@latest
+      fi
+      railway --version
+
+      if [ -z "${RAILWAY_TOKEN:-}" ]; then
+        echo "RAILWAY_TOKEN is required" >&2
+        exit 1
+      fi
+      railway login --browserless --token "${RAILWAY_TOKEN}"
+
+  - name: 🔍 Link current project (and optional env/service)
+    run: |
+      set -euo pipefail
+      if [ -z "${RAILWAY_PROJECT_ID:-}" ]; then
+        echo "RAILWAY_PROJECT_ID is required" >&2
+        exit 1
+      fi
+      railway link --project "${RAILWAY_PROJECT_ID}"
+
+      # Optionally select a specific environment/service for clarity
+      if [ -n "${RAILWAY_ENV_ID:-}" ]; then
+        railway env use "${RAILWAY_ENV_ID}" || true
+      fi
+      if [ -n "${RAILWAY_SERVICE_ID:-}" ]; then
+        railway service "${RAILWAY_SERVICE_ID}" || true
+      fi
+
+  - name: 🌐 Add custom domains
+    run: |
+      set -e
+      # Add apex and www; accept if they already exist
+      railway domain add noidlabs.co || railway domains add noidlabs.co || true
+      railway domain add www.noidlabs.co || railway domains add www.noidlabs.co || true
+      echo "✅ Domains added to Railway — now verifying DNS…"
+
+  - name: 🧾 Verify DNS instructions
+    run: |
+      set -e
+      echo ""
+      echo "👉 Go to your domain registrar (Namecheap, Cloudflare, etc.) and create:" 
+      echo ""
+      echo "TYPE: CNAME | NAME: www | VALUE: ${RAILWAY_PROJECT_ID}.up.railway.app | TTL: Auto"
+      echo "TYPE: CNAME | NAME: @   | VALUE: ${RAILWAY_PROJECT_ID}.up.railway.app | TTL: Auto"
+      echo ""
+      echo "Note: If your registrar does not support root CNAME, use ALIAS/ANAME to the same target."
+      echo "⏳ DNS may take 5–15 minutes to propagate globally."
+      echo ""
+      railway domain list || railway domains list || true
+
+  - name: 🧠 Confirm deployment
+    run: |
+      set -e
+      railway status || true
+      echo "🚀 Your Railway app will respond to https://noidlabs.co once DNS finishes propagating."
