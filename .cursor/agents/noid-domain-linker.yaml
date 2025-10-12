@@ -1,0 +1,76 @@
+name: NoID Domain Linker
+trigger: manual
+description: >
+  Non-interactive Vercel deploy and link noidlabs.co to current project, then verify DNS.
+steps:
+  - name: ⚙️ Ensure Vercel CLI
+    run: |
+      set -e
+      if ! command -v vercel >/dev/null 2>&1; then
+        npm install -g vercel@latest
+      fi
+      vercel --version
+
+  - name: 🧱 Link project and deploy (prod)
+    run: |
+      set -euo pipefail
+      SCOPE="${VERCEL_SCOPE:-${VERCEL_ORG_ID:-}}"
+      if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${SCOPE:-}" ]; then
+        echo "Missing Vercel config. Export VERCEL_TOKEN and VERCEL_ORG_ID (or VERCEL_SCOPE)." >&2
+        exit 1
+      fi
+
+      if [ -z "${VERCEL_PROJECT_ID:-}" ] && [ -z "${VERCEL_PROJECT_NAME:-}" ]; then
+        echo "Provide VERCEL_PROJECT_ID or VERCEL_PROJECT_NAME." >&2
+        exit 1
+      fi
+
+      # Create .vercel link for this directory
+      if [ -n "${VERCEL_PROJECT_ID:-}" ]; then
+        vercel link --yes --cwd . --project "${VERCEL_PROJECT_ID}" --token "${VERCEL_TOKEN}" --scope "${SCOPE}"
+      else
+        vercel link --yes --cwd . --project "${VERCEL_PROJECT_NAME}" --token "${VERCEL_TOKEN}" --scope "${SCOPE}"
+      fi
+
+      # Pull prod env and settings (no prompts)
+      vercel pull --yes --environment=production --cwd . --token "${VERCEL_TOKEN}" --scope "${SCOPE}"
+
+      # Create production deployment and capture URL
+      DEPLOY_URL="$(vercel deploy --prod --confirm --cwd . --token "${VERCEL_TOKEN}" --scope "${SCOPE}")"
+      echo "Deployment URL: ${DEPLOY_URL}"
+
+      # Save URL for later steps
+      mkdir -p .vercel
+      echo "${DEPLOY_URL}" > .vercel/.last_deploy_url
+
+  - name: 🌐 Add domain to account and project
+    run: |
+      set -euo pipefail
+      SCOPE="${VERCEL_SCOPE:-${VERCEL_ORG_ID:-}}"
+      DEPLOY_URL="$(cat .vercel/.last_deploy_url 2>/dev/null || true)"
+
+      # Ensure domain exists on the account/team
+      vercel domains add noidlabs.co --token "${VERCEL_TOKEN}" --scope "${SCOPE}" || true
+
+      # Prefer project-level domain assignment if available
+      if vercel help project >/dev/null 2>&1; then
+        vercel project add-domain "${VERCEL_PROJECT_ID:-${VERCEL_PROJECT_NAME}}" noidlabs.co --token "${VERCEL_TOKEN}" --scope "${SCOPE}" || true
+      fi
+
+      # Fallback: alias latest deployment to domain (per-deployment)
+      if [ -n "${DEPLOY_URL}" ]; then
+        vercel alias set "${DEPLOY_URL}" noidlabs.co --token "${VERCEL_TOKEN}" --scope "${SCOPE}" || true
+      fi
+
+  - name: 🔍 Verify DNS and configuration
+    run: |
+      set -e
+      SCOPE="${VERCEL_SCOPE:-${VERCEL_ORG_ID:-}}"
+      echo "Inspecting domain status..."
+      vercel domains inspect noidlabs.co --token "${VERCEL_TOKEN}" --scope "${SCOPE}" || true
+      echo
+      echo "Listing DNS records (if using Vercel DNS)..."
+      vercel dns ls noidlabs.co --token "${VERCEL_TOKEN}" --scope "${SCOPE}" || true
+      echo
+      echo "If domain is external, ensure an A record to 76.76.21.21 (apex) and CNAME www -> cname.vercel-dns.com."
+      echo "✅ Domain setup initiated. DNS may take ~5–15 minutes to propagate."
