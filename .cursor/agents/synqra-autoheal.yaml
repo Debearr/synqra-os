@@ -1,0 +1,21 @@
+# Synqra AutoHeal agent
+# Automatically redeploys Synqra if it's unreachable
+---
+trigger:
+  - schedule: "*/30 * * * *"   # every 30 minutes
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+steps:
+  - name: Check Synqra Health
+    run: |
+      STATUS=$(curl -Is https://synqra.co | head -n 1 | awk '{print $2}')
+      if [ "$STATUS" != "200" ]; then
+        echo "⚠️ Synqra down (Status: $STATUS). Redeploying..."
+        railway redeploy --service=synqra-os --token=$RAILWAY_TOKEN
+      else
+        echo "✅ Synqra healthy (Status: $STATUS)"
+      fi
+
+  - name: Optional Notify
+    run: |
+      echo "Synqra AutoHeal check complete."

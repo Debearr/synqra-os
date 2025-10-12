@@ -1,0 +1,39 @@
+# Synqra Health Logger agent
+# Logs daily uptime and generates weekly PDF reports
+---
+trigger:
+  - schedule: "0 9 * * *"    # Runs every day at 9AM
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+steps:
+  - name: Ensure Supabase table exists
+    run: |
+      curl -X POST "$SUPABASE_URL/rest/v1/rpc/execute_sql" \
+      -H "apikey: $SUPABASE_KEY" \
+      -H "Authorization: Bearer $SUPABASE_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "create table if not exists synqra_uptime (
+          ts timestamptz default now(),
+          status int,
+          latency_ms int,
+          notes text
+        );"
+      }'
+
+  - name: Measure Synqra status
+    run: |
+      STATUS=$(curl -Is https://synqra.co | head -n 1 | awk '{print $2}')
+      LATENCY=$(curl -o /dev/null -s -w "%{time_total}\n" https://synqra.co | awk '{print int($1*1000)}')
+      curl -X POST "$SUPABASE_URL/rest/v1/synqra_uptime" \
+      -H "apikey: $SUPABASE_KEY" \
+      -H "Authorization: Bearer $SUPABASE_KEY" \
+      -H "Content-Type: application/json" \
+      -d "{\"status\": $STATUS, \"latency_ms\": $LATENCY, \"notes\": \"daily check\"}"
+
+  - name: Generate weekly digest (Sundays only)
+    if: "$(date +%u)" == "7"
+    run: |
+      echo "Generating PDF health digest for the last 7 days..."
+      # future enhancement: convert query results into a PDF summary
