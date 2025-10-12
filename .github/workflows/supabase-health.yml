@@ -1,0 +1,82 @@
+name: Supabase Health Cell
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # runs every 12 hours
+  workflow_dispatch: {}      # allows manual trigger
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Heartbeat (update pulse)
+        id: beat
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          set -euo pipefail
+          START_NS=$(date +%s%N)
+
+          RESP_CODE=$(curl -s -o /tmp/pulse.txt -w "%{http_code}" \
+            -X PATCH "$SUPABASE_URL/rest/v1/health_pulse?k=eq.pulse" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{"last_ping":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}')
+
+          END_NS=$(date +%s%N)
+          ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
+
+          echo "resp_code=$RESP_CODE" >> "$GITHUB_OUTPUT"
+          echo "elapsed_ms=$ELAPSED_MS" >> "$GITHUB_OUTPUT"
+
+          if [ "$RESP_CODE" -lt 200 ] || [ "$RESP_CODE" -ge 300 ]; then
+            echo "Heartbeat failed with HTTP $RESP_CODE"
+            exit 1
+          fi
+
+      - name: Log success in health_logs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          RESP_CODE: ${{ steps.beat.outputs.resp_code }}
+          ELAPSED_MS: ${{ steps.beat.outputs.elapsed_ms }}
+        run: |
+          curl -s -o /dev/null -X POST "$SUPABASE_URL/rest/v1/health_logs" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"OK","note":"heartbeat","http_code":'"$RESP_CODE"',"elapsed_ms":'"$ELAPSED_MS"'}'
+
+      - name: Mirror success to SELFIX (optional)
+        if: success()
+        env:
+          SELFIX_WEBHOOK_URL: ${{ secrets.SELFIX_WEBHOOK_URL }}
+        run: |
+          if [ -n "${SELFIX_WEBHOOK_URL:-}" ]; then
+            curl -s -X POST "$SELFIX_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d '{"event":"supabase_heartbeat","status":"OK"}' >/dev/null || true
+          fi
+
+      - name: On failure → log + alert
+        if: failure()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          curl -s -o /dev/null -X POST "$SUPABASE_URL/rest/v1/health_logs" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"FAIL","note":"heartbeat failed","http_code":500}' >/dev/null || true
+
+          if [ -n "${ALERT_WEBHOOK_URL:-}" ]; then
+            curl -s -X POST "$ALERT_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d '{"text":"⚠️ Supabase heartbeat failed — project may be paused or unreachable. Restore or upgrade to Pro."}' || true
+          fi
