@@ -6,18 +6,23 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "export:slides": "node scripts/exportSlides.js"
+    "export:slides": "node scripts/exportSlides.js",
+    "task": "node scripts/run-cursor-task.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.7",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "next": "^14.2.7",
+    "node-fetch": "^3.3.2",
     "puppeteer": "^23.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
+    "js-yaml": "^4.1.0",
     "@tailwindcss/postcss": "^4.1.14",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",

@@ -2,18 +2,23 @@ name: Synqra Auto Train
 trigger: ["postDeploy"]
 steps:
   - name: Harvest latest insights
-    run: npx cursor run synqra-insight-harvest
+    run: |
+      node scripts/fetchLinkedInData.js
+      node scripts/synqra-analyze.js --source="linkedin" --metrics="impressions,comments,shares,likes"
+      node scripts/synqra-generate.js --mode="growth" --topics="founder mindset, AI hustle, automation freedom"
+      mkdir -p reports/insights
+      mv synqra-output.json reports/insights/$(date +%Y-%m-%d)_linkedin.json
 
   - name: Upload analytics to Supabase
     run: node scripts/supabaseInsert.js
 
   - name: Generate next 2 post drafts
-    run: npx synqra-generate --mode="growth" --count=2 --topics="founder mindset, AI hustle, automation freedom"
+    run: node scripts/synqra-generate.js --mode="growth" --count=2 --topics="founder mindset, AI hustle, automation freedom"
 
   - name: Push drafts to /posts folder
     run: |
       mkdir -p posts
-      mv synqra-drafts/* posts/
+      mv synqra-drafts/* posts/ 2>/dev/null || true
 
   - name: Send summary email
-    run: npx synqra-digest --email="tomford46661@gmail.com"
+    run: node scripts/synqra-digest.js --email="tomford46661@gmail.com"

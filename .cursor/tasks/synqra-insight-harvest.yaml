@@ -5,10 +5,10 @@ steps:
     run: node scripts/fetchLinkedInData.js
 
   - name: Analyze performance
-    run: npx synqra-analyze --source="linkedin" --metrics="impressions,comments,shares,likes"
+    run: node scripts/synqra-analyze.js --source="linkedin" --metrics="impressions,comments,shares,likes"
 
   - name: Generate content plan
-    run: npx synqra-generate --mode="growth" --topics="founder story, resilience, AI, innovation"
+    run: node scripts/synqra-generate.js --mode="growth" --topics="founder story, resilience, AI, innovation"
 
   - name: Save report
     run: |
@@ -16,4 +16,4 @@ steps:
       mv synqra-output.json reports/insights/$(date +%Y-%m-%d)_linkedin.json
 
   - name: Send summary email
-    run: npx synqra-digest --email="tomford46661@gmail.com"
+    run: node scripts/synqra-digest.js --email="tomford46661@gmail.com"

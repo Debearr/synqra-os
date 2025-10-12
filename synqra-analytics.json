@@ -1,0 +1,25 @@
+{
+  "mock": true,
+  "organization": "YOUR_ORG_ID",
+  "generatedAt": "2025-10-12T12:13:19.262Z",
+  "impressions": 115,
+  "comments": 118,
+  "shares": 141,
+  "likes": 20,
+  "items": [
+    {
+      "id": 1,
+      "impressions": 1200,
+      "comments": 4,
+      "shares": 2,
+      "likes": 40
+    },
+    {
+      "id": 2,
+      "impressions": 3400,
+      "comments": 12,
+      "shares": 6,
+      "likes": 120
+    }
+  ]
+}

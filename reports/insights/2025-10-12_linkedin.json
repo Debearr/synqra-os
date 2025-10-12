@@ -1,0 +1,21 @@
+{
+  "source": "linkedin",
+  "analyzedAt": "2025-10-12T12:13:19.368Z",
+  "metricsAnalyzed": [
+    "impressions",
+    "comments",
+    "shares",
+    "likes"
+  ],
+  "insights": {
+    "total": {
+      "impressions": 3,
+      "comments": 3,
+      "shares": 3,
+      "likes": 3
+    },
+    "notes": [
+      "Heuristic counts computed over raw JSON."
+    ]
+  }
+}
