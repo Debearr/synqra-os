@@ -1,0 +1,114 @@
+name: Synqra Domain Health Watchdog
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  domain-health:
+    name: Check synqra.co domain health
+    runs-on: ubuntu-latest
+    env:
+      DOMAIN: synqra.co
+      URL: https://synqra.co
+    steps:
+      - name: Check Synqra domain status
+        id: http
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS=$(curl -fsSIL -o /dev/null -w "%{http_code}" -m 20 "$URL" || true)
+          STATUS_LINE=$(curl -IsS "$URL" | head -n1 | tr -d '\r' || true)
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "status_line=$STATUS_LINE" >> "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Synqra is live and reachable."
+          else
+            echo "❌ Synqra not yet reachable (HTTP $STATUS)."
+          fi
+
+      - name: Verify SSL certificate
+        id: ssl
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSL_INFO=$(echo | openssl s_client -connect "${DOMAIN}:443" -servername "${DOMAIN}" 2>/dev/null | openssl x509 -noout -dates || true)
+
+          # Expose as output (multi-line)
+          {
+            echo "ssl_info<<'EOF'"
+            echo "$SSL_INFO"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+          if [ -n "$SSL_INFO" ]; then
+            echo "🔒 SSL certificate detected."
+          else
+            echo "⚠️ No SSL yet — still propagating."
+          fi
+
+      - name: Compute health result
+        id: result
+        shell: bash
+        run: |
+          OK="false"
+          if [ "${{ steps.http.outputs.http_status }}" = "200" ] && [ -n "${{ steps.ssl.outputs.ssl_info }}" ]; then
+            OK="true"
+          fi
+          echo "health_ok=$OK" >> "$GITHUB_OUTPUT"
+
+      - name: Append run summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Synqra Domain Health Report"
+            echo ""
+            echo "- URL: $URL"
+            echo "- Time: $(date -u) (UTC)"
+            echo "- HTTP: ${{ steps.http.outputs.status_line }}"
+            if [ -n "${{ steps.ssl.outputs.ssl_info }}" ]; then
+              echo "- SSL:"
+              echo '```'
+              echo "${{ steps.ssl.outputs.ssl_info }}"
+              echo '```'
+            else
+              echo "- SSL: unavailable"
+            fi
+            echo "- Health OK: ${{ steps.result.outputs.health_ok }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Send email notification (optional)
+        if: ${{ steps.result.outputs.health_ok == 'true' && secrets.SMTP_HOST != '' && secrets.SMTP_USERNAME != '' && secrets.SMTP_PASSWORD != '' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          to: tomford46661@gmail.com
+          subject: "✅ Synqra is Live!"
+          from: "Synqra Watchdog <noreply@synqra.co>"
+          content_type: text/plain
+          body: |
+            Synqra Domain Health Report
+
+            HTTP: ${{ steps.http.outputs.status_line }}
+            SSL:
+            ${{ steps.ssl.outputs.ssl_info }}
+
+            Time: ${{ github.run_started_at }}
+            URL: ${{ env.URL }}
+
+      - name: Telegram alert (optional)
+        if: ${{ steps.result.outputs.health_ok == 'true' && secrets.TELEGRAM_TOKEN != '' && secrets.TELEGRAM_TO != '' }}
+        uses: appleboy/telegram-action@v0.1.3
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ Synqra is live! SSL verified at https://synqra.co
+            HTTP: ${{ steps.http.outputs.status_line }}
+            Time: ${{ github.run_started_at }}

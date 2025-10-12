@@ -1,0 +1,29 @@
+name: Synqra Domain Health Monitor
+trigger:
+  - schedule: "*/10 * * * *"   # every 10 minutes
+steps:
+  - name: Check Synqra availability
+    run: |
+      STATUS=$(curl -Is https://synqra.co | head -n 1 | grep "200")
+      SSL=$(curl -Iv https://synqra.co 2>&1 | grep "SSL connection")
+      if [ -n "$STATUS" ] && [ -n "$SSL" ]; then
+        echo "✅ Synqra is live and SSL verified."
+      else
+        echo "❌ Synqra not yet reachable or SSL pending."
+      fi
+
+  - name: Send summary email
+    if: "success"
+    uses: supabase/send-email
+    with:
+      to: "tomford46661@gmail.com"
+      subject: "✅ Synqra is Live!"
+      body: |
+        Your domain https://synqra.co is now active with SSL enabled.
+        Visit it from browser or phone to confirm the landing page.
+
+  - name: Telegram alert
+    uses: telegram/send-message
+    with:
+      chat_id: "<your_chat_id>"
+      text: "✅ Synqra is live! SSL verified at https://synqra.co"
