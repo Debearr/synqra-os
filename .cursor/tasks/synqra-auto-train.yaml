@@ -1,0 +1,19 @@
+name: Synqra Auto Train
+trigger: ["postDeploy"]
+steps:
+  - name: Harvest latest insights
+    run: npx cursor run synqra-insight-harvest
+
+  - name: Upload analytics to Supabase
+    run: node scripts/supabaseInsert.js
+
+  - name: Generate next 2 post drafts
+    run: npx synqra-generate --mode="growth" --count=2 --topics="founder mindset, AI hustle, automation freedom"
+
+  - name: Push drafts to /posts folder
+    run: |
+      mkdir -p posts
+      mv synqra-drafts/* posts/
+
+  - name: Send summary email
+    run: npx synqra-digest --email="tomford46661@gmail.com"
