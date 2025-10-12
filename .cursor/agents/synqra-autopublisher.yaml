@@ -1,0 +1,40 @@
+name: Synqra AutoPublisher
+trigger:
+  - manual
+description: >
+  Fully automated LinkedIn publisher. Creates local .env template, helps retrieve an access token, then posts an update using synqra-publish.js.
+steps:
+  - name: 🧱 Ensure dependencies
+    run: |
+      npm --version >/dev/null 2>&1 || { echo "Node & npm are required."; exit 1; }
+      npm install axios dotenv --silent
+
+  - name: 🧩 Create .env template if missing
+    run: |
+      if [ ! -f ".env" ]; then
+        cat <<'EOF' > .env
+        # LinkedIn API access token (Bearer token)
+        LINKEDIN_ACCESS_TOKEN=
+        # Full person URN (e.g., urn:li:person:XXXXXXXX)
+        LINKEDIN_PERSON_URN=
+        # Optional organization URN (e.g., urn:li:organization:YYYYYYYY)
+        LINKEDIN_ORG_URN=
+        # "person" or "organization"
+        POST_AS=person
+        # Optional custom post text
+        POST_TEXT=🚀 Synqra test post — automation setup complete!
+        EOF
+        echo ".env created. Fill the values before publishing."
+      else
+        echo ".env already exists; not overwriting."
+      fi
+
+  - name: ⚡ How to fetch a LinkedIn token
+    run: |
+      echo "Open your LinkedIn Developer app → Auth tab → copy CLIENT_ID and CLIENT_SECRET"
+      echo "Then visit (replace CLIENT_ID and REDIRECT_URI):"
+      echo "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=CLIENT_ID&redirect_uri=http://localhost:3000/auth/linkedin/callback&scope=w_member_social%20r_liteprofile%20r_emailaddress"
+      echo "Exchange the 'code' for an access token via the token endpoint."
+
+  - name: 🚀 Publish post
+    run: node synqra-publish.js

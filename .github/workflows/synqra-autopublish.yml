@@ -1,0 +1,24 @@
+name: Synqra AutoPublisher
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  post-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install LinkedIn publisher deps
+        run: npm install axios dotenv
+      - name: Publish to LinkedIn
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
+          POST_AS: ${{ vars.POST_AS || 'person' }}
+          POST_TEXT: ${{ vars.POST_TEXT }}
+        run: node synqra-publish.js
