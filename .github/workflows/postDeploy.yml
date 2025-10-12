@@ -5,26 +5,49 @@ on:
     types: [postDeploy]
 
 jobs:
-  run:
+  guardian:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install dependencies
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run Auto Homepage Guardian+
         run: |
-          npm ci
-      - name: Run CLOSER agent
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-4o-mini
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_MODEL: claude-3-5-sonnet-20240620
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CLOSER_TASK: "Post-deploy: validate and polish latest changes for release notes."
-          CLOSER_ROLE: copywriter
+          echo "🔍 Checking homepage and essentials..."
+          if [ ! -f "pages/index.js" ] && [ ! -f "app/page.tsx" ]; then
+            echo "⚠️ No homepage found — generating default Synqra landing page..."
+            mkdir -p pages
+            cat <<'EOF' > pages/index.js
+            export default function Home() {
+              return (
+                <div style={{
+                  height:'100vh',
+                  display:'flex',
+                  flexDirection:'column',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  backgroundColor:'#000',
+                  color:'#fff',
+                  fontFamily:'sans-serif'
+                }}>
+                  <h1>Welcome to Synqra</h1>
+                  <p>Your automation ecosystem is live.</p>
+                </div>
+              );
+            }
+            EOF
+          fi
+
+          # ✅ Favicon, manifest & metadata safeguard
+          mkdir -p public
+          [ ! -f "public/favicon.ico" ] && echo "🧩 Restoring missing favicon..." && touch public/favicon.ico
+          [ ! -f "public/manifest.json" ] && echo '{"name":"Synqra","short_name":"Synqra","start_url":"/"}' > public/manifest.json
+          [ ! -f "public/meta.json" ] && echo '{"title":"Synqra","description":"Automation ecosystem by NØID Labs"}' > public/meta.json
+
+      - name: Commit & Push Fixes
         run: |
-          npm run closer
+          git config user.name "Auto Guardian"
+          git config user.email "bot@noidlabs.io"
+          git add .
+          git commit -m "AutoHomepageGuardian+: ensured homepage, favicon, manifest, meta present" || true
+          git push
