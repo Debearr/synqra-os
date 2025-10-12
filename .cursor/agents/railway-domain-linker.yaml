@@ -1,0 +1,156 @@
+name: Railway Domain Linker – NoID Labs
+trigger: manual
+description: >
+  Links a custom domain to the deployed Railway service, prints correct DNS
+  instructions (including apex options), optionally verifies propagation, and
+  can deploy a branded placeholder page.
+
+steps:
+  - name: ⚙️ Configure
+    run: |
+      set -euo pipefail
+      : "${RAILWAY_TOKEN:?Missing RAILWAY_TOKEN}"
+      : "${RAILWAY_PROJECT_ID:?Missing RAILWAY_PROJECT_ID}"
+
+      export CUSTOM_DOMAIN_ROOT="${CUSTOM_DOMAIN_ROOT:-noidlabs.co}"
+      export CUSTOM_DOMAIN_WWW="${CUSTOM_DOMAIN_WWW:-www.${CUSTOM_DOMAIN_ROOT}}"
+      export RAILWAY_SERVICE_NAME="${RAILWAY_SERVICE_NAME:-web}"
+      export DNS_VERIFY="${DNS_VERIFY:-true}"
+      export VERIFY_TIMEOUT_SECONDS="${VERIFY_TIMEOUT_SECONDS:-900}"
+      export VERIFY_INTERVAL_SECONDS="${VERIFY_INTERVAL_SECONDS:-20}"
+
+      echo "Using project: $RAILWAY_PROJECT_ID"
+      echo "Domains: root=$CUSTOM_DOMAIN_ROOT, www=$CUSTOM_DOMAIN_WWW"
+      echo "Service: $RAILWAY_SERVICE_NAME"
+      echo "DNS verification enabled: $DNS_VERIFY"
+
+  - name: 🧭 Authenticate with Railway
+    run: |
+      if ! command -v railway >/dev/null 2>&1; then
+        npm install -g @railway/cli
+      fi
+      railway --version
+      railway login --browserless --token "$RAILWAY_TOKEN"
+
+  - name: 🔍 Link project and environment
+    run: |
+      set -euo pipefail
+      railway link --project "$RAILWAY_PROJECT_ID"
+      if [ -n "${RAILWAY_ENVIRONMENT:-}" ]; then
+        railway environment use "$RAILWAY_ENVIRONMENT"
+      fi
+      echo "Linked to Railway project $RAILWAY_PROJECT_ID"
+      railway status || true
+
+  - name: 🌐 Add custom domains to Railway
+    run: |
+      set -euo pipefail
+      railway domain add "$CUSTOM_DOMAIN_ROOT" || true
+      railway domain add "$CUSTOM_DOMAIN_WWW" || true
+      echo "✅ Domains added to Railway (or already present)."
+
+      DEFAULT_HOST=$(railway status 2>/dev/null | sed -n 's/.*https:\/\/\([^ ]*\.up\.railway\.app\).*/\1/p' | head -n1 || true)
+      if [ -z "${DEFAULT_HOST}" ]; then
+        echo "⚠️ Could not auto-detect your Railway *.up.railway.app host from status."
+        echo "   Set RAILWAY_DEFAULT_HOST or check 'railway status' for the URL."
+      else
+        echo "Detected Railway host: $DEFAULT_HOST"
+      fi
+      export DEFAULT_HOST
+
+  - name: 🧾 DNS setup instructions
+    run: |
+      set -euo pipefail
+      echo ""
+      echo "👉 In your DNS provider (Namecheap, Cloudflare, Google Domains, etc.), create these records:"
+      echo ""
+      echo "TYPE: CNAME | NAME: www | VALUE: ${DEFAULT_HOST:-<your-service>.up.railway.app} | TTL: Auto"
+      echo ""
+      echo "For the apex/root '@' record, use ONE of the following:"
+      echo "- TYPE: ALIAS/ANAME (or CNAME with flattening) | NAME: @ | VALUE: ${DEFAULT_HOST:-<your-service>.up.railway.app} | TTL: Auto"
+      echo "- Or set a URL redirect from @ → https://${CUSTOM_DOMAIN_WWW} (commonly supported by registrars)"
+      echo ""
+      echo "⏳ DNS may take 5–30 min to propagate globally."
+      echo ""
+      railway domain list || true
+
+  - name: 🎨 Deploy branded placeholder
+    run: |
+      set -euo pipefail
+      cat > index.html << 'HTML'
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>NØID Labs Online</title>
+          <style>
+            body { background:#000; color:#0ff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; text-align:center; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+            .wrap { padding: 6vh 6vw; }
+            h1 { font-size: clamp(32px, 6vw, 64px); margin: 0 0 12px; letter-spacing: 0.02em; }
+            p { font-size: clamp(16px, 2.5vw, 22px); opacity: 0.9; margin: 0; }
+          </style>
+        </head>
+        <body>
+          <div class="wrap">
+            <h1>NØID Labs Online 🚀</h1>
+            <p>Drive Unseen. Earn Smart.</p>
+          </div>
+        </body>
+      </html>
+      HTML
+
+      echo "Deploying placeholder to service '$RAILWAY_SERVICE_NAME'…"
+      railway up --service "$RAILWAY_SERVICE_NAME" --detach || true
+      echo "✅ Placeholder deploy triggered — it will serve once DNS resolves."
+
+  - name: 🔁 Verify DNS and HTTPS (optional)
+    run: |
+      set -euo pipefail
+      if [ "${DNS_VERIFY}" != "true" ]; then
+        echo "Skipping DNS verification (DNS_VERIFY=$DNS_VERIFY)"
+        exit 0
+      fi
+
+      end_time=$(( $(date +%s) + VERIFY_TIMEOUT_SECONDS ))
+      success_root=false
+      success_www=false
+
+      check_http() {
+        local host="$1"
+        local code
+        code=$(curl -k -sS -o /dev/null -w "%{http_code}" --max-time 10 "https://$host" || true)
+        if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+          echo "✅ HTTPS reachable for $host (HTTP $code)"
+          return 0
+        else
+          echo "⏳ $host not ready yet (HTTP ${code:-none})"
+          return 1
+        fi
+      }
+
+      while [ $(date +%s) -lt $end_time ]; do
+        if ! $success_root; then
+          check_http "$CUSTOM_DOMAIN_ROOT" && success_root=true || true
+        fi
+        if ! $success_www; then
+          check_http "$CUSTOM_DOMAIN_WWW" && success_www=true || true
+        fi
+
+        if $success_root && $success_www; then
+          break
+        fi
+        sleep "$VERIFY_INTERVAL_SECONDS"
+      done
+
+      if $success_root && $success_www; then
+        echo "🎉 DNS and HTTPS look good for both $CUSTOM_DOMAIN_ROOT and $CUSTOM_DOMAIN_WWW"
+      else
+        echo "⚠️ Verification timed out. Current Railway domains:"
+        railway domain list || true
+        echo "You can re-run this agent later; propagation can take longer depending on TTL."
+      fi
+
+  - name: 🧠 Final status
+    run: |
+      railway status || true
+      echo "🚀 Your Railway app will respond to https://$CUSTOM_DOMAIN_ROOT once DNS finishes propagating."
