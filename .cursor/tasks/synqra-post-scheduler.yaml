@@ -1,0 +1,13 @@
+name: Synqra Post Scheduler
+trigger: ["daily"]
+steps:
+  - name: Fetch pending posts
+    run: node scripts/fetchPendingPosts.js
+
+  - name: Schedule or auto-publish
+    run: node scripts/synqra-publish.js --source="posts" --platform="linkedin" --mode="auto" --interval="48h"
+
+  - name: Log post status
+    run: |
+      mkdir -p logs/scheduler
+      echo "$(date): Scheduled new Synqra post" >> logs/scheduler/run_log.txt
