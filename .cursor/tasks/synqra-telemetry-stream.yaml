@@ -1,0 +1,8 @@
+name: Synqra Telemetry Stream
+model: gpt-5
+description: Logs system health, latency, and repair events into Supabase for historical analytics.
+
+steps:
+  - run: |
+      echo "📡 Synqra Telemetry Stream Active..."
+      bash scripts/synqra-telemetry.sh "${TARGET_URL:-https://synqra.co}"

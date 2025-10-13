@@ -1,0 +1,23 @@
+name: Synqra Telemetry Stream
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes
+  workflow_dispatch: {}
+
+jobs:
+  telemetry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run telemetry script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          TARGET_URL: ${{ secrets.TARGET_URL || 'https://synqra.co' }}
+        run: |
+          set -euo pipefail
+          bash scripts/synqra-telemetry.sh "$TARGET_URL"
