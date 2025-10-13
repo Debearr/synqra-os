@@ -1,0 +1,16 @@
+name: Auto-Redeploy
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Railway Redeploy
+        run: |
+          curl -X POST "https://backboard.railway.app/graphql/v2" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $RAILWAY_API_KEY" \
+          -d '{"query":"mutation { redeployService(id:\"SERVICE_ID_HERE\") { id status } }"}'

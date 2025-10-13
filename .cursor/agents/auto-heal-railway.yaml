@@ -1,0 +1,17 @@
+name: Synqra Auto-Heal Agent
+description: Monitors Railway + Supabase, auto-redeploys if health check fails.
+
+trigger:
+  - schedule: "*/30 * * * *"
+  - onFail: "auto-heal-run"
+
+steps:
+  - name: Check Synqra Health
+    run: |
+      response=$(curl -s -o /dev/null -w "%{http_code}" https://synqra.co)
+      if [ "$response" != "200" ]; then
+        echo "❌ Health check failed ($response), triggering redeploy..."
+        gh workflow run redeploy.yml
+      else
+        echo "✅ Synqra healthy (HTTP $response)"
+      fi
