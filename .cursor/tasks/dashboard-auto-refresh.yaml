@@ -1,0 +1,9 @@
+name: Synqra Dashboard Auto-Refresh
+model: gpt-5
+description: Automatically re-runs the activity board every 10 minutes.
+steps:
+  - run: |
+      while true; do
+        cursor run .cursor/tasks/synqra-activity-board.yaml
+        sleep 600
+      done

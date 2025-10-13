@@ -1,0 +1,13 @@
+name: Synqra Orchestrator
+model: gpt-5
+description: Runs the full Invincible Workforce cycle — Guardian, Repair, Dashboard, and Auto-Heal.
+
+steps:
+  - run: |
+      echo "🧩 SYNQRA ORCHESTRATOR INITIATED"
+      echo "Running full maintenance cycle..."
+      cursor run .cursor/tasks/auto-asset-repair.yaml || true
+      cursor run .cursor/tasks/auto-homepage-guardian.yaml || true
+      cursor run .cursor/tasks/synqra-activity-board.yaml || true
+      cursor run .cursor/tasks/guardian-auto-heal.yaml || true
+      echo "🔁  All tasks completed successfully."

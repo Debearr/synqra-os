@@ -1,0 +1,13 @@
+name: Synqra Homepage Guardian
+model: gpt-5
+description: Checks production homepage health and alerts on failures.
+steps:
+  - run: |
+      echo "🔎 Checking homepage health..."
+      STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://synqra.co)
+      if [ "$STATUS_CODE" != "200" ]; then
+        echo "🚨  404/5xx detected! Consider triggering auto-repair and notification."
+        # webhook/email optional
+      else
+        echo "✅ Homepage healthy."
+      fi

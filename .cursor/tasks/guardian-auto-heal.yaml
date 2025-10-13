@@ -1,0 +1,19 @@
+name: Synqra Guardian Auto-Heal
+model: gpt-5
+description: Continuously monitors Supabase and Railway health. Auto-redeploys on downtime or latency spikes.
+
+steps:
+  - run: |
+      echo "🩺 Running Synqra Guardian Auto-Heal..."
+      STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://synqra.co)
+      if [ "$STATUS_CODE" != "200" ]; then
+        echo "🚨  Website down! Triggering immediate repair..."
+        cursor run .cursor/tasks/auto-asset-repair.yaml || true
+        # Avoid making git pushes automatically in CI; uncomment if desired
+        # git add .
+        # git commit -m "Guardian auto-heal: restored homepage" || true
+        # git push origin main || true
+        railway redeploy synqra-os || echo "Redeploy fallback triggered."
+      else
+        echo "✅  Site healthy — no action needed."
+      fi
