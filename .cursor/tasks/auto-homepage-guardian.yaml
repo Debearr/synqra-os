@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Try to resolve a homepage URL from environment variables
+URL="${HOMEPAGE_URL:-${PRODUCTION_URL:-${DOMAIN:-${SITE_URL:-}}}}"
+
+if [ -z "$URL" ]; then
+  echo "No HOMEPAGE_URL/PRODUCTION_URL/DOMAIN/SITE_URL provided; skipping." >&2
+  exit 0
+fi
+
+# Normalize URL by ensuring it has a scheme
+if [[ "$URL" != http* ]]; then
+  URL="https://$URL"
+fi
+
+# Basic reachability check
+HTTP_CODE=$(curl -s -o /tmp/homepage_guardian.html -w "%{http_code}" "$URL")
+
+echo "HTTP $HTTP_CODE for $URL"
+
+# Accept any 2xx or 3xx as OK
+if [[ "$HTTP_CODE" =~ ^2|3 ]]; then
+  echo "Homepage reachable."
+  exit 0
+fi
+
+# On failure, print snippet for debugging
+head -n 50 /tmp/homepage_guardian.html || true
+exit 1
