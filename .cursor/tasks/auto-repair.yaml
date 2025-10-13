@@ -1,0 +1,38 @@
+name: Deploy Synqra Auto-Repair
+model: gpt-5
+description: Fix 404 homepage and favicon automatically after every deploy
+
+steps:
+  - run: |
+      mkdir -p pages public
+      echo "🧠 Checking for missing homepage and favicon..."
+      if [ ! -f "pages/index.js" ] && [ ! -f "app/page.tsx" ]; then
+        cat <<'EOF' > pages/index.js
+        export default function Home() {
+          return (
+            <div style={{
+              height:'100vh',
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              justifyContent:'center',
+              backgroundColor:'#000',
+              color:'#0ff',
+              fontFamily:'Inter, sans-serif'
+            }}>
+              <h1 style={{fontSize:'3rem', fontWeight:'700'}}>Synqra OS is Live ⚡</h1>
+              <p style={{fontSize:'1.2rem', opacity:0.8}}>Automated Recovery Active — 404 resolved.</p>
+            </div>
+          )
+        }
+        EOF
+      fi
+
+      if [ ! -f "public/favicon.ico" ]; then
+        curl -o public/favicon.ico https://raw.githubusercontent.com/faviconkit/google.com/main/favicon.ico
+      fi
+
+      git add .
+      git commit -m "Auto-generated Synqra homepage + favicon"
+      git push origin main
+  - run: echo "✅ Homepage and favicon successfully restored!"

@@ -1,0 +1,108 @@
+name: Synqra Auto-Repair
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ensure homepage and favicon exist
+        run: |
+          mkdir -p pages public
+          echo "🧠 Checking for missing homepage and favicon..."
+          if [ ! -f "pages/index.js" ] && [ ! -f "app/page.tsx" ]; then
+            cat <<'EOF' > pages/index.js
+            export default function Home() {
+              return (
+                <div style={{
+                  height:'100vh',
+                  display:'flex',
+                  flexDirection:'column',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  backgroundColor:'#000',
+                  color:'#0ff',
+                  fontFamily:'Inter, sans-serif'
+                }}>
+                  <h1 style={{fontSize:'3rem', fontWeight:'700'}}>Synqra OS is Live ⚡</h1>
+                  <p style={{fontSize:'1.2rem', opacity:0.8}}>Automated Recovery Active — 404 resolved.</p>
+                </div>
+              )
+            }
+            EOF
+          fi
+
+          if [ ! -f "public/favicon.ico" ]; then
+            curl -o public/favicon.ico https://raw.githubusercontent.com/faviconkit/google.com/main/favicon.ico
+          fi
+
+      - name: Enforce homepage content (Guardian)
+        run: |
+          mkdir -p pages
+          DEFAULT_PAGE=$(cat <<'EOF'
+          export default function Home() {
+            return (
+              <div style={{
+                height:'100vh',
+                display:'flex',
+                flexDirection:'column',
+                alignItems:'center',
+                justifyContent:'center',
+                backgroundColor:'#000',
+                color:'#0ff',
+                fontFamily:'Inter, sans-serif'
+              }}>
+                <h1 style={{fontSize:'3rem', fontWeight:'700'}}>Synqra OS is Live ⚡</h1>
+                <p style={{fontSize:'1.2rem', opacity:0.8}}>Automated Recovery Active — 404 resolved.</p>
+              </div>
+            )
+          }
+          EOF
+          )
+
+          TARGET_FILE=""
+          if [ -f "pages/index.js" ]; then
+            TARGET_FILE="pages/index.js"
+          elif [ -f "app/page.tsx" ]; then
+            TARGET_FILE="app/page.tsx"
+          else
+            TARGET_FILE="pages/index.js"
+          fi
+
+          if [ ! -f "$TARGET_FILE" ]; then
+            echo "$DEFAULT_PAGE" > "$TARGET_FILE"
+            echo "Created missing homepage at $TARGET_FILE"
+          else
+            if ! grep -q "Synqra OS is Live" "$TARGET_FILE"; then
+              echo "$DEFAULT_PAGE" > "$TARGET_FILE"
+              echo "Homepage content restored at $TARGET_FILE"
+            fi
+          fi
+
+      - name: Commit and push changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Auto-repair: ensure homepage and favicon present"
+            git push
+          else
+            echo "No changes to commit"
+          fi

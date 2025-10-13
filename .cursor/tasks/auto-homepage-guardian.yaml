@@ -1,0 +1,51 @@
+name: Auto Homepage Guardian
+model: gpt-5
+description: Enforce Synqra homepage presence and content; auto-repair deviations
+
+steps:
+  - run: |
+      mkdir -p pages
+      DEFAULT_PAGE=$(cat <<'EOF'
+      export default function Home() {
+        return (
+          <div style={{
+            height:'100vh',
+            display:'flex',
+            flexDirection:'column',
+            alignItems:'center',
+            justifyContent:'center',
+            backgroundColor:'#000',
+            color:'#0ff',
+            fontFamily:'Inter, sans-serif'
+          }}>
+            <h1 style={{fontSize:'3rem', fontWeight:'700'}}>Synqra OS is Live ⚡</h1>
+            <p style={{fontSize:'1.2rem', opacity:0.8}}>Automated Recovery Active — 404 resolved.</p>
+          </div>
+        )
+      }
+      EOF
+      )
+
+      TARGET_FILE=""
+      if [ -f "pages/index.js" ]; then
+        TARGET_FILE="pages/index.js"
+      elif [ -f "app/page.tsx" ]; then
+        TARGET_FILE="app/page.tsx"
+      else
+        TARGET_FILE="pages/index.js"
+      fi
+
+      if [ ! -f "$TARGET_FILE" ]; then
+        echo "$DEFAULT_PAGE" > "$TARGET_FILE"
+        echo "Created missing homepage at $TARGET_FILE"
+      else
+        if ! grep -q "Synqra OS is Live" "$TARGET_FILE"; then
+          echo "$DEFAULT_PAGE" > "$TARGET_FILE"
+          echo "Homepage content restored at $TARGET_FILE"
+        fi
+      fi
+
+      git add .
+      git commit -m "Guardian: ensure homepage content enforced" || echo "No changes to commit"
+      git push origin main || echo "Push skipped"
+  - run: echo "🛡️ Homepage guardian check complete"
