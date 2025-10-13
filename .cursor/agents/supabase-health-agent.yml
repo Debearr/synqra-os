@@ -1,0 +1,30 @@
+name: Supabase Health Agent
+description: |
+  Monitors Supabase uptime and triggers GitHub Action workflows when health
+  pings fail or Supabase goes idle.
+
+trigger:
+  - schedule: "0 * * * *"     # every hour
+  - onFail: "supabase-health" # when last run failed
+
+env:
+  SUPABASE_URL: "https://tjfeindwmpuyajvjftke.supabase.co"
+
+steps:
+  - name: Check Supabase Health
+    run: |
+      set -euo pipefail
+      curl -s -o /dev/null -w "%{http_code}" \
+        "$SUPABASE_URL/rest/v1/health_pulse" \
+        -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" > status.txt
+
+  - name: Evaluate Response
+    run: |
+      set -euo pipefail
+      STATUS=$(cat status.txt)
+      if [ "$STATUS" != "200" ]; then
+        echo "⚠️ Supabase health check failed ($STATUS). Triggering GitHub Action..."
+        cursor run-action "Supabase Health Cell"
+      else
+        echo "✅ Supabase healthy ($STATUS)"
+      fi

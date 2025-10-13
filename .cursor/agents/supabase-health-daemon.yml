@@ -1,0 +1,34 @@
+name: Supabase Health Daemon
+description: |
+  Autonomous background agent that monitors, wakes, and heals Supabase connections.
+  Runs locally in Cursor — no GitHub Actions required.
+
+trigger:
+  - schedule: "*/20 * * * *" # every 20 minutes
+  - onFail: "supabase-health-daemon"
+
+env:
+  SUPABASE_URL: "https://tjfeindwmpuyajvjftke.supabase.co"
+
+steps:
+  - name: Check Supabase health
+    run: |
+      set -euo pipefail
+      STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+        -H "apikey: $SUPABASE_SERVICE_KEY" \
+        "$SUPABASE_URL/rest/v1/health_pulse")
+      echo "$STATUS" > status.txt
+
+  - name: Heal or log
+    run: |
+      set -euo pipefail
+      STATUS=$(cat status.txt)
+      if [ "$STATUS" != "200" ]; then
+        echo "🩺 Attempting to heal Supabase connection..."
+        curl -s -o /dev/null -X POST "$SUPABASE_URL/rest/v1/health_logs" \
+          -H "apikey: $SUPABASE_SERVICE_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"status":"heal","note":"Daemon auto-heal triggered"}'
+      else
+        echo "✅ Supabase healthy at $(date)"
+      fi
