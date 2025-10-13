@@ -1,0 +1,21 @@
+name: Synqra Guardian
+description: Invincible Agent — monitors uptime, triggers self-repair + redeploy.
+model: gpt-5
+repo: Debearr/synqra-os
+branch: main
+
+actions:
+  - run: |
+      echo "🛰 Checking homepage availability..."
+      STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://synqra.co)
+      if [ "$STATUS" != "200" ]; then
+        echo "🚨 Homepage down ($STATUS). Triggering repair + redeploy..."
+        cursor tasks run "Auto Repair Synqra Homepage"
+        git add .
+        git commit -m "Synqra Guardian auto-repair triggered"
+        git push origin main
+      else
+        echo "✅ Synqra homepage healthy ($STATUS)"
+      fi
+schedule:
+  - "*/10 * * * *"  # runs every 10 minutes

@@ -1,0 +1,10 @@
+name: Log Synqra Health to Supabase
+trigger: ["postDeploy"]
+
+steps:
+  - name: Record health log
+    run: |
+      curl -X POST "https://tjfeindwm…supabase.co/rest/v1/health_logs" \
+      -H "apikey: $SUPABASE_ANON_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"status":"healthy","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}'

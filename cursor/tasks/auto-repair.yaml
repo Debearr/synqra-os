@@ -1,0 +1,40 @@
+name: Auto Repair Synqra Homepage
+trigger: ["postDeploy"]
+
+steps:
+  - name: Validate homepage and favicon
+    run: |
+      echo "🧠 Running automated homepage validation..."
+      if [ ! -f "pages/index.js" ] && [ ! -f "app/page.tsx" ]; then
+        echo "⚠️ Homepage missing — generating fallback..."
+        mkdir -p pages
+        cat <<'EOF' > pages/index.js
+        export default function Home() {
+          return (
+            <div style={{
+              height:'100vh',
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              justifyContent:'center',
+              backgroundColor:'#000',
+              color:'#00FFFF',
+              fontFamily:'Inter, sans-serif'
+            }}>
+              <h1 style={{fontSize:'3rem', fontWeight:'bold'}}>Synqra OS ⚡</h1>
+              <p style={{fontSize:'1.2rem', opacity:0.8}}>
+                Auto-recovery active — system integrity restored.
+              </p>
+            </div>
+          )
+        }
+EOF
+      fi
+
+      if [ ! -f "public/favicon.ico" ]; then
+        echo "⚠️ Favicon missing — restoring default..."
+        mkdir -p public
+        curl -o public/favicon.ico https://raw.githubusercontent.com/faviconkit/github.com/main/favicon.ico
+      fi
+
+      echo "✅ Homepage & favicon check complete."

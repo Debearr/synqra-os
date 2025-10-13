@@ -1,0 +1,18 @@
+name: Auto-Redeploy Railway
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 */6 * * *"  # every 6 hours
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Railway Redeploy
+        run: |
+          curl -X POST "https://backboard.railway.app/graphql/v2" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RAILWAY_API_KEY }}" \
+          -d '{"query":"mutation { redeployService(id:\"SERVICE_ID_HERE\") { id status } }"}'
