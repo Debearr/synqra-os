@@ -17,7 +17,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          TARGET_URL: ${{ secrets.TARGET_URL || 'https://synqra.co' }}
+          TARGET_URL: ${{ secrets.TARGET_URL }}
         run: |
           set -euo pipefail
-          bash scripts/synqra-telemetry.sh "$TARGET_URL"
+          bash scripts/synqra-telemetry.sh "${TARGET_URL:-https://synqra.co}"
