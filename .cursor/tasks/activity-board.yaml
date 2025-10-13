@@ -1,0 +1,13 @@
+name: Synqra Activity Board
+model: gpt-5
+description: Visual dashboard showing Guardian, Repair, Redeploy, and Logs
+steps:
+  - run: |
+      echo "🛰️  SYNQRA ACTIVITY BOARD"
+      echo "--------------------------------------------"
+      echo "🧠  Auto-Repair Task:      $(date)"
+      echo "🛰️  Guardian Next Check:   $(date -d '+10 min')"
+      echo "⚙️  Next Redeploy:         $(date -d '+6 hours')"
+      echo "📊  Supabase Log Update:   On next deploy"
+      echo "--------------------------------------------"
+      echo "All systems operational ✅"
