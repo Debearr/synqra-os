@@ -1,0 +1,5 @@
+# Example CODEOWNERS. Update to real owners.
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+*       @your-org/your-team
+.github/ @your-org/maintainers
