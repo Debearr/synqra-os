@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# This task runs the full guardian suite. It expects HOMEPAGE_URL/DOMAIN set.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+bash "$SCRIPT_DIR/run-guardians.sh"
