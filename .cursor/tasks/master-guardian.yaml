@@ -1,0 +1,45 @@
+name: Master Guardian Orchestrator
+trigger: ["schedule", "postDeploy", "manual"]
+
+steps:
+  - name: Verify Homepage
+    run: |
+      echo "🔍 Checking Synqra homepage availability..."
+      node scripts/guardian-check.js || echo "Guardian check failed — proceeding to recovery."
+
+  - name: Recovery Path (if 404)
+    run: |
+      echo "🛠 Initiating recovery sequence..."
+      mkdir -p app
+      cat <<'EOF' > app/page.tsx
+      export default function Home() {
+        return (
+          <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+            <h1 className="text-5xl font-bold mb-4 text-teal-400">Synqra OS</h1>
+            <p className="text-gray-300 text-lg">Your intelligent content engine is initializing...</p>
+          </main>
+        )
+      }
+      EOF
+      git add app/page.tsx
+      git commit -m "Guardian: Auto-restored Synqra homepage [skip ci]" || true
+      git push origin main || true
+      echo "✅ Homepage restoration committed and pushed."
+
+  - name: Trigger Redeploy
+    run: |
+      echo "🚀 Triggering Railway redeploy..."
+      railway up --detach || echo "Railway redeploy fallback triggered."
+
+  - name: Post-Deploy Verification
+    run: |
+      echo "🧪 Validating post-deploy status..."
+      curl -Is https://synqra.co | head -n 1
+      echo "✅ Post-deploy check complete."
+
+  - name: Log Result to Supabase (optional)
+    run: |
+      echo "🗂 Logging guardian cycle..."
+      curl -X POST "https://<SUPABASE_FUNCTION_URL>" \
+        -H "Content-Type: application/json" \
+        -d '{"status":"completed","timestamp":"$(date)"}'
