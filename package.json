@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3000",
     "export:slides": "node scripts/exportSlides.js",
-    "init-config": "node scripts/init-config.js"
+    "init-config": "node scripts/init-config.js",
+    "smart:auto-init": "node scripts/smart-auto-init.js"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
