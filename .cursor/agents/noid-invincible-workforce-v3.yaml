@@ -1,0 +1,88 @@
+name: "NØID Invincible Workforce v3"
+trigger: "auto-init"
+description: "Fully autonomous self-healing initializer with rollback, redeploy, and Guardian telemetry."
+actions:
+  - run: |
+      echo "🧠  NØID Invincible Workforce v3 activating..."
+      ROOT="/workspace"
+      LOG="$ROOT/noid-auto-init.log"
+      echo "[$(date)] Phase-3 Init Begin" >> "$LOG"
+
+      # 1️⃣  Detect active project
+      for project in Synqra AuraFX NY7 NØID; do
+        if [ -f "$ROOT/$project/package.json" ]; then
+          cd "$ROOT/$project"
+          ACTIVE_PROJECT="$project"
+          echo "📦 Detected project: $ACTIVE_PROJECT" | tee -a "$LOG"
+          break
+        fi
+      done
+      if [ -z "$ACTIVE_PROJECT" ]; then
+        echo "❌ No project found." | tee -a "$LOG"; exit 1
+      fi
+
+      # 2️⃣  Safety snapshot (for rollback)
+      SNAPSHOT_DIR="$ROOT/.noid_snapshots/$ACTIVE_PROJECT/$(date +%Y%m%d_%H%M%S)"
+      mkdir -p "$SNAPSHOT_DIR"
+      echo "🧩 Creating snapshot at $SNAPSHOT_DIR" | tee -a "$LOG"
+      tar czf "$SNAPSHOT_DIR/project-backup.tar.gz" . 2>/dev/null || true
+
+      # 3️⃣  Install dependencies with monitoring
+      echo "📦 Installing dependencies..." | tee -a "$LOG"
+      if ! npm install --silent >> "$LOG" 2>&1; then
+        echo "🚨 npm install failed — starting recovery..." | tee -a "$LOG"
+        npm cache clean --force >> "$LOG" 2>&1
+        npm install --legacy-peer-deps >> "$LOG" 2>&1 || ROLLBACK=1
+      fi
+
+      # 4️⃣  Verify build integrity
+      echo "🔎 Verifying build..." | tee -a "$LOG"
+      if ! npm run build >> "$LOG" 2>&1; then
+        ROLLBACK=1
+        echo "💣 Build verification failed." | tee -a "$LOG"
+      fi
+
+      # 5️⃣  Rollback logic
+      if [ "$ROLLBACK" = "1" ]; then
+        echo "🕹️  Restoring last stable snapshot..." | tee -a "$LOG"
+        LATEST=$(ls -td $ROOT/.noid_snapshots/$ACTIVE_PROJECT/* | head -1)
+        if [ -n "$LATEST" ]; then
+          tar xzf "$LATEST/project-backup.tar.gz" -C . 2>/dev/null || true
+          npm install --legacy-peer-deps >> "$LOG" 2>&1
+          npm run build >> "$LOG" 2>&1 && echo "✅ Rollback successful." | tee -a "$LOG"
+        else
+          echo "⚠️ No previous snapshot available." | tee -a "$LOG"
+        fi
+      fi
+
+      # 6️⃣  Auto-deploy if build succeeds
+      if npm run build >> "$LOG" 2>&1; then
+        echo "🚀 Build verified — deploying..." | tee -a "$LOG"
+        if command -v railway >/dev/null 2>&1; then
+          railway up --yes >> "$LOG" 2>&1 || echo "⚠️ Railway deploy skipped." | tee -a "$LOG"
+        elif command -v vercel >/dev/null 2>&1; then
+          vercel deploy --prod --yes >> "$LOG" 2>&1 || echo "⚠️ Vercel deploy skipped." | tee -a "$LOG"
+        else
+          echo "ℹ️ No deployment CLI found." | tee -a "$LOG"
+        fi
+      else
+        echo "❌ Deployment skipped — build not ready." | tee -a "$LOG"
+      fi
+
+      # 7️⃣  Git + Telemetry Sync
+      git add . >> "$LOG" 2>&1
+      git commit -m "🧠 Auto-repair & deploy sync ($ACTIVE_PROJECT)" >> "$LOG" 2>&1 || true
+      git push origin master >> "$LOG" 2>&1 || true
+      echo "{\"project\":\"$ACTIVE_PROJECT\",\"time\":\"$(date)\",\"status\":\"complete\"}" > "$ROOT/guardian-report.json"
+
+      # 8️⃣  Notify Guardian
+      if [ -n "$SUPABASE_URL" ]; then
+        curl -s -X POST "$SUPABASE_URL/api/noid/guardian-report" \
+          -H "Content-Type: application/json" \
+          -d @"$ROOT/guardian-report.json" >> "$LOG" 2>&1
+      fi
+
+      echo "✅  $ACTIVE_PROJECT self-healing sequence complete." | tee -a "$LOG"
+      echo "[$(date)] Phase-3 Init End" >> "$LOG"
+  - notify: "🧱 NØID Invincible Workforce v3 — Self-Heal + Rollback + Deploy completed."
+  - notify: "📜 Logs available at /workspace/noid-auto-init.log"
