@@ -1,0 +1,28 @@
+name: "NØID Smart Auto Init"
+trigger: "auto-init"
+description: "Auto-detects and initializes NØID projects (Synqra or AuraFX) directly inside Cursor without needing local PowerShell."
+actions:
+  - run: |
+      echo "🧭 Detecting environment..."
+      if [ "$(uname -s)" = "Linux" ]; then
+        echo "🌐 Running in Cursor Cloud VM"
+        ROOT="/workspace"
+      else
+        echo "💻 Running locally on Windows"
+        ROOT="C:/Users/De Bear/OneDrive"
+      fi
+
+      if [ -f "$ROOT/Synqra/package.json" ]; then
+        cd "$ROOT/Synqra"
+        echo "📦 Synqra detected"
+      elif [ -f "$ROOT/AuraFX/package.json" ]; then
+        cd "$ROOT/AuraFX"
+        echo "📦 AuraFX detected"
+      else
+        echo "❌ No known project found."
+        exit 1
+      fi
+
+      npm install
+      npm run init-config || echo "⚠️ init-config script not found — skipping."
+  - notify: "✅ NØID Smart Auto Init completed successfully!"
