@@ -12,7 +12,11 @@ actions:
         ROOT="C:/Users/De Bear/OneDrive"
       fi
 
-      if [ -f "$ROOT/Synqra/package.json" ]; then
+      # Prefer project at the ROOT itself if present, else look for known subfolders
+      if [ -f "$ROOT/package.json" ]; then
+        cd "$ROOT"
+        echo "📦 Project detected at workspace root"
+      elif [ -f "$ROOT/Synqra/package.json" ]; then
         cd "$ROOT/Synqra"
         echo "📦 Synqra detected"
       elif [ -f "$ROOT/AuraFX/package.json" ]; then
