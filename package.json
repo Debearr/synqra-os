@@ -6,13 +6,19 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "export:slides": "node scripts/exportSlides.js"
+    "export:slides": "node scripts/exportSlides.js",
+    "apply:rls-policies": "node scripts/apply-rls-policies.mjs",
+    "env:verify": "node scripts/env-verify.mjs",
+    "fix:deployment-blockers": "node scripts/fix-deployment-blockers.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^16.4.5",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "next": "^14.2.7",
+    "node-fetch": "^3.3.2",
     "puppeteer": "^23.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
