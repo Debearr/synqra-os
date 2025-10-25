@@ -1,0 +1,35 @@
+{
+  "name": "synqra-mcp-orchestration",
+  "version": "1.0.0",
+  "description": "MCP Orchestration Server for Synqra/NØID/AuraFX AI automation system",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test-pipeline.js"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "orchestration",
+    "automation",
+    "synqra"
+  ],
+  "author": "Synqra AI",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "@supabase/supabase-js": "^2.45.0",
+    "@anthropic-ai/sdk": "^0.27.0",
+    "openai": "^4.56.0",
+    "axios": "^1.7.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

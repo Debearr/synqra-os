@@ -1,0 +1,92 @@
+name: MCP Server CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - claude/*
+    paths:
+      - 'mcp-server/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'mcp-server/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test MCP Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd mcp-server
+          npm ci
+
+      - name: Check for syntax errors
+        run: |
+          cd mcp-server
+          node --check server.js
+          node --check test-pipeline.js
+
+      - name: Verify configuration files
+        run: |
+          cd mcp-server
+          test -f package.json
+          test -f railway.json
+          test -f .env.example
+          test -f README.md
+
+  health-check:
+    name: Health Check (Post-Deploy)
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Check Railway health endpoint
+        run: |
+          if [ -n "${{ secrets.RAILWAY_APP_URL }}" ]; then
+            curl -f ${{ secrets.RAILWAY_APP_URL }}/health || exit 1
+          else
+            echo "RAILWAY_APP_URL not configured, skipping health check"
+          fi
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [test, health-check]
+    if: always()
+
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ MCP Server tests passed"
+          else
+            echo "❌ MCP Server tests failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.health-check.result }}" == "success" ]; then
+            echo "✅ MCP Server health check passed"
+          elif [ "${{ needs.health-check.result }}" == "skipped" ]; then
+            echo "⏭️  Health check skipped (not main branch)"
+          else
+            echo "⚠️  MCP Server health check failed"
+          fi
