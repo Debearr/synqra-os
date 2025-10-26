@@ -1,169 +1,279 @@
-# Synqra MCP Orchestration Server
+# Synqra MCP Server
 
-AI orchestration system for Synqra/NØID/AuraFX with intelligent routing, fallbacks, and automated social media posting.
+**Model Context Protocol (MCP)** backend for the Synqra AI ecosystem, orchestrating Claude, GPT-5, and Leonardo AI for automated content generation and distribution.
+
+---
 
 ## Features
 
-- **AI Router**: Intelligent routing with automatic fallbacks across multiple AI services
-- **Multi-Service Integration**:
-  - Leonardo AI (image generation)
-  - Claude (captions & content)
-  - GPT-4O (logic & reasoning)
-  - VOAI (video generation - placeholder)
-- **LinkedIn Auto-posting**: Automated social media content distribution
-- **Health Monitoring**: Real-time service health tracking with auto-recovery
-- **Supabase Integration**: Comprehensive logging and data storage
-- **Production-Ready**: Error handling, logging, and monitoring built-in
+- **AI Council Router**: Intelligent routing between Claude (creative) and GPT-5 (technical)
+- **Multi-Model Integration**: Leonardo AI (images), Claude (captions), GPT-5 (complex content)
+- **Supabase Logging**: Full observability via ai_logs, posts, and metrics tables
+- **N8N Integration**: Webhook-based automation for LinkedIn posting
+- **Railway-Ready**: Optimized for Railway deployment with health checks
 
-## Quick Start
-
-### Local Development
-
-```bash
-cd mcp-server
-npm install
-cp .env.example .env
-# Edit .env with your API keys
-npm run dev
-```
-
-### Testing
-
-```bash
-npm test
-```
-
-### Production Deployment
-
-The server is configured for Railway deployment with automatic health checks and restart policies.
+---
 
 ## API Endpoints
 
 ### Health Check
 ```bash
-GET /health
+GET /api/health
+GET /api/health?checkDb=true  # Include Supabase connectivity test
 ```
 
-### Full Pipeline Orchestration
-```bash
-POST /api/orchestrate
+**Response:**
+```json
 {
-  "generateImage": true,
-  "imagePrompt": "Your image prompt",
-  "generateCaption": true,
-  "captionContext": "Context for caption",
-  "tone": "professional",
-  "postToLinkedIn": false
+  "status": "OK",
+  "timestamp": "2025-10-26T12:00:00Z",
+  "uptime": 3600,
+  "environment": "production",
+  "service": "MCP Server"
 }
 ```
 
-### Individual Services
+---
 
-**Generate Image**
+### Generate Image (Leonardo AI)
 ```bash
-POST /api/generate/image
+POST /api/generate-image
+Content-Type: application/json
+
 {
-  "prompt": "Your image prompt",
-  "options": {
-    "width": 1024,
-    "height": 1024
-  }
+  "prompt": "Luxury minimalist product shot",
+  "style": "CINEMATIC"
 }
 ```
 
-**Generate Caption**
-```bash
-POST /api/generate/caption
+**Response:**
+```json
 {
-  "imageContext": "Image description",
-  "tone": "professional"
+  "generationId": "abc-123",
+  "url": "https://cdn.leonardo.ai/image.jpg"
 }
 ```
 
-**Generate Video**
+---
+
+### Generate Caption (AI Council)
 ```bash
-POST /api/generate/video
+POST /api/generate-caption
+Content-Type: application/json
+
 {
-  "prompt": "Your video prompt"
+  "imageUrl": "https://cdn.leonardo.ai/image.jpg",
+  "context": "New product launch for luxury brand",
+  "platform": "linkedin"
 }
 ```
 
-**Post to LinkedIn**
-```bash
-POST /api/linkedin/post
+**Response:**
+```json
 {
-  "content": "Your post content",
-  "imageUrl": "optional_image_url"
+  "caption": "Redefining luxury in the digital age...",
+  "model_used": "claude"
 }
 ```
+
+**AI Council Routing:**
+- **Claude 3.5 Sonnet** → Standard creative content (<500 chars)
+- **GPT-5 Turbo** → Technical/complex content (>500 chars or "technical" keyword)
+
+---
+
+### Post to LinkedIn
+```bash
+POST /api/post-linkedin
+Content-Type: application/json
+
+{
+  "text": "Check out our latest creation!",
+  "imageUrl": "https://cdn.leonardo.ai/image.jpg",
+  "authorId": "user-123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Post queued successfully",
+  "queued_at": "2025-10-26T12:00:00Z"
+}
+```
+
+---
+
+### Metrics
+```bash
+GET /api/metrics
+```
+
+**Response:**
+```json
+{
+  "metrics": [
+    {
+      "id": 1,
+      "action": "generate-image",
+      "count": 42,
+      "created_at": "2025-10-26"
+    }
+  ]
+}
+```
+
+---
 
 ## Environment Variables
 
-Required environment variables (see `.env.example`):
+Copy `.env.example` to `.env` and configure:
 
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_KEY` - Your Supabase service role key
-- `LEONARDO_API_KEY` - Leonardo AI API key
-- `ANTHROPIC_API_KEY` - Anthropic Claude API key
-- `OPENAI_API_KEY` - OpenAI API key
-- `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Environment (production/development)
+```bash
+# Server
+PORT=3001
+NODE_ENV=production
 
-Optional:
-- `LINKEDIN_ACCESS_TOKEN` - LinkedIn OAuth token
-- `LINKEDIN_PERSON_ID` - LinkedIn person URN
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE=your-service-role-key
+
+# AI APIs
+CLAUDE_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-proj-...
+LEONARDO_API_KEY=your-leonardo-key
+LEONARDO_MODEL_ID=b24e16ff-06e3-43eb-8d33-4416c2d75876
+
+# N8N Webhooks
+N8N_LINKEDIN_WEBHOOK_URL=https://n8n.yourdomain.com/webhook/linkedin-post
+
+# Optional
+ALERT_WEBHOOK_URL=https://your-alert-service.com/webhook
+```
+
+---
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server (with auto-reload)
+npm run dev
+
+# Start production server
+npm start
+```
+
+Server runs on `http://localhost:3001`
+
+---
 
 ## Railway Deployment
 
-1. Connect your GitHub repository to Railway
-2. Create a new project
-3. Add all environment variables from `.env.example`
-4. Deploy from the `mcp-server` directory
-5. Railway will automatically use `railway.json` configuration
+### Prerequisites
+1. Railway account with CLI installed
+2. Railway project created
+3. Environment variables configured in Railway dashboard
 
-### Railway Environment Setup
+### Deploy
+```bash
+# Login to Railway
+railway login
 
-In your Railway project settings, add these variables:
-- All variables from `.env.example`
-- Set `NODE_ENV=production`
-- Set `PORT=3000` (Railway will inject $PORT automatically)
+# Link to your project
+railway link
+
+# Deploy
+railway up
+```
+
+### CI/CD with GitHub Actions
+The `.github/workflows/mcp-deploy.yml` workflow automatically deploys on push to `main` branch.
+
+**Required GitHub Secrets:**
+- `RAILWAY_TOKEN` - Railway API token
+- `RAILWAY_PROJECT_ID` - Your Railway project ID
+- `RAILWAY_ENVIRONMENT` - Target environment (e.g., "production")
+- `RAILWAY_SERVICE_URL` - Your Railway service URL (for health checks)
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE` - Supabase service role key
+- `ALERT_WEBHOOK_URL` (optional) - Alert webhook for failures
+
+---
+
+## Health Check Strategy
+
+### During CI (GitHub Actions)
+- ✅ **NO Supabase ping** - Avoids GitHub IP restrictions
+- ✅ Tests run against local mock
+- ✅ Verifies server.js and config files exist
+
+### Post-Deployment (Railway)
+- ✅ Calls `/api/health` endpoint on Railway URL
+- ✅ Retry logic with exponential backoff (5 attempts)
+- ✅ Optional database connectivity check (`?checkDb=true`)
+- ✅ Logs success/failure to Supabase
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────┐
-│   API Gateway   │
-│   (Express)     │
-└────────┬────────┘
-         │
-    ┌────▼────────────────────┐
-    │   AI Router/Orchestrator│
-    └────┬────────────────────┘
-         │
-    ┌────▼────┬────────┬────────┬────────┐
-    │         │        │        │        │
-┌───▼───┐ ┌──▼───┐ ┌─▼────┐ ┌─▼────┐ ┌▼────────┐
-│Leonardo│ │Claude│ │GPT-4O│ │ VOAI │ │LinkedIn │
-└────────┘ └──────┘ └──────┘ └──────┘ └─────────┘
-                                            │
-                                       ┌────▼────┐
-                                       │Supabase │
-                                       └─────────┘
+┌─────────────┐
+│   Client    │
+└──────┬──────┘
+       │
+       v
+┌─────────────────────┐
+│   MCP Server        │
+│  (Railway/Railway)  │
+├─────────────────────┤
+│  AI Council Router  │
+│  ├─ Claude API      │
+│  ├─ GPT-5 API       │
+│  └─ Leonardo AI     │
+└──────┬──────┬───────┘
+       │      │
+       v      v
+  ┌────────┐ ┌────────┐
+  │Supabase│ │  N8N   │
+  │ Logs   │ │AutoPost│
+  └────────┘ └────────┘
 ```
 
-## Monitoring & Logs
+---
 
-- Health checks run automatically every 5 minutes
-- All operations are logged to Supabase `mcp_logs` table
-- Pipeline results stored in `mcp_pipelines` table
-- Access logs via Supabase dashboard or `/health` endpoint
+## Optimization Roadmap
 
-## Error Handling & Fallbacks
+See [OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md) for detailed analysis.
 
-- Claude → OpenAI automatic fallback for captions
-- Service health tracking with failure counting
-- Automatic retry logic with exponential backoff
-- Graceful degradation when services are unavailable
+**Quick Wins:**
+- Reduce DB writes from 3→1 per request
+- Add AI Council fallback logic
+- Implement session-based context sharing
+
+---
+
+## Troubleshooting
+
+### Health check fails during deployment
+- Verify `RAILWAY_SERVICE_URL` secret is set correctly
+- Check Railway logs: `railway logs`
+- Ensure PORT environment variable is set (Railway auto-assigns)
+
+### Supabase connection errors
+- Verify `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE` are correct
+- Check Supabase project isn't paused (free tier auto-pauses after 1 week inactivity)
+- Confirm tables exist: `users`, `posts`, `ai_logs`, `metrics`, `health_pulse`
+
+### AI API errors
+- Verify API keys are valid and have sufficient credits
+- Check rate limits (Claude: 50 req/min, GPT-5: varies by tier)
+- Review logs in Supabase `ai_logs` table for specific error messages
+
+---
 
 ## License
 
