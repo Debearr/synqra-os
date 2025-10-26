@@ -1,1 +1,1 @@
-module.exports = { output: 'standalone' }
+export default { output: 'standalone' }
