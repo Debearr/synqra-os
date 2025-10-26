@@ -1,0 +1,185 @@
+name: MCP Server - Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'mcp-server/**'
+      - '.github/workflows/mcp-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      skip_health_check:
+        description: 'Skip post-deployment health check'
+        required: false
+        default: 'false'
+
+env:
+  RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+  RAILWAY_ENVIRONMENT: ${{ secrets.RAILWAY_ENVIRONMENT }}
+
+jobs:
+  # Build and Test (NO Supabase ping - avoids GitHub IP restriction)
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: ./mcp-server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify server.js exists
+        run: |
+          if [ ! -f "server.js" ]; then
+            echo "Error: server.js not found"
+            exit 1
+          fi
+          echo "✓ server.js found"
+
+      - name: Check environment configuration
+        run: |
+          echo "Checking required files..."
+          test -f package.json && echo "✓ package.json" || exit 1
+          test -f railway.json && echo "✓ railway.json" || exit 1
+          test -f .env.example && echo "✓ .env.example" || exit 1
+          echo "All configuration files present"
+
+  # Deploy to Railway
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd mcp-server
+          railway link $RAILWAY_PROJECT_ID
+          railway up --detach --environment $RAILWAY_ENVIRONMENT
+          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+        id: deploy
+
+      - name: Wait for deployment to stabilize
+        run: sleep 30
+
+      - name: Output deployment info
+        run: |
+          echo "🚀 Deployment completed at: ${{ steps.deploy.outputs.deployment_time }}"
+          echo "📊 Environment: $RAILWAY_ENVIRONMENT"
+
+  # Post-Deployment Health Check (runs AFTER Railway deployment)
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event.inputs.skip_health_check != 'true' }}
+
+    steps:
+      - name: Health check - Basic endpoint
+        env:
+          RAILWAY_SERVICE_URL: ${{ secrets.RAILWAY_SERVICE_URL }}
+        run: |
+          echo "Checking health endpoint..."
+
+          # Retry logic with exponential backoff
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          SLEEP_TIME=2
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            RESP_CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+              "${RAILWAY_SERVICE_URL}/api/health")
+
+            if [ "$RESP_CODE" -eq 200 ]; then
+              echo "✓ Health check passed (HTTP $RESP_CODE)"
+              cat /tmp/health.json | jq '.'
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⚠️  Attempt $RETRY_COUNT failed (HTTP $RESP_CODE). Retrying in ${SLEEP_TIME}s..."
+            sleep $SLEEP_TIME
+            SLEEP_TIME=$((SLEEP_TIME * 2))
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          exit 1
+
+      - name: Health check - Database connectivity (optional)
+        if: success()
+        env:
+          RAILWAY_SERVICE_URL: ${{ secrets.RAILWAY_SERVICE_URL }}
+        run: |
+          echo "Checking database connectivity..."
+
+          RESP_CODE=$(curl -s -o /tmp/db_health.json -w "%{http_code}" \
+            "${RAILWAY_SERVICE_URL}/api/health?checkDb=true")
+
+          if [ "$RESP_CODE" -eq 200 ]; then
+            echo "✓ Database health check passed"
+            cat /tmp/db_health.json | jq '.'
+          else
+            echo "⚠️  Database health check returned HTTP $RESP_CODE"
+            cat /tmp/db_health.json || echo "No response body"
+            # Don't fail the workflow - DB might be temporarily unavailable
+          fi
+
+      - name: Log success to Supabase
+        if: success()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          curl -s -o /dev/null -X POST "$SUPABASE_URL/rest/v1/health_logs" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "status": "OK",
+              "note": "MCP deployment successful",
+              "service": "mcp-server",
+              "http_code": 200
+            }' || echo "Failed to log to Supabase (non-critical)"
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          if [ -n "${ALERT_WEBHOOK_URL}" ]; then
+            curl -s -X POST "$ALERT_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "text": "🚨 MCP Server deployment health check failed",
+                "service": "mcp-server",
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }' || echo "Failed to send alert"
+          fi
