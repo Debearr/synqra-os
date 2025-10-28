@@ -1,0 +1,21 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["components/**/*.{js,jsx,ts,tsx}", "app/**/*.{js,jsx,ts,tsx}"],
+      "rules": {
+        "no-restricted-syntax": [
+          "warn",
+          {
+            "selector": "Program:not(:has(ExpressionStatement > Literal[value='use client'])):has(CallExpression[callee.name=/^use/])",
+            "message": "Components using React hooks must include 'use client' directive at the top of the file."
+          }
+        ]
+      }
+    }
+  ]
+}
