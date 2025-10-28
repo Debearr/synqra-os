@@ -1,0 +1,31 @@
+#!/bin/bash
+
+echo ""
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║                                                       ║"
+echo "║              NØID SYNQRA DASHBOARD                    ║"
+echo "║                                                       ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo ""
+echo "🚀 Starting development server..."
+echo ""
+echo "✅ Dashboard Pages:"
+echo "   • /dashboard (Overview)"
+echo "   • /dashboard/content (Content Library)"
+echo "   • /dashboard/calendar (Calendar)"
+echo "   • /dashboard/analytics (Analytics)"
+echo "   • /dashboard/brand-voice (Brand Voice)"
+echo "   • /dashboard/integrations (Integrations)"
+echo "   • /dashboard/settings (Settings)"
+echo ""
+echo "🎨 Brand Colors Applied:"
+echo "   • Midnight Black (#0B0B0B)"
+echo "   • Gold Foil (#D4AF37)"
+echo "   • Neon Teal (#00FFC6)"
+echo "   • Soft Gray (#A0A0A0)"
+echo ""
+echo "⏳ Launching server on http://localhost:3000/dashboard"
+echo ""
+
+# Start the dev server
+npm run dev
