@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import AuthButton from '@/components/AuthButton';
 
 export default function Home() {
   return (
@@ -32,6 +33,11 @@ export default function Home() {
           }}
           className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gold/10 rounded-full blur-3xl"
         />
+      </div>
+
+      {/* Auth Button - Top Right */}
+      <div className="absolute top-6 right-6 z-20">
+        <AuthButton />
       </div>
 
       {/* Content */}
