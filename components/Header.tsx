@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import AuthButton from "./AuthButton";
 
 export type HeaderProps = {
   onToggleSidebar?: () => void;
@@ -28,6 +29,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <button className="px-3 py-1.5 rounded-md border border-gold text-sm hover:glow-gold transition">
               Launch Plan
             </button>
+            <AuthButton />
             <div className="w-8 h-8 rounded-full bg-deep-charcoal border border-gold" aria-label="User avatar" />
           </div>
         </div>
