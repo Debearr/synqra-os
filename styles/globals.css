@@ -1,18 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Helvetica+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root { --carousel-bg: #0b0b0f; --text: #eaeaf2; --muted: #9aa0b4; }
+:root {
+  --carousel-bg: #0b0b0f;
+  --text: #eaeaf2;
+  --muted: #9aa0b4;
+
+  /* NØID Brand Tokens */
+  --noid-gold: #D4AF37;
+  --noid-rose-gold: #B76E79;
+  --noid-teal-neon: #00FFF0;
+  --noid-electric-blue: #0080FF;
+  --noid-matte-black: #0A0A0A;
+  --noid-deep-charcoal: #1A1A1A;
+  --noid-silver-mist: #C0C0C0;
+  --noid-crimson: #DC143C;
+  --noid-sage: #87CEEB;
+}
 
 html, body, #__next { height: 100%; }
 body {
   margin: 0;
-  background: var(--carousel-bg);
-  color: var(--text);
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background: var(--noid-matte-black);
+  color: var(--noid-silver-mist);
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
 }
 
 * { box-sizing: border-box; }
+
+/* Utility Classes - Brand */
+.glassmorphism {
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, var(--noid-gold), var(--noid-rose-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-teal { box-shadow: 0 0 20px rgba(0, 255, 240, 0.5); }
+.glow-gold { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+
+/* Semantic helpers for brand tokens */
+.bg-matte-black { background-color: var(--noid-matte-black); }
+.bg-deep-charcoal { background-color: var(--noid-deep-charcoal); }
+.text-silver-mist { color: var(--noid-silver-mist); }
+.border-gold { border-color: var(--noid-gold); }
+.gold-divider { border-bottom: 1px solid color-mix(in srgb, var(--noid-gold) 35%, transparent); }
+
+/* Animations */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 240, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(0, 255, 240, 0.8); }
+}
+
+.animate-glow-pulse { animation: glowPulse 2s ease-in-out infinite; }
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+
+@keyframes slideUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slideUp 0.5s ease-out; }
