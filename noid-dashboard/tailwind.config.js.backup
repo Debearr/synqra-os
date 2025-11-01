@@ -1,0 +1,38 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        noid: {
+          black: '#0A0A0A',
+          gold: '#D4AF37',
+          'gold-light': '#F4E4B7',
+          'gold-dark': '#B8941F',
+          charcoal: '#1A1A1A',
+          'charcoal-light': '#2A2A2A',
+          silver: '#C0C0C0',
+          'silver-light': '#E8E8E8',
+          white: '#FAFAFA',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'serif'],
+      },
+      backgroundImage: {
+        'gradient-gold': 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)',
+        'gradient-dark': 'linear-gradient(180deg, #0A0A0A 0%, #1A1A1A 100%)',
+      },
+      boxShadow: {
+        'gold-glow': '0 0 20px rgba(212, 175, 55, 0.3)',
+        'gold-glow-lg': '0 0 40px rgba(212, 175, 55, 0.4)',
+      },
+    },
+  },
+  plugins: [],
+}

@@ -1,0 +1,11 @@
+# Synqra Auto-Setup (Zero Manual Handling)
+$zipPath = "$env:USERPROFILE\Downloads\synqra-os-main.zip"
+$projectDir = "$env:USERPROFILE\Synqra"
+Expand-Archive -Path $zipPath -DestinationPath $projectDir -Force
+Set-Location $projectDir
+git init
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/synqra-os.git
+git add .
+git commit -m "bootstrap: imported synqra-os source"
+git push -u origin main
+Start-Process "cursor://open?path=$projectDir"

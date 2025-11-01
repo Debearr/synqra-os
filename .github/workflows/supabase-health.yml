@@ -1,0 +1,56 @@
+name: Supabase Health Cell
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/health-checks/**'
+      - '.github/workflows/supabase-health.yml'
+
+jobs:
+  ping-supabase:
+    name: Check Supabase Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        working-directory: scripts/health-checks
+        run: npm install @supabase/supabase-js node-fetch
+      
+      - name: Run health check
+        working-directory: scripts/health-checks
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+        run: node ping-supabase.mjs
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-check-logs-${{ github.run_number }}
+          path: .healthcell/local-logs.jsonl
+          retention-days: 7
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed - N8N notified for recovery"
+          fi
