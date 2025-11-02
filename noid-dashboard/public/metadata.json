@@ -1,0 +1,6 @@
+{
+  "title": "Synqra Dashboard",
+  "description": "Operational dashboard surfaces analytics, calendar, and automation insights for Synqra.",
+  "author": "Synqra Platform",
+  "generator": "fix-deployment-blockers.js"
+}
