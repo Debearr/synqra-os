@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  output: "standalone",
+  typedRoutes: true,
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;
