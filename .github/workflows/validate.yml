@@ -1,0 +1,156 @@
+name: Deployment Validation
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  validate:
+    name: Validate Build & Deployment
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: noid-dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd noid-dashboard
+          npm ci
+
+      - name: Validate file structure
+        run: |
+          echo "Checking required files..."
+          required_files=(
+            "noid-dashboard/package.json"
+            "noid-dashboard/next.config.ts"
+            "noid-dashboard/app/layout.tsx"
+            "noid-dashboard/app/page.tsx"
+            "noid-dashboard/app/api/health/route.ts"
+            "railway.json"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required files present"
+
+      - name: Run build
+        run: |
+          cd noid-dashboard
+          npm run build
+
+      - name: Test server startup
+        run: |
+          cd noid-dashboard
+          # Start server in background
+          npm run start &
+          SERVER_PID=$!
+
+          # Wait for server to start
+          echo "Waiting for server to start..."
+          sleep 10
+
+          # Check if server is still running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "❌ Server failed to start"
+            exit 1
+          fi
+
+          echo "✅ Server started successfully"
+
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Test health endpoint
+        run: |
+          cd noid-dashboard
+          # Start server in background
+          npm run start &
+          SERVER_PID=$!
+
+          # Wait for server
+          sleep 10
+
+          # Test health endpoint
+          max_attempts=15
+          attempt=0
+
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f http://localhost:3000/api/health; then
+              echo "✅ Health endpoint responding"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 0
+            fi
+            echo "Attempt $((attempt + 1))/$max_attempts failed, retrying..."
+            attempt=$((attempt + 1))
+            sleep 2
+          done
+
+          echo "❌ Health endpoint not responding"
+          kill $SERVER_PID 2>/dev/null || true
+          exit 1
+
+      - name: Test main page
+        run: |
+          cd noid-dashboard
+          # Start server in background
+          npm run start &
+          SERVER_PID=$!
+
+          # Wait for server
+          sleep 10
+
+          # Test main page
+          if curl -f http://localhost:3000 > /dev/null 2>&1; then
+            echo "✅ Main page responding"
+          else
+            echo "❌ Main page not responding"
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Validate Railway configuration
+        run: |
+          if [ ! -f "railway.json" ]; then
+            echo "❌ Missing railway.json"
+            exit 1
+          fi
+
+          # Check railway.json has required fields
+          if ! grep -q "startCommand" railway.json; then
+            echo "❌ railway.json missing startCommand"
+            exit 1
+          fi
+
+          if ! grep -q "buildCommand" railway.json; then
+            echo "❌ railway.json missing buildCommand"
+            exit 1
+          fi
+
+          echo "✅ Railway configuration valid"
+
+      - name: All checks passed
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ ALL DEPLOYMENT VALIDATION CHECKS PASSED!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

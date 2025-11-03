@@ -5,7 +5,9 @@
     "dev": "cd noid-dashboard && npm run dev",
     "build": "cd noid-dashboard && npm run build",
     "start": "cd noid-dashboard && npm run start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pre-deploy": "bash scripts/pre-deploy-check.sh",
+    "safe-deploy": "npm run pre-deploy && git push"
   },
   "keywords": [],
   "author": "",
