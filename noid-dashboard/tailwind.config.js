@@ -8,16 +8,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        noid: {
-          black: '#0B0B0B',
-          gold: '#D4AF37',
-          teal: '#00FFC6',
-          gray: '#A0A0A0',
-        }
+        'noid-black': '#0B0B0B',
+        'noid-charcoal': '#141414',
+        'noid-charcoal-light': '#1E1E1E',
+        'noid-white': '#F5F5F5',
+        'noid-silver': '#9FA4B2',
+        'noid-gold': '#D4AF37',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      }
+        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'monospace'],
+        display: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        'gold-glow': '0 0 30px rgba(212, 175, 55, 0.25)',
+      },
+      backgroundImage: {
+        'gradient-gold': 'linear-gradient(135deg, #D4AF37 0%, #F9E7A5 100%)',
+      },
     },
   },
   plugins: [],
