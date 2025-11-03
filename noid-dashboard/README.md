@@ -29,8 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on Railway
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This repository includes a `railway.json` configuration that tells Railway how to build and start the app inside the `noid-dashboard` workspace:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Install:** `cd noid-dashboard && npm install`
+- **Build:** `cd noid-dashboard && npm run build`
+- **Start:** `cd noid-dashboard && npm start`
+
+### Environment variables
+
+Create these variables in your Railway service (values below are examples?replace them with your real credentials):
+
+- `LINKEDIN_ACCESS_TOKEN`
+- `LINKEDIN_PERSON_URN`
+- `POST_AS`
+- `TIMEZONE`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `N8N_WEBHOOK_URL`
+- (optional) `NODE_ENV=production`
+- (optional) `NEXT_TELEMETRY_DISABLED=1`
+
+### Deploy steps
+
+1. Push the latest changes (including `railway.json`) to GitHub.
+2. Link the GitHub repo to your Railway project.
+3. Trigger a deploy; Railway will run the commands above and expose the app on the assigned port.
+4. After the deploy, confirm the health check (`/`) returns `200 OK` and smoke-test the dashboard.
