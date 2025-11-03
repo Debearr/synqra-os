@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  Plus, 
-  Sparkles, 
-  Image, 
-  FileText, 
-  MoreVertical,
+import {
+  Plus,
+  Sparkles,
+  Image as ImageIcon,
+  FileText,
   Edit,
   Trash2,
   Copy
@@ -96,7 +95,7 @@ const ContentPage = () => {
         <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all cursor-pointer">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-gold rounded-lg">
-              <Image className="w-6 h-6 text-noid-black" />
+            <ImageIcon className="w-6 h-6 text-noid-black" />
             </div>
             <h3 className="text-lg font-medium text-noid-white">Image Post</h3>
           </div>
