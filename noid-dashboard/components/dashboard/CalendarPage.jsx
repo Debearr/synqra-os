@@ -2,10 +2,9 @@
 
 import React, { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Calendar as CalendarIcon,
+import {
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Plus
 } from 'lucide-react';

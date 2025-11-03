@@ -149,11 +149,11 @@ const BrandVoicePage = () => {
               <p className="text-noid-silver mb-3">{guideline.description}</p>
               <div className="flex flex-wrap gap-2">
                 {guideline.examples.map((example, idx) => (
-                  <span 
+                  <span
                     key={idx}
                     className="px-3 py-1 bg-noid-charcoal-light text-noid-gold text-sm rounded-lg border border-noid-gold/20"
                   >
-                    "{example}"
+                    “{example}”
                   </span>
                 ))}
               </div>
