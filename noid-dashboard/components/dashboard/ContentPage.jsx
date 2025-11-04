@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import DashboardLayout from './DashboardLayout';
+import React, { useState } from "react";
+import DashboardLayout from "./DashboardLayout";
 import {
   Plus,
   Sparkles,
@@ -9,60 +9,60 @@ import {
   FileText,
   Edit,
   Trash2,
-  Copy
-} from 'lucide-react';
+  Copy,
+} from "lucide-react";
 
 const ContentPage = () => {
-  const [selectedTab, setSelectedTab] = useState('all');
+  const [selectedTab, setSelectedTab] = useState("all");
 
   const contentItems = [
     {
       id: 1,
-      type: 'Image Post',
-      platform: 'Instagram',
-      content: 'Introducing our latest timepiece collection. Crafted with precision...',
-      status: 'Published',
-      engagement: '2.4K',
-      date: '2 hours ago',
-      aiGenerated: true
+      type: "Image Post",
+      platform: "Instagram",
+      content: "Introducing our latest timepiece collection. Crafted with precision...",
+      status: "Published",
+      engagement: "2.4K",
+      date: "2 hours ago",
+      aiGenerated: true,
     },
     {
       id: 2,
-      type: 'Carousel',
-      platform: 'Instagram',
-      content: 'Behind the scenes: The making of luxury',
-      status: 'Scheduled',
-      engagement: '-',
-      date: 'Today, 6:00 PM',
-      aiGenerated: true
+      type: "Carousel",
+      platform: "Instagram",
+      content: "Behind the scenes: The making of luxury",
+      status: "Scheduled",
+      engagement: "-",
+      date: "Today, 6:00 PM",
+      aiGenerated: true,
     },
     {
       id: 3,
-      type: 'Article',
-      platform: 'LinkedIn',
-      content: 'The Evolution of Luxury in the Digital Age',
-      status: 'Draft',
-      engagement: '-',
-      date: 'Draft',
-      aiGenerated: false
+      type: "Article",
+      platform: "LinkedIn",
+      content: "The Evolution of Luxury in the Digital Age",
+      status: "Draft",
+      engagement: "-",
+      date: "Draft",
+      aiGenerated: false,
     },
     {
       id: 4,
-      type: 'Thread',
-      platform: 'Twitter',
-      content: 'Product spotlight: 8 tweets showcasing our craftsmanship',
-      status: 'Published',
-      engagement: '1.8K',
-      date: '1 day ago',
-      aiGenerated: true
-    }
+      type: "Thread",
+      platform: "Twitter",
+      content: "Product spotlight: 8 tweets showcasing our craftsmanship",
+      status: "Published",
+      engagement: "1.8K",
+      date: "1 day ago",
+      aiGenerated: true,
+    },
   ];
 
   const tabs = [
-    { id: 'all', label: 'All Content' },
-    { id: 'published', label: 'Published' },
-    { id: 'scheduled', label: 'Scheduled' },
-    { id: 'drafts', label: 'Drafts' }
+    { id: "all", label: "All Content" },
+    { id: "published", label: "Published" },
+    { id: "scheduled", label: "Scheduled" },
+    { id: "drafts", label: "Drafts" },
   ];
 
   return (
@@ -76,8 +76,8 @@ const ContentPage = () => {
               onClick={() => setSelectedTab(tab.id)}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 selectedTab === tab.id
-                  ? 'bg-gradient-gold text-noid-black'
-                  : 'text-noid-silver hover:text-noid-white hover:bg-noid-charcoal'
+                  ? "bg-gradient-gold text-noid-black"
+                  : "text-noid-silver hover:text-noid-white hover:bg-noid-charcoal"
               }`}
             >
               {tab.label}
@@ -95,7 +95,7 @@ const ContentPage = () => {
         <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all cursor-pointer">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-gold rounded-lg">
-            <ImageIcon className="w-6 h-6 text-noid-black" />
+              <ImageIcon className="w-6 h-6 text-noid-black" />
             </div>
             <h3 className="text-lg font-medium text-noid-white">Image Post</h3>
           </div>
@@ -136,14 +136,16 @@ const ContentPage = () => {
         </div>
         <div className="divide-y divide-noid-charcoal-light">
           {contentItems.map((item) => (
-            <div 
+            <div
               key={item.id}
               className="p-6 hover:bg-noid-charcoal-light transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xs font-medium text-noid-gold">{item.platform}</span>
+                    <span className="text-xs font-medium text-noid-gold">
+                      {item.platform}
+                    </span>
                     <span className="text-xs text-noid-silver">•</span>
                     <span className="text-xs text-noid-silver">{item.type}</span>
                     {item.aiGenerated && (
@@ -158,17 +160,19 @@ const ContentPage = () => {
                   </div>
                   <p className="text-noid-white font-medium mb-2">{item.content}</p>
                   <div className="flex items-center gap-4 text-sm text-noid-silver">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      item.status === 'Published' 
-                        ? 'bg-green-400/10 text-green-400' 
-                        : item.status === 'Scheduled'
-                        ? 'bg-blue-400/10 text-blue-400'
-                        : 'bg-noid-charcoal-light text-noid-silver'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${
+                        item.status === "Published"
+                          ? "bg-green-400/10 text-green-400"
+                          : item.status === "Scheduled"
+                            ? "bg-blue-400/10 text-blue-400"
+                            : "bg-noid-charcoal-light text-noid-silver"
+                      }`}
+                    >
                       {item.status}
                     </span>
                     <span>{item.date}</span>
-                    {item.engagement !== '-' && (
+                    {item.engagement !== "-" && (
                       <span>{item.engagement} engagements</span>
                     )}
                   </div>
@@ -194,4 +198,3 @@ const ContentPage = () => {
 };
 
 export default ContentPage;
-

@@ -1,83 +1,96 @@
 "use client";
 
-import React, { useState } from 'react';
-import DashboardLayout from './DashboardLayout';
-import { 
-  Sparkles, 
-  BookOpen, 
+import React, { useState } from "react";
+import DashboardLayout from "./DashboardLayout";
+import {
+  Sparkles,
+  BookOpen,
   Settings,
   Plus,
   Check,
-  Edit
-} from 'lucide-react';
+  Edit,
+} from "lucide-react";
 
 const BrandVoicePage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   const brandAttributes = [
-    { name: 'Sophisticated', active: true },
-    { name: 'Premium', active: true },
-    { name: 'Innovative', active: true },
-    { name: 'Exclusive', active: true },
-    { name: 'Timeless', active: true },
-    { name: 'Bold', active: false },
-    { name: 'Playful', active: false },
-    { name: 'Minimalist', active: true },
+    { name: "Sophisticated", active: true },
+    { name: "Premium", active: true },
+    { name: "Innovative", active: true },
+    { name: "Exclusive", active: true },
+    { name: "Timeless", active: true },
+    { name: "Bold", active: false },
+    { name: "Playful", active: false },
+    { name: "Minimalist", active: true },
   ];
 
   const toneGuidelines = [
     {
-      category: 'Vocabulary',
-      description: 'Use elevated, precise language',
-      examples: ['Crafted', 'Curated', 'Heritage', 'Excellence', 'Distinguished']
+      category: "Vocabulary",
+      description: "Use elevated, precise language",
+      examples: [
+        "Crafted",
+        "Curated",
+        "Heritage",
+        "Excellence",
+        "Distinguished",
+      ],
     },
     {
-      category: 'Sentence Structure',
-      description: 'Mix short impactful statements with longer descriptive phrases',
-      examples: ['Power in simplicity.', 'Where heritage meets modern craftsmanship.']
+      category: "Sentence Structure",
+      description:
+        "Mix short impactful statements with longer descriptive phrases",
+      examples: [
+        "Power in simplicity.",
+        "Where heritage meets modern craftsmanship.",
+      ],
     },
     {
-      category: 'Emotional Tone',
-      description: 'Confident yet approachable, aspirational but authentic',
-      examples: ['Luxury redefined', 'Experience the difference']
-    }
+      category: "Emotional Tone",
+      description: "Confident yet approachable, aspirational but authentic",
+      examples: ["Luxury redefined", "Experience the difference"],
+    },
   ];
 
   const trainingExamples = [
     {
-      platform: 'Instagram',
-      example: 'Introducing our Heritage Collection. Where timeless design meets modern craftsmanship. Each piece tells a story of excellence.',
-      rating: '98% match'
+      platform: "Instagram",
+      example:
+        "Introducing our Heritage Collection. Where timeless design meets modern craftsmanship. Each piece tells a story of excellence.",
+      rating: "98% match",
     },
     {
-      platform: 'LinkedIn',
-      example: 'The evolution of luxury isn\'t about following trends—it\'s about setting standards. Our approach to design reflects decades of expertise.',
-      rating: '96% match'
+      platform: "LinkedIn",
+      example:
+        "The evolution of luxury isn't about following trends—it's about setting standards. Our approach to design reflects decades of expertise.",
+      rating: "96% match",
     },
     {
-      platform: 'Twitter',
-      example: 'Excellence isn\'t an act. It\'s a habit. Our commitment to quality shows in every detail.',
-      rating: '94% match'
-    }
+      platform: "Twitter",
+      example:
+        "Excellence isn't an act. It's a habit. Our commitment to quality shows in every detail.",
+      rating: "94% match",
+    },
   ];
 
   return (
     <DashboardLayout activePage="brand-voice">
       {/* Tab Navigation */}
       <div className="flex items-center gap-4 mb-8 border-b border-noid-charcoal-light">
-        {['Overview', 'Training', 'Guidelines'].map((tab) => (
+        {["Overview", "Training", "Guidelines"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab.toLowerCase())}
             className={`px-6 py-3 font-medium transition-all relative ${
               activeTab === tab.toLowerCase()
-                ? 'text-noid-gold'
-                : 'text-noid-silver hover:text-noid-white'
+                ? "text-noid-gold"
+                : "text-noid-silver hover:text-noid-white"
             }`}
           >
             {tab}
             {activeTab === tab.toLowerCase() && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-gold"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-gold" />
             )}
           </button>
         ))}
@@ -92,15 +105,19 @@ const BrandVoicePage = () => {
           <div className="flex-1">
             <h3 className="text-xl font-display text-noid-black mb-2">NØID Brand Voice</h3>
             <p className="text-noid-black/80 mb-4">
-              Sophisticated, premium, and timeless. We speak to those who appreciate 
+              Sophisticated, premium, and timeless. We speak to those who appreciate
               excellence and understand the value of authentic craftsmanship.
             </p>
             <div className="flex items-center gap-2">
               <div className="px-4 py-2 bg-noid-black/10 rounded-lg">
-                <span className="text-sm text-noid-black font-medium">94% AI Consistency</span>
+                <span className="text-sm text-noid-black font-medium">
+                  94% AI Consistency
+                </span>
               </div>
               <div className="px-4 py-2 bg-noid-black/10 rounded-lg">
-                <span className="text-sm text-noid-black font-medium">1,247 Posts Trained</span>
+                <span className="text-sm text-noid-black font-medium">
+                  1,247 Posts Trained
+                </span>
               </div>
             </div>
           </div>
@@ -125,8 +142,8 @@ const BrandVoicePage = () => {
               key={attr.name}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 attr.active
-                  ? 'bg-gradient-gold text-noid-black'
-                  : 'bg-noid-black text-noid-silver hover:text-noid-white border border-noid-charcoal-light'
+                  ? "bg-gradient-gold text-noid-black"
+                  : "bg-noid-black text-noid-silver hover:text-noid-white border border-noid-charcoal-light"
               }`}
             >
               {attr.active && <Check className="w-4 h-4 inline mr-2" />}
@@ -144,7 +161,9 @@ const BrandVoicePage = () => {
             <div key={guideline.category} className="p-4 bg-noid-black rounded-lg">
               <div className="flex items-center gap-3 mb-3">
                 <BookOpen className="w-5 h-5 text-noid-gold" />
-                <h4 className="text-lg font-medium text-noid-white">{guideline.category}</h4>
+                <h4 className="text-lg font-medium text-noid-white">
+                  {guideline.category}
+                </h4>
               </div>
               <p className="text-noid-silver mb-3">{guideline.description}</p>
               <div className="flex flex-wrap gap-2">
@@ -175,7 +194,9 @@ const BrandVoicePage = () => {
           {trainingExamples.map((example, index) => (
             <div key={index} className="p-4 bg-noid-black rounded-lg border border-noid-charcoal-light">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-noid-gold">{example.platform}</span>
+                <span className="text-xs font-medium text-noid-gold">
+                  {example.platform}
+                </span>
                 <span className="px-3 py-1 bg-green-400/10 text-green-400 text-xs font-medium rounded-full">
                   {example.rating}
                 </span>
@@ -199,7 +220,7 @@ const BrandVoicePage = () => {
           </button>
         </div>
         <div className="mt-4 h-2 bg-noid-black rounded-full overflow-hidden">
-          <div className="h-full w-[94%] bg-gradient-gold"></div>
+          <div className="h-full w-[94%] bg-gradient-gold" />
         </div>
         <p className="text-xs text-noid-silver mt-2">94% consistency across all AI-generated content</p>
       </div>
@@ -208,4 +229,3 @@ const BrandVoicePage = () => {
 };
 
 export default BrandVoicePage;
-
