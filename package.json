@@ -2,9 +2,9 @@
   "name": "synqra",
   "version": "1.0.0",
   "scripts": {
-    "dev": "cd noid-dashboard && npm run dev",
-    "build": "cd noid-dashboard && npm run build",
-    "start": "cd noid-dashboard && npm run start",
+    "dev": "npm run dev --prefix noid-dashboard",
+    "build": "npm run build --prefix noid-dashboard",
+    "start": "npm run start --prefix noid-dashboard",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
