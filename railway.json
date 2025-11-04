@@ -8,6 +8,8 @@
   "deploy": {
     "startCommand": "cd noid-dashboard && npm run start",
     "healthcheckPath": "/",
-    "restartPolicyType": "ALWAYS"
+    "restartPolicyType": "ALWAYS",
+    "rollbackOnFailure": true,
+    "logRetentionDays": 7
   }
 }
