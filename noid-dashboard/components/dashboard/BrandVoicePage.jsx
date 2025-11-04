@@ -2,14 +2,7 @@
 
 import React, { useState } from "react";
 import DashboardLayout from "./DashboardLayout";
-import {
-  Sparkles,
-  BookOpen,
-  Settings,
-  Plus,
-  Check,
-  Edit,
-} from "lucide-react";
+import { Sparkles, BookOpen, Settings, Plus, Check, Edit } from "lucide-react";
 
 const BrandVoicePage = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -103,10 +96,13 @@ const BrandVoicePage = () => {
             <Sparkles className="w-6 h-6 text-noid-black" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-display text-noid-black mb-2">NØID Brand Voice</h3>
+            <h3 className="text-xl font-display text-noid-black mb-2">
+              NØID Brand Voice
+            </h3>
             <p className="text-noid-black/80 mb-4">
-              Sophisticated, premium, and timeless. We speak to those who appreciate
-              excellence and understand the value of authentic craftsmanship.
+              Sophisticated, premium, and timeless. We speak to those who
+              appreciate excellence and understand the value of authentic
+              craftsmanship.
             </p>
             <div className="flex items-center gap-2">
               <div className="px-4 py-2 bg-noid-black/10 rounded-lg">
@@ -130,7 +126,9 @@ const BrandVoicePage = () => {
       {/* Brand Attributes */}
       <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-display text-noid-white">Brand Attributes</h3>
+          <h3 className="text-xl font-display text-noid-white">
+            Brand Attributes
+          </h3>
           <button className="flex items-center gap-2 px-4 py-2 text-noid-gold hover:bg-noid-charcoal-light rounded-lg transition-colors">
             <Plus className="w-4 h-4" />
             Add Attribute
@@ -155,10 +153,15 @@ const BrandVoicePage = () => {
 
       {/* Tone Guidelines */}
       <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6 mb-8">
-        <h3 className="text-xl font-display text-noid-white mb-6">Tone Guidelines</h3>
+        <h3 className="text-xl font-display text-noid-white mb-6">
+          Tone Guidelines
+        </h3>
         <div className="space-y-6">
           {toneGuidelines.map((guideline) => (
-            <div key={guideline.category} className="p-4 bg-noid-black rounded-lg">
+            <div
+              key={guideline.category}
+              className="p-4 bg-noid-black rounded-lg"
+            >
               <div className="flex items-center gap-3 mb-3">
                 <BookOpen className="w-5 h-5 text-noid-gold" />
                 <h4 className="text-lg font-medium text-noid-white">
@@ -184,7 +187,9 @@ const BrandVoicePage = () => {
       {/* Training Examples */}
       <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-display text-noid-white">Training Examples</h3>
+          <h3 className="text-xl font-display text-noid-white">
+            Training Examples
+          </h3>
           <button className="flex items-center gap-2 px-6 py-3 bg-gradient-gold text-noid-black font-medium rounded-lg hover:shadow-gold-glow transition-all">
             <Plus className="w-5 h-5" />
             Add Example
@@ -192,7 +197,10 @@ const BrandVoicePage = () => {
         </div>
         <div className="space-y-4">
           {trainingExamples.map((example, index) => (
-            <div key={index} className="p-4 bg-noid-black rounded-lg border border-noid-charcoal-light">
+            <div
+              key={index}
+              className="p-4 bg-noid-black rounded-lg border border-noid-charcoal-light"
+            >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-medium text-noid-gold">
                   {example.platform}
@@ -201,7 +209,9 @@ const BrandVoicePage = () => {
                   {example.rating}
                 </span>
               </div>
-              <p className="text-noid-white leading-relaxed">{example.example}</p>
+              <p className="text-noid-white leading-relaxed">
+                {example.example}
+              </p>
             </div>
           ))}
         </div>
@@ -211,8 +221,12 @@ const BrandVoicePage = () => {
       <div className="mt-6 bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-lg font-medium text-noid-white mb-2">AI Training Status</h4>
-            <p className="text-noid-silver">Your brand voice model is trained on 1,247 approved posts</p>
+            <h4 className="text-lg font-medium text-noid-white mb-2">
+              AI Training Status
+            </h4>
+            <p className="text-noid-silver">
+              Your brand voice model is trained on 1,247 approved posts
+            </p>
           </div>
           <button className="px-6 py-3 bg-noid-charcoal-light text-noid-white rounded-lg hover:bg-noid-charcoal border border-noid-charcoal-light transition-colors">
             <Settings className="w-5 h-5 inline mr-2" />
@@ -222,7 +236,9 @@ const BrandVoicePage = () => {
         <div className="mt-4 h-2 bg-noid-black rounded-full overflow-hidden">
           <div className="h-full w-[94%] bg-gradient-gold" />
         </div>
-        <p className="text-xs text-noid-silver mt-2">94% consistency across all AI-generated content</p>
+        <p className="text-xs text-noid-silver mt-2">
+          94% consistency across all AI-generated content
+        </p>
       </div>
     </DashboardLayout>
   );

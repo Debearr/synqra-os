@@ -20,7 +20,8 @@ const ContentPage = () => {
       id: 1,
       type: "Image Post",
       platform: "Instagram",
-      content: "Introducing our latest timepiece collection. Crafted with precision...",
+      content:
+        "Introducing our latest timepiece collection. Crafted with precision...",
       status: "Published",
       engagement: "2.4K",
       date: "2 hours ago",
@@ -100,7 +101,8 @@ const ContentPage = () => {
             <h3 className="text-lg font-medium text-noid-white">Image Post</h3>
           </div>
           <p className="text-sm text-noid-silver">
-            Generate AI-powered image posts with captions optimized for engagement
+            Generate AI-powered image posts with captions optimized for
+            engagement
           </p>
         </div>
 
@@ -112,7 +114,8 @@ const ContentPage = () => {
             <h3 className="text-lg font-medium text-noid-white">Article</h3>
           </div>
           <p className="text-sm text-noid-silver">
-            Create long-form content with AI research and brand voice consistency
+            Create long-form content with AI research and brand voice
+            consistency
           </p>
         </div>
 
@@ -121,7 +124,9 @@ const ContentPage = () => {
             <div className="p-3 bg-gradient-gold rounded-lg">
               <Plus className="w-6 h-6 text-noid-black" />
             </div>
-            <h3 className="text-lg font-medium text-noid-white">Batch Generate</h3>
+            <h3 className="text-lg font-medium text-noid-white">
+              Batch Generate
+            </h3>
           </div>
           <p className="text-sm text-noid-silver">
             Generate multiple posts at once for the entire week
@@ -132,7 +137,9 @@ const ContentPage = () => {
       {/* Content List */}
       <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
         <div className="p-6 border-b border-noid-charcoal-light">
-          <h3 className="text-xl font-display text-noid-white">Content Library</h3>
+          <h3 className="text-xl font-display text-noid-white">
+            Content Library
+          </h3>
         </div>
         <div className="divide-y divide-noid-charcoal-light">
           {contentItems.map((item) => (
@@ -147,7 +154,9 @@ const ContentPage = () => {
                       {item.platform}
                     </span>
                     <span className="text-xs text-noid-silver">•</span>
-                    <span className="text-xs text-noid-silver">{item.type}</span>
+                    <span className="text-xs text-noid-silver">
+                      {item.type}
+                    </span>
                     {item.aiGenerated && (
                       <>
                         <span className="text-xs text-noid-silver">•</span>
@@ -158,7 +167,9 @@ const ContentPage = () => {
                       </>
                     )}
                   </div>
-                  <p className="text-noid-white font-medium mb-2">{item.content}</p>
+                  <p className="text-noid-white font-medium mb-2">
+                    {item.content}
+                  </p>
                   <div className="flex items-center gap-4 text-sm text-noid-silver">
                     <span
                       className={`px-2 py-1 rounded text-xs ${
