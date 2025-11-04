@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://synqra.app";
+const baseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://synqra.app"
+    : "http://localhost:3003");
 
 export const metadata: Metadata = {
+  title: "Synqra Dashboard",
+  description: "Luxury social media automation platform",
   metadataBase: new URL(baseUrl),
-  title: {
-    default: "Synqra — Luxury Social Automation",
-    template: "%s · Synqra",
-  },
-  description:
-    "Synqra unifies NØID Studio intelligence, concierge automations, and AuraFX insights into one luxury social media command center.",
   icons: {
     icon: "/favicon.ico",
   },
