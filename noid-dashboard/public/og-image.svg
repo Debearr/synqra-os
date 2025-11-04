@@ -1,0 +1,49 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0B0B0B" />
+  <rect x="60" y="60" width="1080" height="510" rx="48" fill="url(#paint0_radial)" stroke="rgba(255,255,255,0.06)" />
+  <g filter="url(#filter0_d)">
+    <text x="120" y="236" fill="#F5F5F5" font-family="Inter, Helvetica, Arial, sans-serif" font-size="72" font-weight="600" letter-spacing="0.3em">
+      SYNQRA
+    </text>
+  </g>
+  <text x="120" y="320" fill="#A0A0A0" font-family="Inter, Helvetica, Arial, sans-serif" font-size="24" letter-spacing="0.08em">
+    Luxury Social Automation · Powered by NØID + AuraFX
+  </text>
+  <g>
+    <rect x="120" y="360" width="300" height="160" rx="28" fill="rgba(20,20,20,0.8)" stroke="rgba(255,255,255,0.08)" />
+    <text x="150" y="420" fill="#9FA4B2" font-family="Inter, Helvetica, Arial, sans-serif" font-size="18" letter-spacing="0.18em">
+      LIVE EXECUTIVES
+    </text>
+    <text x="150" y="474" fill="#F5F5F5" font-family="Inter, Helvetica, Arial, sans-serif" font-size="54" font-weight="600">
+      128
+    </text>
+  </g>
+  <g>
+    <rect x="460" y="360" width="300" height="160" rx="28" fill="rgba(20,20,20,0.8)" stroke="rgba(255,255,255,0.08)" />
+    <text x="490" y="420" fill="#9FA4B2" font-family="Inter, Helvetica, Arial, sans-serif" font-size="18" letter-spacing="0.18em">
+      ACTIVE RITUALS
+    </text>
+    <text x="490" y="474" fill="#F5F5F5" font-family="Inter, Helvetica, Arial, sans-serif" font-size="54" font-weight="600">
+      46
+    </text>
+  </g>
+  <g>
+    <rect x="800" y="360" width="300" height="160" rx="28" fill="rgba(20,20,20,0.8)" stroke="rgba(255,255,255,0.08)" />
+    <text x="830" y="420" fill="#9FA4B2" font-family="Inter, Helvetica, Arial, sans-serif" font-size="18" letter-spacing="0.18em">
+      AVERAGE LIFT
+    </text>
+    <text x="830" y="474" fill="#00FFC6" font-family="Inter, Helvetica, Arial, sans-serif" font-size="54" font-weight="600">
+      37%
+    </text>
+  </g>
+  <defs>
+    <filter id="filter0_d" x="112" y="176" width="476" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix" />
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+    </filter>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 315) scale(600 315)">
+      <stop stop-color="rgba(0,255,198,0.18)" />
+      <stop offset="1" stop-color="rgba(0,255,198,0.02)" />
+    </radialGradient>
+  </defs>
+</svg>
