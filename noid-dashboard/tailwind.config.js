@@ -16,9 +16,17 @@ module.exports = {
         'noid-gold': '#D4AF37',
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'monospace'],
-        display: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: [
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'Liberation Mono',
+          'Courier New',
+          'monospace',
+        ],
+        display: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'gold-glow': '0 0 30px rgba(212, 175, 55, 0.25)',
