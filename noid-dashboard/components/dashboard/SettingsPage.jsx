@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  User, 
-  CreditCard, 
-  Bell, 
+import {
+  User,
+  CreditCard,
+  Bell,
   Shield,
   Zap,
   Users,
-  Globe,
   Save
 } from 'lucide-react';
 
