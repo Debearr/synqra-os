@@ -1,0 +1,6 @@
+2025-11-05T17:33:50+00:00 [SYSTEM] Starting Synqra rollout automation
+2025-11-05T17:33:54+00:00 [READINESS] Node version v22.21.1
+2025-11-05T17:33:59+00:00 [READINESS] npm version 10.9.4
+2025-11-05T17:34:04+00:00 [READINESS][ERROR] .env contains placeholder SUPABASE_SERVICE_KEY; rollout secrets unavailable
+2025-11-05T17:34:10+00:00 [READINESS][WARN] LinkedIn token missing from .env
+2025-11-05T17:34:27+00:00 [READINESS][BLOCKED] Verified rollout secrets missing; cannot continue automation phases
