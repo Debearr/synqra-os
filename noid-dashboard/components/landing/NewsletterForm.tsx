@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { submitNewsletter, type NewsletterFormState } from '@/app/landing/actions';
 
 const initialState: NewsletterFormState = { status: 'idle' };
@@ -20,7 +20,7 @@ function SubmitButton() {
 }
 
 export function NewsletterForm() {
-  const [state, formAction] = useFormState(submitNewsletter, initialState);
+  const [state, formAction] = useActionState(submitNewsletter, initialState);
 
   useEffect(() => {
     if (state.status === 'success') {
