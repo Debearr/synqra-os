@@ -1,0 +1,111 @@
+{
+  "name": "Synqra Social Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": [
+          {
+            "hour": 10,
+            "minute": 0,
+            "weekday": [2, 4, 6]
+          }
+        ]
+      },
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items;"
+      },
+      "name": "Generate Content (Script)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "resource": "Database",
+        "operation": "Insert",
+        "table": "calendar_posts"
+      },
+      "name": "Supabase Insert",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "credentials": {
+        "supabaseApi": "Supabase Account"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "Create",
+        "content": "={{$json[\"copy\"]}} {{$json[\"hashtags\"].join(\" \")}}"
+      },
+      "name": "Twitter Post",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [800, 220],
+      "credentials": {
+        "twitterOAuth2Api": "Twitter API"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Video",
+        "operation": "Upload",
+        "videoUrl": "={{$json[\"asset_url\"]}}",
+        "description": "={{$json[\"copy\"]}} {{$json[\"hashtags\"].join(\" \")}}"
+      },
+      "name": "TikTok Upload",
+      "type": "n8n-nodes-base.tiktok",
+      "typeVersion": 1,
+      "position": [800, 380],
+      "credentials": {
+        "tiktokOAuth2Api": "TikTok API"
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Content (Script)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Content (Script)": {
+      "main": [
+        [
+          {
+            "node": "Supabase Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Insert": {
+      "main": [
+        [
+          {
+            "node": "Twitter Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

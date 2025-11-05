@@ -1,0 +1,37 @@
+{
+  "tasks": [
+    {
+      "name": "Auto Social Orchestration",
+      "trigger": "onSchedule",
+      "schedule": "0 10 * * 2,4,6",
+      "steps": [
+        {
+          "run": "node ./scripts/generate_content.mjs",
+          "label": "Generate AI Posts"
+        },
+        {
+          "run": "node ./scripts/schedule_post.mjs",
+          "label": "Schedule Posts in Supabase"
+        },
+        {
+          "run": "node ./scripts/publish_post.mjs",
+          "label": "Publish to TikTok & Twitter"
+        }
+      ],
+      "notifications": {
+        "success": "Synqra cycle complete ✅",
+        "failure": "Error ⚠️ — check Cursor logs"
+      }
+    }
+  ],
+  "retry": {
+    "maxAttempts": 2,
+    "delay": 60
+  },
+  "logging": {
+    "path": "/Logs/social_pipeline.log"
+  },
+  "notifications": {
+    "email": "admin@aurafxstudio.com"
+  }
+}
