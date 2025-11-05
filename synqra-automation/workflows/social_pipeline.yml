@@ -1,27 +1,36 @@
-agent:
-  name: synqra-auto-social
-  description: Automated Social Media AI for NØID content orchestration.
+workflow:
+  name: Synqra Automated Social Pipeline
+  description: End-to-end AI social content creation, scheduling, and publishing for NØID.
+
   triggers:
-    - cron: "0 10 * * 2,4,6"        # Tue/Thu/Sat 10:00 AM
-  actions:
-    - run: generate_content
-    - run: schedule_post
-    - run: publish_post
-  context:
-    brand: "NØID"
-    voice: "Luxury, Crafted, Curated, Excellence"
-    hashtags:
-      - "#AI"
-      - "#Automation"
-      - "#LuxuryTech"
-      - "#Synqra"
-      - "#NØID"
-      - "#CreatorTools"
-      - "#Innovation"
-    platforms:
-      - twitter
-      - tiktok
-  integrations:
-    twitter_api: ${{ secrets.TWITTER_BEARER }}
-    tiktok_api: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
-    supabase_db: ${{ secrets.SUPABASE_URL }}
+    - cron: "0 10 * * 2,4,6"    # Runs Tue/Thu/Sat at 10 AM
+
+  steps:
+    - id: generate
+      name: Generate Content
+      run: node ../scripts/generate_content.mjs
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        SUPABASE_AUTOMATION_USER_ID: ${{ secrets.SUPABASE_AUTOMATION_USER_ID }}
+
+    - id: schedule
+      name: Schedule Post
+      run: node ../scripts/schedule_post.mjs
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        DEFAULT_SCHEDULE_DELAY_MINUTES: "90"
+
+    - id: publish
+      name: Publish Post
+      run: node ../scripts/publish_post.mjs
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
+        TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+
+  notifications:
+    success: "✅ Synqra social cycle completed successfully."
+    failure: "⚠️ Synqra social cycle encountered an error — check n8n logs."
