@@ -4,3 +4,5 @@
 2025-11-05T17:34:04+00:00 [READINESS][ERROR] .env contains placeholder SUPABASE_SERVICE_KEY; rollout secrets unavailable
 2025-11-05T17:34:10+00:00 [READINESS][WARN] LinkedIn token missing from .env
 2025-11-05T17:34:27+00:00 [READINESS][BLOCKED] Verified rollout secrets missing; cannot continue automation phases
+2025-11-05T18:16:20+00:00 [READINESS] Reload requested; inspecting .env for LinkedIn client credentials
+2025-11-05T18:16:39+00:00 [READINESS][ERROR] LinkedIn OAuth credentials missing or empty
