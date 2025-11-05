@@ -1,0 +1,27 @@
+agent:
+  name: synqra-auto-social
+  description: Automated Social Media AI for NØID content orchestration.
+  triggers:
+    - cron: "0 10 * * 2,4,6"        # Tue/Thu/Sat 10:00 AM
+  actions:
+    - run: generate_content
+    - run: schedule_post
+    - run: publish_post
+  context:
+    brand: "NØID"
+    voice: "Luxury, Crafted, Curated, Excellence"
+    hashtags:
+      - "#AI"
+      - "#Automation"
+      - "#LuxuryTech"
+      - "#Synqra"
+      - "#NØID"
+      - "#CreatorTools"
+      - "#Innovation"
+    platforms:
+      - twitter
+      - tiktok
+  integrations:
+    twitter_api: ${{ secrets.TWITTER_BEARER }}
+    tiktok_api: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+    supabase_db: ${{ secrets.SUPABASE_URL }}
