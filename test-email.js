@@ -1,3 +1,5 @@
+// Simple SMTP connectivity + send test for NØID / Synqra email system
+
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
@@ -10,7 +12,9 @@ const requiredEnv = [
   'SMTP_USER',
   'SMTP_PASS',
   'FROM_EMAIL',
-  'ADMIN_EMAIL'
+  'ADMIN_EMAIL',
+  'SYSTEM_EMAIL',
+  'EMAIL_PROVIDER'
 ];
 
 const missing = requiredEnv.filter((key) => !process.env[key]);
@@ -18,9 +22,9 @@ const logFile = path.join(__dirname, 'logs', 'email-setup.txt');
 
 function appendLog(entry) {
   const timestamp = new Date().toISOString();
-  const message = `[${timestamp}] ${entry}\n`;
+  const message = `[${timestamp}] ${entry}`;
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
-  fs.appendFileSync(logFile, message, { encoding: 'utf8' });
+  fs.appendFileSync(logFile, `${message}\n`, { encoding: 'utf8' });
 }
 
 async function run() {
@@ -41,24 +45,34 @@ async function run() {
   });
 
   const mailOptions = {
-    envelope: {
-      from: process.env.SMTP_USER,
-      to: process.env.ADMIN_EMAIL
-    },
-    from: process.env.FROM_EMAIL,
+    from: `"NØID System" <${process.env.FROM_EMAIL}>`,
     to: process.env.ADMIN_EMAIL,
-    subject: 'Synqra + NØID Email Integration Test',
-    text: 'Automated verification email from the Synqra + NØID environment.'
+    subject: '✅ NØID Mail Test — Private Email Integration Successful',
+    text: `Hello De Bear,\n\nYour Namecheap Private Email setup is working perfectly!\n\nDomain: ${process.env.EMAIL_PROVIDER}\nSystem Email: ${process.env.SYSTEM_EMAIL}\nSent via Synqra test script.\n\n🚀`,
+    html: `
+    <h2>✅ NØID Mail Test — Success!</h2>
+    <p>Hello De Bear,</p>
+    <p>Your <b>Namecheap Private Email</b> setup is verified and working perfectly.</p>
+    <ul>
+      <li><b>Domain:</b> ${process.env.EMAIL_PROVIDER}</li>
+      <li><b>System Email:</b> ${process.env.SYSTEM_EMAIL}</li>
+      <li><b>Sent from:</b> ${process.env.FROM_EMAIL}</li>
+    </ul>
+    <p>🚀 Synqra + NØID are officially connected.</p>
+  `
   };
 
   try {
+    console.log('📨 Sending test email...');
     const info = await transporter.sendMail(mailOptions);
-    appendLog(`SUCCESS: messageId=${info.messageId || 'n/a'} response=${info.response || 'n/a'}`);
-    console.log('Test email sent successfully.');
+    console.log('✅ Test email sent:', info.messageId);
+    appendLog(
+      `Test email sent successfully to ${process.env.ADMIN_EMAIL} via ${process.env.EMAIL_PROVIDER}\n`
+    );
+    console.log('🪵 Logged to /logs/email-setup.txt');
   } catch (error) {
-    appendLog(`ERROR: ${error.name}: ${error.message}`);
-    console.error('Failed to send test email.');
-    console.error(error);
+    console.error('❌ Error sending test email:', error);
+    appendLog(`ERROR: ${error.message}`);
     process.exitCode = 1;
   }
 }
