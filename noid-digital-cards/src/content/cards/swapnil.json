@@ -1,0 +1,27 @@
+{
+  "handle": "swapnil",
+  "name": "Swapnil Shah",
+  "title": "Lead Platform Engineer",
+  "location": "Toronto · Remote",
+  "bio": "Delivers resilient Supabase + Vercel infrastructures with graceful degradation and instant recovery protocols.",
+  "email": "swapnil@noidlux.com",
+  "phone": "+1 (647) 555-4631",
+  "website": "https://noidlux.com",
+  "industry": "Platform Engineering",
+  "focus": [
+    "Supabase edge automation",
+    "Railway deployment choreography",
+    "Lighthouse performance tuning"
+  ],
+  "highlights": [
+    "Achieved 99.98% uptime across credential microservices",
+    "Integrated zero-downtime seasonal variant rollouts",
+    "Optimized Lighthouse score 94 → 99"
+  ],
+  "socials": {
+    "linkedin": "https://linkedin.com/in/swapnilshah",
+    "github": "https://github.com/swapnil-noid"
+  },
+  "availability": "Deploying investor sandboxes on demand",
+  "avatar": "/images/team/swapnil.svg"
+}

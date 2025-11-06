@@ -1,0 +1,55 @@
+{
+  "default": "evergreen",
+  "seasons": [
+    {
+      "id": "evergreen",
+      "label": "Evergreen Signal",
+      "start": "01-01",
+      "end": "12-31",
+      "surface": "linear-gradient(145deg, rgba(10, 12, 18, 0.92), rgba(12, 22, 34, 0.86))",
+      "glow": "0 0 60px rgba(79, 224, 217, 0.24)",
+      "badge": "Signal Active",
+      "qrForeground": "#f7f7f5"
+    },
+    {
+      "id": "winter",
+      "label": "Aurora Winter",
+      "start": "12-01",
+      "end": "02-29",
+      "surface": "linear-gradient(160deg, rgba(8, 14, 26, 0.95), rgba(18, 64, 115, 0.85))",
+      "glow": "0 0 75px rgba(104, 198, 255, 0.28)",
+      "badge": "Aurora Mode",
+      "qrForeground": "#e6faff"
+    },
+    {
+      "id": "spring",
+      "label": "Bloom Cycle",
+      "start": "03-01",
+      "end": "05-31",
+      "surface": "linear-gradient(150deg, rgba(10, 18, 20, 0.9), rgba(24, 86, 79, 0.82))",
+      "glow": "0 0 68px rgba(110, 248, 213, 0.22)",
+      "badge": "Spring Calibration",
+      "qrForeground": "#f4fffb"
+    },
+    {
+      "id": "summer",
+      "label": "Solstice Current",
+      "start": "06-01",
+      "end": "08-31",
+      "surface": "linear-gradient(140deg, rgba(16, 16, 30, 0.94), rgba(36, 79, 133, 0.78))",
+      "glow": "0 0 80px rgba(59, 188, 255, 0.3)",
+      "badge": "Solstice Signal",
+      "qrForeground": "#eef9ff"
+    },
+    {
+      "id": "autumn",
+      "label": "Ember Drift",
+      "start": "09-01",
+      "end": "11-30",
+      "surface": "linear-gradient(150deg, rgba(17, 12, 18, 0.95), rgba(74, 40, 55, 0.76))",
+      "glow": "0 0 70px rgba(255, 143, 102, 0.26)",
+      "badge": "Harvest Circuit",
+      "qrForeground": "#fff5ef"
+    }
+  ]
+}

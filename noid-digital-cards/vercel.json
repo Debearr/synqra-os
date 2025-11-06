@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/card/:handle",
+      "destination": "/card/[handle]"
+    },
+    {
+      "source": "/api/card/:handle/qr",
+      "destination": "/api/card/[handle]/qr"
+    },
+    {
+      "source": "/api/card/:handle/vcard",
+      "destination": "/api/card/[handle]/vcard"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/cards",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
+}
