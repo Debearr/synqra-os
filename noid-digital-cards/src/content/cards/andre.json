@@ -1,0 +1,27 @@
+{
+  "handle": "andre",
+  "name": "Andre McConnell",
+  "title": "Director of Digital Partnerships",
+  "location": "New York · London",
+  "bio": "Secures multi-market alliances and scales credential launches across luxury and fintech portfolios.",
+  "email": "andre@noidlux.com",
+  "phone": "+1 (917) 555-2746",
+  "website": "https://noidlux.com",
+  "industry": "Strategic Partnerships",
+  "focus": [
+    "Partner onboarding intelligence",
+    "Railway + Supabase orchestration",
+    "Capital introductions"
+  ],
+  "highlights": [
+    "Closed $15M partner-backed platform expansion",
+    "Built investor-ready KPI telemetry",
+    "Deployed cross-border NFC access in 4 weeks"
+  ],
+  "socials": {
+    "linkedin": "https://linkedin.com/in/andremcconnell",
+    "x": "https://x.com/andre_noid"
+  },
+  "availability": "Co-developing investor portfolios Q1/Q2",
+  "avatar": "/images/team/andre.svg"
+}
