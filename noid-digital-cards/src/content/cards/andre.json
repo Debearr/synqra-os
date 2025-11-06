@@ -1,10 +1,11 @@
 {
   "handle": "andre",
-  "name": "Andre McConnell",
-  "title": "Director of Digital Partnerships",
+  "name": "Andre",
+  "title": "Director of Operations",
+  "tier": "obsidian-luxe",
   "location": "New York · London",
   "bio": "Secures multi-market alliances and scales credential launches across luxury and fintech portfolios.",
-  "email": "andre@noidlux.com",
+  "email": "andre@noidlabs.com",
   "phone": "+1 (917) 555-2746",
   "website": "https://noidlux.com",
   "industry": "Strategic Partnerships",
@@ -19,9 +20,9 @@
     "Deployed cross-border NFC access in 4 weeks"
   ],
   "socials": {
-    "linkedin": "https://linkedin.com/in/andremcconnell",
+    "linkedin": "https://linkedin.com/in/andre",
     "x": "https://x.com/andre_noid"
   },
   "availability": "Co-developing investor portfolios Q1/Q2",
-  "avatar": "/images/team/andre.svg"
+  "avatar": "/images/team/andre.jpg"
 }
