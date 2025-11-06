@@ -1,10 +1,11 @@
 {
   "handle": "debear",
-  "name": "DeBear Johnson",
-  "title": "Founder & Chief Experience Architect",
+  "name": "De Bear",
+  "title": "Founder & CEO",
+  "tier": "obsidian-luxe",
   "location": "Los Angeles · Global",
   "bio": "Architects immersive credential flows for culture-forward partners and flagship activations.",
-  "email": "debear@noidlux.com",
+  "email": "tomford46661@gmail.com",
   "phone": "+1 (213) 555-1183",
   "website": "https://noidlux.com",
   "industry": "Experiential Systems",
@@ -19,10 +20,10 @@
     "Activated investor showcase with 2hr deployment"
   ],
   "socials": {
-    "linkedin": "https://linkedin.com/in/debearjohnson",
+    "linkedin": "https://linkedin.com/in/debear",
     "x": "https://x.com/debear",
     "instagram": "https://instagram.com/noid.debear"
   },
   "availability": "Accepting select investor studio collaborations",
-  "avatar": "/images/team/debear.svg"
+  "avatar": "/images/team/debear.jpg"
 }
