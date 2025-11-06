@@ -1,12 +1,16 @@
 {
-  "name": "synqra-dashboard",
+  "name": "synqra-enterprise-health-cell",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3003",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start -p 3003",
+    "lint": "next lint",
+    "health:check": "node enterprise-health-monitor.mjs",
+    "health:recovery": "node recovery-automation.mjs",
+    "health:install": "node install-health.mjs"
   },
   "dependencies": {
     "next": "^14.0.0",
@@ -15,6 +19,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "@supabase/auth-helpers-nextjs": "^0.8.7",
     "@supabase/auth-helpers-react": "^0.4.2",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.3.1",
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
