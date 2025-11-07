@@ -1,3 +1,5 @@
+import type { PricingTierSlug } from "@/types/pricing";
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -69,6 +71,83 @@ async function supabaseFetch(path: string, init?: RequestInit): Promise<Response
     headers,
     cache: "no-store",
   });
+}
+
+export type ProfileRow = {
+  id: string;
+  stripe_customer_id: string | null;
+  tier: string | null;
+  campaigns_used: number | null;
+  campaigns_limit: number | null;
+  renewal_date: string | null;
+};
+
+export function isSupabaseAvailable(): boolean {
+  return isSupabaseConfigured;
+}
+
+export async function getProfileByStripeCustomerId(
+  stripeCustomerId: string
+): Promise<ProfileRow | null> {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  const response = await supabaseFetch(
+    `/rest/v1/profiles?select=id,stripe_customer_id,tier,campaigns_used,campaigns_limit,renewal_date&stripe_customer_id=eq.${encodeURIComponent(
+      stripeCustomerId
+    )}&limit=1`
+  );
+
+  if (!response.ok) {
+    console.warn(
+      `Supabase profile lookup failed for customer ${stripeCustomerId}: ${response.status}`
+    );
+    return null;
+  }
+
+  const rows = (await response.json()) as ProfileRow[];
+  return rows[0] ?? null;
+}
+
+type UpdateProfileSubscriptionPayload = {
+  tier: PricingTierSlug;
+  campaignsLimit: number | null;
+  renewalDate: string;
+  campaignsUsed: number;
+};
+
+export async function updateProfileSubscription(
+  stripeCustomerId: string,
+  payload: UpdateProfileSubscriptionPayload
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    console.warn("Supabase environment variables are not configured. Skipping profile update.");
+    return;
+  }
+
+  const response = await supabaseFetch(
+    `/rest/v1/profiles?stripe_customer_id=eq.${encodeURIComponent(stripeCustomerId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        tier: payload.tier,
+        campaigns_limit: payload.campaignsLimit,
+        campaigns_used: payload.campaignsUsed,
+        renewal_date: payload.renewalDate,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(
+      `Supabase profile update failed (${response.status}): ${message}`
+    );
+  }
 }
 
 export async function saveNewsletterSignup(payload: NewsletterPayload) {

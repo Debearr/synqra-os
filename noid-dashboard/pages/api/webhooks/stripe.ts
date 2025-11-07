@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { STRIPE_PRODUCTS, getTierFromPriceId } from "@/lib/stripeProducts";
+import {
+  resolveCampaignLimit,
+  syncSubscriptionProfile,
+} from "@/lib/subscription";
+import { isSupabaseAvailable } from "@/lib/supabase";
+import type { PricingTierSlug } from "@/types/pricing";
 
 export const config = {
   api: {
@@ -30,9 +36,6 @@ type StripeEvent = {
   } | null;
 };
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
 async function readRawBody(req: NextApiRequest): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
 
@@ -48,8 +51,11 @@ function unixTimestampToISOString(timestamp: number | null | undefined): string 
   return new Date(timestamp * 1000).toISOString();
 }
 
-async function updateSubscriptionProfile(subscription: StripeSubscription): Promise<void> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+async function handleSubscriptionSync(
+  subscription: StripeSubscription,
+  fallbackTier?: PricingTierSlug
+): Promise<void> {
+  if (!isSupabaseAvailable()) {
     console.warn("Supabase environment variables are not configured. Skipping profile update.");
     return;
   }
@@ -61,51 +67,38 @@ async function updateSubscriptionProfile(subscription: StripeSubscription): Prom
   }
 
   const priceId = subscription.items?.data?.[0]?.price?.id ?? null;
-  if (!priceId) {
-    console.warn("Subscription payload missing price identifier.");
-    return;
+  let tier: PricingTierSlug | null = fallbackTier ?? null;
+
+  if (!tier && priceId) {
+    tier = getTierFromPriceId(priceId);
   }
 
-  const tier = getTierFromPriceId(priceId);
   if (!tier) {
-    console.warn(`No tier mapping found for price ${priceId}.`);
+    console.warn(
+      `No tier mapping found for subscription ${subscription?.customer ?? "unknown"}`
+    );
     return;
   }
 
   const product = STRIPE_PRODUCTS[tier];
+
+  if (!product && tier !== "free") {
+    console.warn(`Missing Stripe product configuration for tier ${tier}.`);
+    return;
+  }
+
+  const campaignsLimit = resolveCampaignLimit(tier, product?.campaignsLimit ?? null);
   const renewalDate =
     unixTimestampToISOString(subscription.current_period_end) ?? new Date().toISOString();
 
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/profiles?stripe_customer_id=eq.${encodeURIComponent(customerId)}`,
-    {
-      method: "PATCH",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        tier,
-        campaigns_limit: product.campaignsLimit,
-        campaigns_used: 0,
-        renewal_date: renewalDate,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Failed to update Supabase profile from Stripe webhook:", errorText);
-    throw new Error("Supabase profile update failed");
-  }
+  await syncSubscriptionProfile(customerId, tier, campaignsLimit, renewalDate);
 }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<StripeWebhookResponse>
 ): Promise<void> {
+  // TODO(stripe): Validate webhook signature using Stripe SDK once credentials are provisioned.
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method Not Allowed" });
@@ -129,10 +122,18 @@ export default async function handler(
 
   try {
     switch (event.type) {
+      case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data?.object;
         if (subscription) {
-          await updateSubscriptionProfile(subscription);
+          await handleSubscriptionSync(subscription);
+        }
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const subscription = event.data?.object;
+        if (subscription) {
+          await handleSubscriptionSync(subscription, "free");
         }
         break;
       }
