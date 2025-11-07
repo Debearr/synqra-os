@@ -19,6 +19,12 @@
     "noEmit": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "types": [
       "node"
     ],
