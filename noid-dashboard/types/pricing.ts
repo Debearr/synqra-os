@@ -64,3 +64,5 @@ export interface CampaignLimitCheck {
   remainingCampaigns: number | null;
   message?: string;
 }
+
+export type PricingConfig = Record<PricingTierSlug, PricingTier>;
