@@ -4,18 +4,29 @@
 
 :root {
   color-scheme: dark;
+  --brand-bg: #0B0B0B;
+  --brand-fg: #EDEDED;
+  --brand-gold: #D4AF37;
+  --brand-teal: #00FFC6;
+  --brand-gray: #A0A0A0;
+  --brand-ink: #141414;
+  --brand-mute: #F7F7F7;
 }
 
 html,
 body {
   height: 100%;
+  background: var(--brand-bg);
+  color: var(--brand-fg);
+  font-feature-settings: "ss01","ss02","ss03";
 }
 
 body {
   @apply bg-noir text-white font-sans antialiased;
-  background: radial-gradient(circle at 20% 20%, rgba(75, 82, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 10%, rgba(75, 82, 255, 0.12), transparent 40%),
-    #0b0b0b;
+  background-color: var(--brand-bg);
+  background-image: radial-gradient(circle at 20% 20%, rgba(75, 82, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 10%, rgba(75, 82, 255, 0.12), transparent 40%);
+  color: var(--brand-fg);
 }
 
 * {
