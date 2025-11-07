@@ -1,44 +1,55 @@
-import { pricingConfig, type BillingInterval, type TierSlug } from "@/lib/config/pricing";
+import { pricingConfig } from "@/lib/config/pricing";
+import type { PricingTierSlug, PricingTier, BillingInterval } from "@/types/pricing";
+
+type StripeBillingInterval = Extract<BillingInterval, "weekly" | "monthly">;
 
 type StripeProductConfig = {
   priceId: string;
-  campaignsLimit: number;
-  billingInterval: BillingInterval;
+  campaignsLimit: number | null;
+  billingInterval: StripeBillingInterval;
+  tier: PricingTier;
 };
 
-export const STRIPE_PRODUCTS: Record<TierSlug, StripeProductConfig> = {
+const ensuredTier = (slug: PricingTierSlug): PricingTier => pricingConfig[slug];
+
+// TODO(stripe): Replace env-driven price IDs with live Stripe product lookups once connected.
+export const STRIPE_PRODUCTS: Partial<Record<PricingTierSlug, StripeProductConfig>> = {
   explorer: {
     priceId: process.env.STRIPE_PRICE_EXPLORER ?? "",
-    campaignsLimit: pricingConfig.explorer.campaignsLimit,
-    billingInterval: pricingConfig.explorer.billingInterval,
+    campaignsLimit: ensuredTier("explorer").campaignsPerInterval,
+    billingInterval: ensuredTier("explorer").billingInterval as StripeBillingInterval,
+    tier: ensuredTier("explorer"),
   },
   creator: {
     priceId: process.env.STRIPE_PRICE_CREATOR ?? "",
-    campaignsLimit: pricingConfig.creator.campaignsLimit,
-    billingInterval: pricingConfig.creator.billingInterval,
+    campaignsLimit: ensuredTier("creator").campaignsPerInterval,
+    billingInterval: ensuredTier("creator").billingInterval as StripeBillingInterval,
+    tier: ensuredTier("creator"),
   },
   team: {
     priceId: process.env.STRIPE_PRICE_TEAM ?? "",
-    campaignsLimit: pricingConfig.team.campaignsLimit,
-    billingInterval: pricingConfig.team.billingInterval,
+    campaignsLimit: ensuredTier("team").campaignsPerInterval,
+    billingInterval: ensuredTier("team").billingInterval as StripeBillingInterval,
+    tier: ensuredTier("team"),
   },
   studio: {
     priceId: process.env.STRIPE_PRICE_STUDIO ?? "",
-    campaignsLimit: pricingConfig.studio.campaignsLimit,
-    billingInterval: pricingConfig.studio.billingInterval,
+    campaignsLimit: ensuredTier("studio").campaignsPerInterval,
+    billingInterval: ensuredTier("studio").billingInterval as StripeBillingInterval,
+    tier: ensuredTier("studio"),
   },
 };
 
-const PRICE_TO_TIER = Object.entries(STRIPE_PRODUCTS).reduce(
+const PRICE_TO_TIER = Object.entries(STRIPE_PRODUCTS).reduce<Record<string, PricingTierSlug>>(
   (acc, [tier, product]) => {
-    if (product.priceId) {
-      acc[product.priceId] = tier as TierSlug;
+    if (product?.priceId) {
+      acc[product.priceId] = tier as PricingTierSlug;
     }
     return acc;
   },
-  {} as Record<string, TierSlug>
+  {}
 );
 
-export function getTierFromPriceId(priceId: string): TierSlug | null {
+export function getTierFromPriceId(priceId: string): PricingTierSlug | null {
   return PRICE_TO_TIER[priceId] ?? null;
 }

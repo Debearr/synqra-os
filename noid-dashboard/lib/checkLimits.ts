@@ -1,11 +1,39 @@
-import { pricingConfig } from "@/lib/config/pricing";
+import type { PricingTierSlug } from "@/types/pricing";
+import {
+  calculateCampaignLimitCheck,
+  resolveCampaignLimit,
+  resolveTierSlug,
+} from "@/lib/subscription";
 
-void pricingConfig;
+type CampaignUsageInput = {
+  tier?: PricingTierSlug | null;
+  campaigns_used?: number | null;
+  campaigns_limit?: number | null;
+};
 
-export async function checkCampaignLimit(user: any) {
-  if (!user) return { ok: false, reason: "unauthenticated" };
+type CampaignLimitCheckResult =
+  | { ok: true }
+  | { ok: false; reason: "unauthenticated" | "limit_exceeded" };
 
-  if (user.campaigns_used >= user.campaigns_limit) {
+export async function checkCampaignLimit(
+  user: CampaignUsageInput | null | undefined
+): Promise<CampaignLimitCheckResult> {
+  if (!user) {
+    return { ok: false, reason: "unauthenticated" };
+  }
+
+  const tier = resolveTierSlug(user.tier);
+  const campaignsUsed = Number(user.campaigns_used ?? 0);
+  const campaignsLimit = resolveCampaignLimit(tier, user.campaigns_limit ?? null);
+
+  const limitCheck = calculateCampaignLimitCheck({
+    campaignsUsed,
+    campaignsLimit,
+    tier,
+    nextRenewalDate: null,
+  });
+
+  if (limitCheck.isAtLimit) {
     return { ok: false, reason: "limit_exceeded" };
   }
 
