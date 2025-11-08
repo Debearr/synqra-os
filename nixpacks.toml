@@ -1,11 +1,5 @@
-[phases.setup]
-nixPkgs = ["nodejs_20"]
-
-[phases.install]
-cmds = ["npm install --prefix synqra-mvp"]
-
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npm install --prefix synqra-mvp", "npm run build --prefix synqra-mvp"]
 
 [start]
-cmd = "npm run start"
+cmd = "npm --prefix synqra-mvp run start"
