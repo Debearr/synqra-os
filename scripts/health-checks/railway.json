@@ -6,7 +6,6 @@
       "buildCommand": "cd noid-dashboard && npx next build"
     },
     "deploy": {
-      "startCommand": "cd noid-dashboard && npx next start",
       "healthcheckPath": "/",
       "restartPolicyType": "ALWAYS"
     }
