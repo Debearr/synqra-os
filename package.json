@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "npm --prefix apps/synqra-mvp run dev",
     "build": "npm --prefix apps/synqra-mvp run build",
-    "start": "cd apps/synqra-mvp && npm start",
+    "start": "npm --prefix apps/synqra-mvp run start",
     "lint": "npm --prefix apps/synqra-mvp exec next lint"
   },
   "keywords": [],
