@@ -2,10 +2,10 @@
   "name": "synqra",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npm run dev --prefix noid-dashboard",
-    "build": "npm run build --prefix noid-dashboard",
-    "start": "npm run start --prefix noid-dashboard",
-    "lint": "npm run lint --prefix noid-dashboard"
+    "dev": "npm --prefix synqra-mvp run dev",
+    "build": "npm --prefix synqra-mvp run build",
+    "start": "npm --prefix synqra-mvp run start",
+    "lint": "npm --prefix synqra-mvp run lint"
   },
   "keywords": [],
   "author": "",
