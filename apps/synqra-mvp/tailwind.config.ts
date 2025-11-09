@@ -23,9 +23,18 @@ const config: Config = {
           indigo: "#4B52FF",
         },
         fontFamily: {
-          display: ['"Playfair Display"', "serif"],
-          sans: ["Inter", "system-ui", "sans-serif"],
-          mono: ['"JetBrains Mono"', "monospace"],
+          display: ["ui-serif", "Georgia", "serif"],
+          sans: [
+            "system-ui",
+            "-apple-system",
+            "BlinkMacSystemFont",
+            '"Segoe UI"',
+            "Roboto",
+            '"Helvetica Neue"',
+            "Arial",
+            "sans-serif",
+          ],
+          mono: ["ui-monospace", "Menlo", "Monaco", "Consolas", "monospace"],
         },
         borderRadius: {
           xl: "1.25rem",
