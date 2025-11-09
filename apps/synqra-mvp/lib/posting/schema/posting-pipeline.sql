@@ -68,6 +68,12 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_posts_status ON public.scheduled_posts(
 CREATE INDEX IF NOT EXISTS idx_posting_logs_job ON public.posting_logs(job_id);
 CREATE INDEX IF NOT EXISTS idx_social_tokens_platform ON public.social_tokens(platform);
 
+-- Media support for content variants
+ALTER TABLE public.content_variants
+  ADD COLUMN IF NOT EXISTS media_url text,
+  ADD COLUMN IF NOT EXISTS media_type text,
+  ADD COLUMN IF NOT EXISTS media_metadata jsonb;
+
 -- Comments for documentation
 COMMENT ON TABLE public.social_tokens IS 'OAuth tokens for social media platforms';
 COMMENT ON TABLE public.scheduled_posts IS 'Queue of posts scheduled for publishing';
