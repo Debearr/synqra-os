@@ -32,3 +32,6 @@ next-env.d.ts
 # Misc
 .vercel
 coverage
+
+# Railway production secrets
+.env.railway
