@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
 import "../styles/globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
+// Use system fonts for Railway deployment compatibility
+// Google Fonts can fail during build when network is restricted
 
 export const metadata: Metadata = {
   title: "Synqra | Perfect Draft Engine",
@@ -28,7 +27,7 @@ type RootLayoutProps = {
 const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en" className="bg-noir">
-      <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans`}>{children}</body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 };
