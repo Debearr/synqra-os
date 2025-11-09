@@ -22,6 +22,8 @@ interface GenerateRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: GenerateRequest = await request.json();
+    const { searchParams } = new URL(request.url);
+    const demoMode = searchParams.get("demo") === "true";
 
     // Validate input
     if (!body.brief || !body.platforms || body.platforms.length === 0) {
@@ -38,6 +40,23 @@ export async function POST(request: NextRequest) {
 
     // Generate variants for all platforms
     const allVariants = generateMultiPlatform(brief, platforms);
+
+    // Demo mode: skip database, return generated content directly
+    if (demoMode) {
+      logContentGeneration("demo-" + Date.now(), brief, platforms);
+      return NextResponse.json(
+        {
+          jobId: "demo-" + Date.now(),
+          brief,
+          platforms,
+          variants: allVariants,
+          demoMode: true,
+          message: "Demo mode: Content generated but not saved to database",
+          timestamp: new Date().toISOString(),
+        },
+        { status: 200 }
+      );
+    }
 
     // Create job in Supabase
     const { data: job, error: jobError } = await supabase
