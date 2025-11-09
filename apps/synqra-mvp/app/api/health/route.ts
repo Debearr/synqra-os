@@ -9,7 +9,7 @@ import { agentConfig, validateConfig } from "@/lib/agents";
  * Railway and monitoring systems use this to verify the app is running
  */
 
-export async function GET() {
+async function performHealthCheck() {
   try {
     // Check agent configuration
     const configValidation = validateConfig();
@@ -61,4 +61,16 @@ export async function GET() {
       }
     );
   }
+}
+
+export async function GET() {
+  return performHealthCheck();
+}
+
+export async function HEAD() {
+  const response = await performHealthCheck();
+  return new NextResponse(null, {
+    status: response.status,
+    headers: response.headers,
+  });
 }

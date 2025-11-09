@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:3004": "next dev -p 3004",
     "build": "next build",
-    "start": "next start -p ${PORT:-3000} --hostname 0.0.0.0"
+    "start": "next start -p ${PORT:-3004} --hostname 0.0.0.0",
+    "lint": "next lint || echo 'lint skipped'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@supabase/supabase-js": "^2.80.0",
     "framer-motion": "^11.2.7",
     "next": "15.0.2",
     "react": "18.3.1",

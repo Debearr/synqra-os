@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm --prefix apps/synqra-mvp run dev",
+    "dev:3004": "npm --prefix apps/synqra-mvp run dev:3004",
     "build": "npm --prefix apps/synqra-mvp run build",
     "start": "npm --prefix apps/synqra-mvp run start",
-    "lint": "npm --prefix apps/synqra-mvp exec next lint"
+    "lint": "npm --prefix apps/synqra-mvp run lint"
   },
   "keywords": [],
   "author": "",

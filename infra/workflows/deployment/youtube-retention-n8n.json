@@ -1,0 +1,147 @@
+{
+  "name": "YouTube Retention Tracker",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Runs daily at 9 AM to fetch YouTube analytics"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "queryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "statistics,contentDetails"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.videoId }}"
+            },
+            {
+              "name": "key",
+              "value": "YOUR_YOUTUBE_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "youtube-api-node",
+      "name": "YouTube Data API v3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "notes": "PASTE YOUR FREE YOUTUBE API KEY: Get it from https://console.cloud.google.com/apis/credentials"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse YouTube API response and calculate metrics\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const video = item.json.items?.[0];\n  if (!video) continue;\n\n  const stats = video.statistics;\n  const duration = video.contentDetails?.duration || 'PT0S';\n  \n  // Parse ISO 8601 duration (e.g., PT1H2M10S)\n  const durationMatch = duration.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);\n  const hours = parseInt(durationMatch?.[1] || '0');\n  const minutes = parseInt(durationMatch?.[2] || '0');\n  const seconds = parseInt(durationMatch?.[3] || '0');\n  const totalSeconds = hours * 3600 + minutes * 60 + seconds;\n\n  // Estimate average view duration (YouTube Analytics API required for exact data)\n  // Using 40% as conservative estimate - replace with actual data when available\n  const estimatedAvgViewDuration = totalSeconds * 0.4;\n  const estimatedCompletion = 40;\n\n  results.push({\n    json: {\n      platform: 'youtube',\n      videoId: video.id,\n      viewCount: parseInt(stats.viewCount || 0),\n      likeCount: parseInt(stats.likeCount || 0),\n      commentCount: parseInt(stats.commentCount || 0),\n      avgViewDuration: estimatedAvgViewDuration,\n      avgCompletion: estimatedCompletion,\n      notes: `Views: ${stats.viewCount}, Likes: ${stats.likeCount}, Comments: ${stats.commentCount}. Duration: ${totalSeconds}s. NOTE: View duration is estimated - use YouTube Analytics API for exact data.`\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "parse-node",
+      "name": "Parse Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Parses YouTube API response. NOTE: For exact avgViewDuration, use YouTube Analytics API (requires OAuth)"
+    },
+    {
+      "parameters": {
+        "url": "https://your-app.vercel.app/api/retention/notes",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "post-retention-node",
+      "name": "POST to Retention API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 300],
+      "notes": "UPDATE THIS URL to your deployed app endpoint"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "videoId",
+              "value": "dQw4w9WgXcQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "video-ids-node",
+      "name": "Video IDs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [350, 300],
+      "notes": "CONFIGURE: Add your YouTube video IDs here (one per execution)"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Video IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video IDs": {
+      "main": [
+        [
+          {
+            "node": "YouTube Data API v3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Data API v3": {
+      "main": [
+        [
+          {
+            "node": "Parse Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Metrics": {
+      "main": [
+        [
+          {
+            "node": "POST to Retention API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "meta": {
+    "instanceId": "your-n8n-instance"
+  },
+  "tags": [
+    {
+      "name": "content-flywheel",
+      "id": "1"
+    }
+  ]
+}
