@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "x-powered-by",
+          "value": "Synqra-NOID"
+        }
+      ]
+    }
+  ]
+}
