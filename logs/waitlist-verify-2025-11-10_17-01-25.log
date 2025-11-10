@@ -1,0 +1,69 @@
+=== SYNQRA WAITLIST VERIFICATION & DEPLOYMENT LOG ===
+Timestamp: Mon Nov 10 05:01:25 PM UTC 2025
+Target: https://waitlist.getluxgrid.com
+
+
+=== TEST 1: HOMEPAGE ACCESSIBILITY ===
+URL: https://waitlist.getluxgrid.com/waitlist
+Expected: HTTP 200 OK
+
+Result: HTTP 000000
+❌ FAILED - HTTP 000000 (expected 200)
+
+=== TEST 2: API HEALTH - NEW SIGNUP ===
+Endpoint: POST /api/waitlist
+Email: test-2025-11-10_17-01-25@noidlabs.com
+Expected: {"ok":true}
+
+Response: {"error":"connection_failed"}
+❌ FAILED - API did not return ok:true
+
+=== TEST 3: DUPLICATE EMAIL HANDLING ===
+Email: test-2025-11-10_17-01-25@noidlabs.com (duplicate)
+Expected: Response containing 'already_registered'
+
+Response: {"error":"connection_failed"}
+❌ FAILED - Duplicate not properly handled
+
+=== TEST 4: INVALID EMAIL REJECTION ===
+Email: notanemail (invalid format)
+Expected: Response containing 'Invalid email'
+
+Response: {"error":"connection_failed"}
+✅ PASSED - Invalid email rejected correctly
+
+=== TEST 5: SUCCESS PAGE ACCESSIBILITY ===
+URL: https://waitlist.getluxgrid.com/waitlist/success
+Expected: HTTP 200 OK
+
+Result: HTTP 000000
+❌ FAILED - HTTP 000000 (expected 200)
+
+======================================================
+  VERIFICATION SUMMARY
+======================================================
+
+
+⚠️ ISSUES DETECTED – review log
+
+=== TROUBLESHOOTING ===
+
+Failed tests detected. Possible actions:
+
+1. Review detailed error messages above
+2. Check DNS configuration:
+   nslookup waitlist.getluxgrid.com
+
+3. Verify Vercel deployment:
+   vercel ls
+
+4. If needed, rollback deployment:
+   vercel rollback https://waitlist.getluxgrid.com --yes
+
+
+======================================================
+📊 Verification Complete – Log saved to:
+   /workspace/logs/waitlist-verify-2025-11-10_17-01-25.log
+======================================================
+
+Completed: Mon Nov 10 05:01:57 PM UTC 2025
