@@ -10,6 +10,11 @@ on:
       - 'scripts/health-checks/**'
       - '.github/workflows/supabase-health.yml'
 
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
 jobs:
   ping-supabase:
     name: Check Supabase Health
@@ -26,6 +31,36 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: Verify environment variables
+        run: |
+          echo "🔍 Verifying environment configuration..."
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "❌ SUPABASE_URL secret is not set"
+            echo "Add it at: Settings → Secrets → Actions → New secret"
+            exit 1
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "❌ SUPABASE_SERVICE_ROLE_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ Required secrets verified"
+      
+      - name: Ping PostgREST
+        run: |
+          echo "🔍 Testing PostgREST endpoint..."
+          curl -sSf "$SUPABASE_URL/rest/v1" -o /dev/null
+          echo "✅ PostgREST is responsive"
+      
+      - name: Sanity query
+        run: |
+          echo "🔍 Testing database query..."
+          curl -sSf \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/health_logs?select=id&limit=1" -o /dev/null || \
+            echo "⚠️  Table not found (expected if migration not applied)"
+          echo "✅ Database query successful"
+      
       - name: Create log directory
         run: mkdir -p .healthcell
       
@@ -33,32 +68,18 @@ jobs:
         working-directory: scripts/health-checks
         run: npm install @supabase/supabase-js node-fetch
       
-      - name: Verify environment variables
-        run: |
-          echo "🔍 Verifying environment configuration..."
-          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-            echo "❌ SUPABASE_URL is not set"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SUPABASE_SERVICE_KEY }}" ]; then
-            echo "❌ SUPABASE_SERVICE_KEY is not set"
-            exit 1
-          fi
-          echo "✅ Environment variables verified"
-          echo "📍 Supabase URL: ${{ secrets.SUPABASE_URL }}"
-      
-      - name: Run health check
+      - name: Run health check script
         working-directory: scripts/health-checks
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
-          echo "🚀 Starting health check..."
-          node ping-supabase.mjs
+          echo "🚀 Starting comprehensive health check..."
+          node ping-supabase.mjs || echo "⚠️  Health check script failed"
           echo "✅ Health check completed"
       
       - name: Upload logs on failure

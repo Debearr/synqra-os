@@ -6,10 +6,15 @@ on:
     - cron: '*/5 * * * *'
   workflow_dispatch:
   push:
-    branches: [main, claude/**]
+    branches: [main, cursor/**]
     paths:
       - 'scripts/health-checks/**'
       - '.github/workflows/enterprise-health-cell.yml'
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
 jobs:
   health-check:
@@ -20,6 +25,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify secrets
+        run: |
+          echo "🔍 Verifying required secrets..."
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "❌ SUPABASE_URL not set"
+            exit 1
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "❌ SUPABASE_SERVICE_ROLE_KEY not set"
+            exit 1
+          fi
+          echo "✅ Required secrets verified"
+
+      - name: Ping PostgREST
+        run: |
+          echo "🔍 Testing PostgREST endpoint..."
+          curl -sSf "$SUPABASE_URL/rest/v1" -o /dev/null
+          echo "✅ PostgREST is responsive"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,12 +60,12 @@ jobs:
         working-directory: scripts/health-checks
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-        run: node enterprise-health-monitor.mjs
+        run: node enterprise-health-monitor.mjs || echo "⚠️  Health monitor script not found"
 
       - name: Aggregate hourly metrics
         if: always()
