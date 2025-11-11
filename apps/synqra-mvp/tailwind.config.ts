@@ -21,6 +21,12 @@ const config: Config = {
           },
           noir: "#0B0B0B",
           indigo: "#4B52FF",
+          lux: {
+            black: "#000000",
+            gold: "#D4AF37",
+            emerald: "#00D9A3",
+            white: "#FFFFFF",
+          },
         },
         fontFamily: {
           display: ["ui-serif", "Georgia", "serif"],
