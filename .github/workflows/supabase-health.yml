@@ -45,11 +45,19 @@ jobs:
           fi
           echo "✅ Required secrets verified"
       
-      - name: Ping PostgREST
+      - name: Wait for warm PostgREST
         run: |
-          echo "🔍 Testing PostgREST endpoint..."
-          curl -sSf "$SUPABASE_URL/rest/v1" -o /dev/null
-          echo "✅ PostgREST is responsive"
+          echo "🔍 Testing PostgREST endpoint (with retry)..."
+          for i in 1 2 3 4 5; do
+            if curl -sSf "$SUPABASE_URL/rest/v1" -o /dev/null; then 
+              echo "✅ PostgREST is responsive (attempt $i)"
+              exit 0
+            fi
+            echo "⏳ Waiting $((i*2))s before retry..."
+            sleep $((i*2))
+          done
+          echo "❌ PostgREST not ready after 5 attempts"
+          exit 1
       
       - name: Sanity query
         run: |
