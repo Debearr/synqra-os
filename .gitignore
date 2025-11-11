@@ -35,3 +35,4 @@ coverage
 
 # Railway production secrets
 .env.railway
+.env
