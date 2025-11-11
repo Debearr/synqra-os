@@ -1,8 +1,15 @@
+# Nixpacks configuration for SYNQRA OS
+# Optimized for Next.js 16 deployment on Railway
+
 [phases.setup]
-cmds = ["npm --prefix apps/synqra-mvp install"]
+cmds = ["npm --prefix apps/synqra-mvp install --no-audit --no-fund"]
 
 [phases.build]
 cmds = ["npm --prefix apps/synqra-mvp run build"]
 
 [start]
 cmd = "npm --prefix apps/synqra-mvp run start"
+
+[variables]
+# Railway will inject PORT automatically
+# Next.js will bind to $PORT via `next start -p $PORT`
