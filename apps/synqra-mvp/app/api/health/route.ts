@@ -1,13 +1,8 @@
-import { NextResponse } from "next/server";
-
-/**
- * ============================================================
- * HEALTH CHECK ENDPOINT
- * ============================================================
- * Railway and monitoring systems use this to verify the app is running
- * Simple response: { ok: true } = app is alive and responding
- */
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
 }
