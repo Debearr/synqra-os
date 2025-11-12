@@ -139,11 +139,11 @@ const HomePage = () => {
       <div className="relative w-full max-w-[700px] space-y-8">
         <div className="rounded-[32px] border border-white/8 bg-black/40 p-8 backdrop-blur-xl shadow-[0_16px_80px_rgba(11,11,11,0.85)]">
           <header className="mb-8 text-center">
-            <span className="text-xs uppercase tracking-[0.5em] text-white/35">Synqra</span>
-            <h1 className="mt-3 font-display text-[2.25rem] tracking-[0.12em] text-white">
+            <span className="pt-6 text-xs uppercase tracking-[0.5em] text-white/35 hover:[text-shadow:0_0_6px_rgba(0,255,198,0.25)] transition-all duration-300">Synqra</span>
+            <h1 className="mt-6 font-display text-[clamp(2rem,2.5vw,2.5rem)] tracking-[0.15em] text-white pb-3">
               Perfect Draft Engine
             </h1>
-            <p className="mt-3 text-sm text-white/55">
+            <p className="mt-4 text-sm leading-relaxed text-white/60">
               Drop a single prompt. Receive a premium, production-ready draft instantly.
             </p>
           </header>
