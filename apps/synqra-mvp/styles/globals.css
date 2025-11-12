@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+ * SYNQRA BRAND TEXT
+ * ============================================================
+ * Champagne gold gradient with luxury spacing
+ * Tom Ford × Virgil Abloh aesthetic
+ * Supports dark and light mode themes
+ */
+.synqra-brand-text {
+  font-size: clamp(2.8rem, 6vw, 4rem);
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  /* Dark mode (default) - Champagne gold gradient */
+  background: linear-gradient(135deg, #D4AF37 0%, #F5E6D3 70%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 25px rgba(255, 215, 170, 0.25);
+  margin-top: 20px;
+  margin-bottom: 40px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Light mode - Copper to champagne gold gradient */
+[data-theme="light"] .synqra-brand-text {
+  background: linear-gradient(135deg, #B87333 0%, #D4AF37 80%);
+  text-shadow: 0 0 25px rgba(184, 115, 51, 0.2);
+}
+
+/* Fallback for browsers that don't support background-clip: text */
+@supports not (-webkit-background-clip: text) {
+  .synqra-brand-text {
+    color: #D4AF37;
+    -webkit-text-fill-color: #D4AF37;
+  }
+  
+  [data-theme="light"] .synqra-brand-text {
+    color: #B87333;
+    -webkit-text-fill-color: #B87333;
+  }
+}
+
 :root {
   color-scheme: dark;
   --brand-bg: #0B0B0B;

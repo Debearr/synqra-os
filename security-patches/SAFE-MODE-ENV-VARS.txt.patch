@@ -1,0 +1,51 @@
+# SAFE-MODE-ENV-VARS.txt
+# =======================
+# Environment Variables for Railway Safe Mode Deployment
+# DO NOT commit actual credentials - use Railway dashboard or CLI
+# =======================
+
+# Supabase Configuration (Get from: https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api)
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+
+# Supabase Keys (NEVER commit real keys!)
+SUPABASE_ANON_KEY=your_anon_key_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# Mock key for build testing only (Not for production!)
+# SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYyMDAwMDAwMCwiZXhwIjoxOTM1NjAwMDAwfQ.mock_service_key_for_build_testing_only
+
+# Server Configuration
+PORT=3004
+NODE_ENV=production
+
+# To set these in Railway:
+# =======================
+# Method 1: Railway Dashboard
+# 1. Open Railway Dashboard → Your Project → Variables
+# 2. Add each variable manually
+#
+# Method 2: Railway CLI
+# 1. Install: npm install -g @railway/cli
+# 2. Login: railway login
+# 3. Link project: railway link
+# 4. Set variables:
+#    railway variables set SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+#    railway variables set SUPABASE_SERVICE_ROLE_KEY="your_key_here"
+#    railway variables set TELEGRAM_BOT_TOKEN="your_token_here"
+#    etc.
+
+# Anthropic API (Optional - for AI features)
+# Get from: https://console.anthropic.com/settings/keys
+# ANTHROPIC_API_KEY=sk-ant-api03-YOUR_KEY_HERE
+
+# Telegram Bot (Optional - for notifications)
+# Get from: @BotFather on Telegram
+TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN
+TELEGRAM_CHANNEL_ID=@YOUR_CHANNEL
+
+# KIE.AI Multi-Model Router (Optional)
+# Get from: https://kie.ai/dashboard
+KIE_API_KEY=your_kie_api_key_here
+KIE_PROJECT_ID=your_kie_project_id_here

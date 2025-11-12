@@ -80,7 +80,7 @@
 
 ### 6. Monitoring Configuration ✅
 - **Telegram Bot**: Configured and ready
-  - Bot Token: 8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg
+  - Bot Token: YOUR_BOT_ID:YOUR_BOT_TOKEN
   - Channel: @AuraFX_Hub
 - **GitHub Actions**: Configured with all secrets
 - **Health Logging**: Local and remote logging implemented
@@ -131,9 +131,9 @@ node bootstrap-migration.mjs
 - **Required Secrets**:
   ```
   SUPABASE_URL = https://tjfeindwmpuyajvjftke.supabase.co
-  SUPABASE_SERVICE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTYxODU3NiwiZXhwIjoyMDc1MTk0NTc2fQ.VEHAj85_x8LZFh0TA9ojv_DYPQdH02g8stsoIT9nNBI
-  SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MTg1NzYsImV4cCI6MjA3NTE5NDU3Nn0.knBEboY-VvRWUVLmCFWavQbJHo_Mpjvw6oslHlh3oi0
-  TELEGRAM_BOT_TOKEN = 8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg
+  SUPABASE_SERVICE_KEY = your_supabase_service_role_key_here
+  SUPABASE_ANON_KEY = your_supabase_anon_key_here
+  TELEGRAM_BOT_TOKEN = YOUR_BOT_ID:YOUR_BOT_TOKEN
   TELEGRAM_CHANNEL_ID = @AuraFX_Hub
   N8N_WEBHOOK_URL = [optional - if using N8N automation]
   ```
@@ -149,9 +149,9 @@ bash setup-github-secrets.sh
 - **Required Variables**:
   ```bash
   NEXT_PUBLIC_SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co
-  NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MTg1NzYsImV4cCI6MjA3NTE5NDU3Nn0.knBEboY-VvRWUVLmCFWavQbJHo_Mpjvw6oslHlh3oi0
-  SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTYxODU3NiwiZXhwIjoyMDc1MTk0NTc2fQ.VEHAj85_x8LZFh0TA9ojv_DYPQdH02g8stsoIT9nNBI
-  TELEGRAM_BOT_TOKEN=8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+  SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
+  TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN
   TELEGRAM_CHANNEL_ID=@AuraFX_Hub
   PORT=3004
   ```
@@ -166,7 +166,7 @@ bash setup-github-secrets.sh
 | Health Check Script | ✅ READY | Enhanced with graceful degradation |
 | GitHub Workflow | ✅ UPDATED | Enhanced error handling & notifications |
 | API Health Endpoint | ✅ ENHANCED | Multi-service monitoring |
-| Telegram Notifications | ✅ CONFIGURED | Bot: 8369994671 → @AuraFX_Hub |
+| Telegram Notifications | ✅ CONFIGURED | Bot: YOUR_BOT_ID → @AuraFX_Hub |
 | Database Migration | ⚠️ PENDING | File ready: MIGRATION-TO-APPLY.sql |
 | GitHub Secrets | ⚠️ ACTION NEEDED | Must be added manually |
 | Production Deploy | ⚠️ ACTION NEEDED | Environment variables required |
@@ -217,7 +217,7 @@ cd scripts/health-checks
 npm install
 SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co \
 SUPABASE_SERVICE_KEY=<service-key> \
-TELEGRAM_BOT_TOKEN=8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg \
+TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN \
 TELEGRAM_CHANNEL_ID=@AuraFX_Hub \
 node ping-supabase-enhanced.mjs
 ```
@@ -256,7 +256,7 @@ Expected response: HTTP 200 with JSON health status
 
 ### Telegram Notifications
 - **Channel**: @AuraFX_Hub
-- **Bot**: 8369994671
+- **Bot**: YOUR_BOT_ID
 - **Triggers**: 
   - Health check failures
   - GitHub Action failures

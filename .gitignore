@@ -36,3 +36,12 @@ coverage
 # Railway production secrets
 .env.railway
 .env
+.env
+.env.*
+*.env
+apps/**/.env*
+scripts/**/.env*
+**/*.env
+.env.local
+.env.development
+.env.production

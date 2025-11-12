@@ -6,25 +6,33 @@
 
 ```bash
 # Supabase Connection
-NEXT_PUBLIC_SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # Server-side only
-SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+SUPABASE_ACCESS_TOKEN=your_supabase_access_token_here
 ```
 
 ### Telegram Notifications
 
 ```bash
 TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN
-TELEGRAM_CHANNEL_ID=@AuraFX_Hub
+TELEGRAM_CHANNEL_ID=@YOUR_CHANNEL_NAME
+```
+
+### KIE.AI Multi-Model Router
+
+```bash
+KIE_API_KEY=your_kie_api_key_here
+KIE_PROJECT_ID=your_kie_project_id_here
 ```
 
 ### Health Monitoring (Optional)
 
 ```bash
 # N8N Webhook for incident recovery automation
-N8N_WEBHOOK_URL=<your-n8n-webhook-url>
+N8N_WEBHOOK_URL=your_n8n_webhook_url_here
 ```
 
 ## GitHub Secrets Setup
@@ -34,12 +42,12 @@ Add these secrets to your GitHub repository:
 1. Go to: Settings → Secrets and variables → Actions
 2. Add the following secrets:
 
-- `SUPABASE_URL` = https://tjfeindwmpuyajvjftke.supabase.co
-- `SUPABASE_SERVICE_KEY` = (service role key above)
-- `SUPABASE_ANON_KEY` = (anon key above)
-- `TELEGRAM_BOT_TOKEN` = YOUR_BOT_ID:YOUR_BOT_TOKEN
-- `TELEGRAM_CHANNEL_ID` = @AuraFX_Hub
-- `N8N_WEBHOOK_URL` = (if using N8N automation)
+- `SUPABASE_URL` = Your Supabase project URL
+- `SUPABASE_SERVICE_KEY` = Your service role key from Supabase Dashboard
+- `SUPABASE_ANON_KEY` = Your anon key from Supabase Dashboard
+- `TELEGRAM_BOT_TOKEN` = Your bot token from @BotFather
+- `TELEGRAM_CHANNEL_ID` = Your Telegram channel (e.g., @YourChannel)
+- `N8N_WEBHOOK_URL` = (Optional) Your N8N webhook URL
 
 ## Deployment Platforms
 
@@ -48,11 +56,13 @@ Add these secrets to your GitHub repository:
 Add environment variables in the platform's dashboard:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
-TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN
-TELEGRAM_CHANNEL_ID=@AuraFX_Hub
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHANNEL_ID=@YourChannel
+KIE_API_KEY=your_kie_api_key_here
+KIE_PROJECT_ID=your_kie_project_id_here
 PORT=3004
 ```
 
@@ -105,10 +115,12 @@ The workflow `.github/workflows/supabase-health.yml` automatically:
 # Test health check locally
 cd scripts/health-checks
 npm install
-SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co \
-SUPABASE_SERVICE_KEY=<service-key> \
-TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN \
-TELEGRAM_CHANNEL_ID=@AuraFX_Hub \
+
+# Create .env.local from template
+cp .env.template .env.local
+# Edit .env.local with your actual credentials
+
+# Run test
 node ping-supabase-enhanced.mjs
 ```
 
@@ -119,7 +131,7 @@ node ping-supabase-enhanced.mjs
 The migration file is ready at: `MIGRATION-TO-APPLY.sql`
 
 **Option 1: Supabase Dashboard (Recommended)**
-1. Go to: https://supabase.com/dashboard/project/tjfeindwmpuyajvjftke/sql/new
+1. Go to: https://supabase.com/dashboard/project/YOUR_PROJECT_REF/sql/new
 2. Paste contents of `MIGRATION-TO-APPLY.sql`
 3. Click "Run"
 
@@ -127,12 +139,12 @@ The migration file is ready at: `MIGRATION-TO-APPLY.sql`
 ```bash
 # Get database password from Supabase Dashboard → Settings → Database
 export PGPASSWORD='your-db-password'
-psql "postgresql://postgres@db.tjfeindwmpuyajvjftke.supabase.co:5432/postgres" -f MIGRATION-TO-APPLY.sql
+psql "postgresql://postgres@db.YOUR_PROJECT_REF.supabase.co:5432/postgres" -f MIGRATION-TO-APPLY.sql
 ```
 
 **Option 3: Supabase CLI**
 ```bash
-supabase db push --db-url "postgresql://postgres:[password]@db.tjfeindwmpuyajvjftke.supabase.co:5432/postgres" --file MIGRATION-TO-APPLY.sql
+supabase db push --db-url "postgresql://postgres:[password]@db.YOUR_PROJECT_REF.supabase.co:5432/postgres"
 ```
 
 ### Verify Migration
@@ -166,4 +178,4 @@ Expected output:
 For issues or questions:
 - Check logs: `.healthcell/local-logs.jsonl`
 - Review GitHub Actions: https://github.com/your-repo/actions
-- Telegram alerts: @AuraFX_Hub
+- Telegram alerts: Your configured channel

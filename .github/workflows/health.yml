@@ -1,0 +1,29 @@
+name: Health Check
+
+on:
+  schedule:
+    - cron: '0,30 * * * *'  # Every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Application Health
+        run: |
+          for i in 1 2 3; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.APP_URL }}/api/health)
+            if [ $response -eq 200 ]; then
+              echo "✅ Health check passed (attempt $i)"
+              exit 0
+            else
+              echo "❌ Health check failed with status $response (attempt $i)"
+              if [ $i -lt 3 ]; then
+                echo "⏳ Retrying in 5 seconds..."
+                sleep 5
+              else
+                echo "🚨 All retry attempts failed"
+                exit 1
+              fi
+            fi
+          done
