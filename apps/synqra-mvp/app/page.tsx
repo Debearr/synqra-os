@@ -139,10 +139,29 @@ const HomePage = () => {
       <div className="relative w-full max-w-[700px] space-y-8">
         <div className="rounded-[32px] border border-white/8 bg-black/40 p-8 backdrop-blur-xl shadow-[0_16px_80px_rgba(11,11,11,0.85)]">
           <header className="mb-8 text-center">
-            <span className="pt-6 text-xs uppercase tracking-[0.5em] text-white/35 hover:[text-shadow:0_0_6px_rgba(0,255,198,0.25)] transition-all duration-300">Synqra</span>
-            <h1 className="mt-6 font-display text-[clamp(2rem,2.5vw,2.5rem)] tracking-[0.15em] text-white pb-3">
-              Perfect Draft Engine
+            <h1 
+              className="synqra-brand-text"
+              style={{
+                fontSize: 'clamp(2.8rem, 6vw, 4rem)',
+                letterSpacing: '0.15em',
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6D3 70%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 25px rgba(255, 215, 170, 0.25)',
+                marginTop: '20px',
+                marginBottom: '40px',
+                paddingTop: '24px',
+                paddingBottom: '24px',
+                textAlign: 'center',
+                textTransform: 'uppercase'
+              }}
+            >
+              SYNQRA
             </h1>
+            <h2 className="mt-2 font-display text-[clamp(1.5rem,2vw,2rem)] tracking-[0.12em] text-white/90 pb-3">
+              Perfect Draft Engine
+            </h2>
             <p className="mt-4 text-sm leading-relaxed text-white/60">
               Drop a single prompt. Receive a premium, production-ready draft instantly.
             </p>
