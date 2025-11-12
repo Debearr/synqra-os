@@ -166,7 +166,7 @@ bash setup-github-secrets.sh
 | Health Check Script | ✅ READY | Enhanced with graceful degradation |
 | GitHub Workflow | ✅ UPDATED | Enhanced error handling & notifications |
 | API Health Endpoint | ✅ ENHANCED | Multi-service monitoring |
-| Telegram Notifications | ✅ CONFIGURED | Bot: 8369994671 → @AuraFX_Hub |
+| Telegram Notifications | ✅ CONFIGURED | Bot: YOUR_BOT_ID → @AuraFX_Hub |
 | Database Migration | ⚠️ PENDING | File ready: MIGRATION-TO-APPLY.sql |
 | GitHub Secrets | ⚠️ ACTION NEEDED | Must be added manually |
 | Production Deploy | ⚠️ ACTION NEEDED | Environment variables required |
@@ -256,7 +256,7 @@ Expected response: HTTP 200 with JSON health status
 
 ### Telegram Notifications
 - **Channel**: @AuraFX_Hub
-- **Bot**: 8369994671
+- **Bot**: YOUR_BOT_ID
 - **Triggers**: 
   - Health check failures
   - GitHub Action failures

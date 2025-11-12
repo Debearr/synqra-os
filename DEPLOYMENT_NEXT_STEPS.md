@@ -37,7 +37,7 @@ node bootstrap-migration.mjs
 | `SUPABASE_URL` | `https://tjfeindwmpuyajvjftke.supabase.co` |
 | `SUPABASE_SERVICE_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTYxODU3NiwiZXhwIjoyMDc1MTk0NTc2fQ.VEHAj85_x8LZFh0TA9ojv_DYPQdH02g8stsoIT9nNBI` |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MTg1NzYsImV4cCI6MjA3NTE5NDU3Nn0.knBEboY-VvRWUVLmCFWavQbJHo_Mpjvw6oslHlh3oi0` |
-| `TELEGRAM_BOT_TOKEN` | `8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg` |
+| `TELEGRAM_BOT_TOKEN` | `YOUR_BOT_ID:YOUR_BOT_TOKEN` |
 | `TELEGRAM_CHANNEL_ID` | `@AuraFX_Hub` |
 
 **Verify:**
