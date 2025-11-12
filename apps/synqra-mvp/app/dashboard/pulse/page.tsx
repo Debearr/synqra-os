@@ -18,7 +18,6 @@ export default function PulseEnginePage() {
         <PageHeader
           title="PulseEngine"
           subtitle="Trend-based content automation"
-          barcode="PULSE-001"
         />
 
         {/* Tab Navigation */}

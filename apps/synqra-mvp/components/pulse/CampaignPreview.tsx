@@ -95,10 +95,11 @@ export default function CampaignPreview({
       {/* Generate Button */}
       <div className="flex justify-center">
         <CTAButton
-          label={generating ? 'Generating...' : 'Generate with PulseEngine'}
           onClick={generateCampaign}
           disabled={!brief || selectedPlatforms.length === 0 || generating}
-        />
+        >
+          {generating ? 'Generating...' : 'Generate with PulseEngine'}
+        </CTAButton>
       </div>
 
       {/* Campaign Preview */}
@@ -137,10 +138,9 @@ export default function CampaignPreview({
 
           {/* Next Button */}
           <div className="flex justify-end">
-            <CTAButton
-              label="Schedule Campaign →"
-              onClick={onNext}
-            />
+            <CTAButton onClick={onNext}>
+              Schedule Campaign →
+            </CTAButton>
           </div>
         </div>
       )}

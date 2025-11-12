@@ -153,10 +153,11 @@ export default function TrendPicker({ selectedTrends, onTrendsChange, onNext }: 
       {/* Next Button */}
       <div className="flex justify-end">
         <CTAButton
-          label="Generate Campaign →"
           onClick={onNext}
           disabled={selectedTrends.length === 0}
-        />
+        >
+          Generate Campaign →
+        </CTAButton>
       </div>
     </div>
   );

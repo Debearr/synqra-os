@@ -13,15 +13,9 @@ import { createClient } from '@supabase/supabase-js';
  * - SUPABASE_SERVICE_ROLE: Your Supabase service role key (secret!)
  */
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE in environment. ' +
-    'Set these in .env.local for development or Vercel for production.'
-  );
-}
+// Lazy initialization with placeholders for build time
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || 'placeholder-key';
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
   auth: { 

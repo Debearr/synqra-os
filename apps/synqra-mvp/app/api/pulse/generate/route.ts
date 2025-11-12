@@ -3,10 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import { generateTrendContent } from '@/lib/kieRouter';
 import { generateHooks, type Platform } from '@/lib/contentGenerator';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+// Initialize Supabase client lazily
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+  );
+}
 
 /**
  * POST /api/pulse/generate
@@ -23,6 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseClient();
+    
     // Check token limits
     const { data: tokenData } = await supabase
       .from('pulse_tokens')

@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+// Initialize Supabase client lazily
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+  );
+}
 
 /**
  * POST /api/pulse/share
@@ -30,6 +33,8 @@ export async function POST(request: NextRequest) {
     // Hash IP for privacy
     const ipHash = createHash('sha256').update(ip).digest('hex');
 
+    const supabase = getSupabaseClient();
+    
     // Track share click
     const { error } = await supabase
       .from('pulse_shares')
@@ -72,6 +77,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseClient();
+    
     // Get share stats
     const { data: shares, error } = await supabase
       .from('pulse_shares')

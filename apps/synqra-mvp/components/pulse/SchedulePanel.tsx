@@ -131,10 +131,11 @@ export default function SchedulePanel({ campaign, onScheduled }: SchedulePanelPr
       {/* Schedule Button */}
       <div className="flex justify-center">
         <CTAButton
-          label={scheduling ? 'Scheduling...' : 'Schedule Campaign'}
           onClick={handleSchedule}
           disabled={!scheduledDate || !scheduledTime || scheduling}
-        />
+        >
+          {scheduling ? 'Scheduling...' : 'Schedule Campaign'}
+        </CTAButton>
       </div>
     </div>
   );

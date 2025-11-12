@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { detectTrends } from '@/lib/kieRouter';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+// Initialize Supabase client lazily
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+  );
+}
 
 /**
  * GET /api/pulse/trends
@@ -16,6 +19,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const platform = searchParams.get('platform') || 'all';
 
+    const supabase = getSupabaseClient();
     let query = supabase
       .from('pulse_trends')
       .select('*')
@@ -68,6 +72,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseClient();
+    
     // Delete expired trends for this platform
     await supabase
       .from('pulse_trends')
