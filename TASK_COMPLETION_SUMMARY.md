@@ -249,7 +249,7 @@ psql "postgresql://postgres@db.tjfeindwmpuyajvjftke.supabase.co:5432/postgres" -
 SUPABASE_URL=https://tjfeindwmpuyajvjftke.supabase.co
 SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-TELEGRAM_BOT_TOKEN=8369994671:AAEmB2bJ2frgbPXYFy3oUO5a2u-7brzkxPg
+TELEGRAM_BOT_TOKEN=YOUR_BOT_ID:YOUR_BOT_TOKEN
 TELEGRAM_CHANNEL_ID=@AuraFX_Hub
 ```
 

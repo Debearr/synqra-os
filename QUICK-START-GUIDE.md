@@ -135,7 +135,7 @@ npm run build
 ### Supabase Connection Issues
 ```bash
 # Test Supabase connectivity
-curl -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MTg1NzYsImV4cCI6MjA3NTE5NDU3Nn0.knBEboY-VvRWUVLmCFWavQbJHo_Mpjvw6oslHlh3oi0" \
+curl -H "apikey: your_supabase_anon_key_here" \
   https://tjfeindwmpuyajvjftke.supabase.co/rest/v1/
 ```
 
