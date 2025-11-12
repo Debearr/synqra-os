@@ -139,24 +139,7 @@ const HomePage = () => {
       <div className="relative w-full max-w-[700px] space-y-8">
         <div className="rounded-[32px] border border-white/8 bg-black/40 p-8 backdrop-blur-xl shadow-[0_16px_80px_rgba(11,11,11,0.85)]">
           <header className="mb-8 text-center">
-            <h1 
-              className="synqra-brand-text"
-              style={{
-                fontSize: 'clamp(2.8rem, 6vw, 4rem)',
-                letterSpacing: '0.15em',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6D3 70%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 25px rgba(255, 215, 170, 0.25)',
-                marginTop: '20px',
-                marginBottom: '40px',
-                paddingTop: '24px',
-                paddingBottom: '24px',
-                textAlign: 'center',
-                textTransform: 'uppercase'
-              }}
-            >
+            <h1 className="synqra-brand-text">
               SYNQRA
             </h1>
             <h2 className="mt-2 font-display text-[clamp(1.5rem,2vw,2rem)] tracking-[0.12em] text-white/90 pb-3">
