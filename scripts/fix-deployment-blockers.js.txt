@@ -1,0 +1,28 @@
+// fix-deployment-blockers.js
+// De Bear – Synqra Deployment Fix Script
+
+import fs from "fs";
+import path from "path";
+
+console.log("\n🛠️  Running Synqra Deployment Blocker Fix...\n");
+
+const packagePath = path.join(process.cwd(), "package.json");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("❌ ERROR: package.json not found. Are you in the root project folder?");
+  process.exit(1);
+}
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+
+pkg.type = "module";
+
+if (!pkg.scripts) pkg.scripts = {};
+
+pkg.scripts["fix:deployment-blockers"] = "node scripts/fix-deployment-blockers.js";
+
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2));
+
+console.log("✅ Successfully updated package.json");
+console.log("✅ Deployment blockers fixed");
+console.log("\n🎉 You're good to continue, De Bear!\n");

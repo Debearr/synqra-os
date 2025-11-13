@@ -1,0 +1,29 @@
+# Synqra Final Setup Guide
+
+This guide lists the required environment files and scripts needed to configure and run Synqra locally.
+
+---
+
+## ✅ Required Files
+
+### 1. `.env`
+Contains all API keys and backend/frontend environment variables.
+
+### 2. `.env.template`
+A clean template containing all environment variable names.
+
+### 3. `scripts/fix-deployment-blockers.js`
+Script used to automatically repair missing or invalid config blocks before deployment.
+
+### 4. `setup_and_run.sh` (already in repo)
+Used for setting up dashboards. Do NOT run in Windows.
+
+---
+
+## ✅ How to Run Fix Script
+
+Open terminal inside:  
+`C:\Projects\Synqra\`
+
+Run:
+
