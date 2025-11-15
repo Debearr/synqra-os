@@ -1,0 +1,19 @@
+{
+  "name": "BMW — First Drive Reaction",
+  "slug": "bmw_first_drive",
+  "recipe": "try_on_react_campaign",
+  "industry": "automotive",
+  "description": "Capture authentic first drive reactions for BMW test drive experiences",
+  "variables": {
+    "BRAND_NAME": "BMW [Dealership Name]",
+    "COLLAB_OR_PRODUCT": "BMW [Model] — First Drive Experience",
+    "TALENT_TYPE": "Real customers + sales team + automotive enthusiasts",
+    "PRIMARY_PLATFORM": "YouTube Shorts + Instagram Reels",
+    "VIBE": "Quiet luxury meets German precision. Understated power. No flash, just engineering excellence. Think: confident authority, refined performance.",
+    "GOAL": "Test drive bookings + showroom visits"
+  },
+  "archetype": "The Quiet Luxury Professional",
+  "color_palette": ["#0D0D0D", "#C0C0C0", "#F8F8F8", "#0066B1"],
+  "lighting": "showroom_reflections",
+  "version": "1.0"
+}

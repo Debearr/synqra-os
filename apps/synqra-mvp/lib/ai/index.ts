@@ -87,6 +87,22 @@ export {
 
 export type { Recipe, RecipeExecution } from './recipes';
 
+// Cost Optimizer
+export {
+  classifyTask,
+  optimizeModelSelection,
+  compressInput,
+  detectBatchableTasks,
+  generateCostReport,
+  getBrandProfileCacheKey,
+  getArchetypeCacheKey,
+  detectWaste,
+  applyMinimalMode,
+  calculateOptimizationSummary,
+} from './cost-optimizer';
+
+export type { CostDecision, TaskClass, OptimizationSummary } from './cost-optimizer';
+
 /**
  * QUICK START EXAMPLE
  * 

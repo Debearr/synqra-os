@@ -1,0 +1,19 @@
+{
+  "name": "Porsche — Experience the Interior Reveal",
+  "slug": "porsche_interior_reveal",
+  "recipe": "try_on_react_campaign",
+  "industry": "automotive",
+  "description": "Cinematic interior reveal reactions for Porsche showroom experiences",
+  "variables": {
+    "BRAND_NAME": "Porsche [Dealership Name]",
+    "COLLAB_OR_PRODUCT": "Porsche [Model] — Interior Experience",
+    "TALENT_TYPE": "Car enthusiasts + heritage collectors + first-time Porsche buyers",
+    "PRIMARY_PLATFORM": "Instagram Reels + TikTok",
+    "VIBE": "Timeless sophistication. Racing heritage respect. Precision engineering. European elegance. Think: collector mentality meets performance passion.",
+    "GOAL": "Showroom appointments + heritage event RSVPs"
+  },
+  "archetype": "The Porsche Professional",
+  "color_palette": ["#969696", "#004225", "#E4071B", "#8C8C8C"],
+  "lighting": "golden_hour_showroom",
+  "version": "1.0"
+}
