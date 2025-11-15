@@ -302,3 +302,9 @@ export {
 
 export * from "./revenue/autonomous-revenue-system";
 
+// ============================================================
+// THUMBNAIL INTELLIGENCE SYSTEM
+// ============================================================
+
+export * from "./thumbnails";
+
