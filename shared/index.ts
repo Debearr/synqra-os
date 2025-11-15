@@ -83,3 +83,133 @@ export {
   Card,
   ColorSwatch,
 } from "./components/luxgrid";
+
+// ============================================================
+// PROMPTS & TEMPLATES
+// ============================================================
+
+export {
+  SYSTEM_PROMPTS,
+  TASK_PROMPTS,
+  OUTPUT_SCHEMAS,
+  REFINEMENT_PROMPTS,
+  buildPrompt,
+  getTaskPrompt,
+  listPrompts,
+} from "./prompts/library";
+
+// ============================================================
+// TYPES & VALIDATION
+// ============================================================
+
+export {
+  // Core types
+  type App,
+  type Environment,
+  type Status,
+  type User,
+  type Profile,
+  type ContentJob,
+  type ContentVariant,
+  type Platform,
+  type ContentType,
+  
+  // AI types
+  type ModelTier,
+  type TaskType,
+  type AIUsage,
+  type AIMetadata,
+  
+  // Validation types
+  type Campaign,
+  type CampaignMetrics,
+  type ScheduledPost,
+  type PerformanceMetrics,
+  
+  // Error types
+  AppError,
+  ValidationError,
+  AIError,
+  RateLimitError,
+  
+  // Response wrappers
+  type APIResponse,
+  successResponse,
+  errorResponse,
+  
+  // Schemas
+  EmailContentSchema,
+  SocialPostSchema,
+  CopySchema,
+} from "./types";
+
+export {
+  validateContent,
+  validateWithSchema,
+  validateJSON,
+  quickBrandCheck,
+  createValidator,
+  validateBatch,
+  ValidationPipeline,
+  type ValidationResult,
+  type ValidationRule,
+} from "./validation";
+
+// ============================================================
+// WORKFLOWS
+// ============================================================
+
+export {
+  Workflow,
+  createContentWorkflow,
+  createCampaignWorkflow,
+  executeWorkflow,
+  type WorkflowStep,
+  type WorkflowContext,
+  type WorkflowResult,
+  type StepResult,
+  type RetryConfig,
+} from "./workflows/orchestrator";
+
+// ============================================================
+// CACHE & OPTIMIZATION
+// ============================================================
+
+export {
+  IntelligentCache,
+  cacheManager,
+  contentCache,
+  promptCache,
+  campaignCache,
+  cached,
+  type CacheEntry,
+  type CacheOptions,
+  type CacheStats,
+} from "./cache/intelligent-cache";
+
+export {
+  AutoOptimizer,
+  optimizer,
+  runOptimizationCheck,
+  type OptimizationRule,
+  type ModelPerformance,
+  type OptimizationRecommendation,
+} from "./optimization/auto-optimizer";
+
+// ============================================================
+// DEV TOOLS
+// ============================================================
+
+export {
+  profiler,
+  logger,
+  runDiagnostics,
+  quickTest,
+  getDashboardData,
+  statusCommand,
+  testCommand,
+  optimizeCommand,
+  type SystemHealth,
+  PerformanceProfiler,
+  DebugLogger,
+} from "./dev/tools";
