@@ -1,0 +1,9 @@
+{
+  "name": "toxicity-guard",
+  "version": "1.0.0",
+  "description": "RoBERTa toxicity detection with incident logging",
+  "type": "tool",
+  "capabilities": ["toxicity-detection", "content-moderation", "safety-check"],
+  "requiredEnv": ["SUPABASE_URL", "SUPABASE_SERVICE_KEY"],
+  "cost": { "perRequest": 0.0001 }
+}
