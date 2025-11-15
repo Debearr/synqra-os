@@ -213,3 +213,31 @@ export {
   PerformanceProfiler,
   DebugLogger,
 } from "./dev/tools";
+
+// ============================================================
+// AUTONOMOUS SYSTEMS
+// ============================================================
+
+export {
+  SelfHealingEngine,
+  getSelfHealingEngine,
+  startSelfHealing,
+  IncidentResponseAutomation,
+  type HealthCheck,
+  type Incident,
+  type RecoveryStrategy,
+  type HealthStatus,
+  type IncidentSeverity,
+} from "./autonomous/self-healing";
+
+export {
+  EvolvingAgent,
+  AgentFleetManager,
+  agentFleet,
+  processWithAgent,
+  provideFeedback,
+  type AgentProfile,
+  type AgentInteraction,
+  type AgentDecision,
+  type LearningPattern,
+} from "./autonomous/evolving-agents";
