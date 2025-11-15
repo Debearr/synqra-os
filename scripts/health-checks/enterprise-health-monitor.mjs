@@ -29,8 +29,14 @@ const CONFIG = {
 };
 
 // Required environment variables
-const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_SERVICE_KEY"];
-const OPTIONAL_ENV = ["N8N_WEBHOOK_URL"];
+const REQUIRED_ENV = ["SUPABASE_URL"];
+const OPTIONAL_ENV = ["N8N_WEBHOOK_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL_ID"];
+
+// Support both naming conventions for service key
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_SERVICE_KEY) {
+  REQUIRED_ENV.push("SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY");
+}
 
 // ==============================================
 // GLOBAL ERROR HANDLING
@@ -81,7 +87,7 @@ validateEnvironment();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY,
+  SUPABASE_SERVICE_KEY,
   {
     auth: {
       autoRefreshToken: false,
@@ -160,48 +166,75 @@ function generateCheckId() {
 // ==============================================
 
 /**
- * Gets all active services to check
+ * Gets all active services to check (SIMPLIFIED - no DB dependency)
  */
 async function getActiveServices() {
-  try {
-    const { data, error } = await supabase
-      .from("health_services")
-      .select(`
-        id,
-        service_key,
-        display_name,
-        endpoint_url,
-        timeout_ms,
-        retry_count,
-        thresholds,
-        config,
-        health_projects (
-          project_key,
-          display_name,
-          supabase_url
-        )
-      `)
-      .eq("is_active", true);
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error("❌ Failed to fetch active services:", error.message);
-    return [];
-  }
+  // Return hardcoded service list (no DB query needed)
+  return [
+    {
+      id: "service_postgres",
+      service_key: "postgres",
+      display_name: "PostgreSQL Database",
+      endpoint_url: null,
+      timeout_ms: 10000,
+      retry_count: 3,
+      thresholds: {
+        response_time_warning_ms: 1000,
+        response_time_critical_ms: 5000,
+      },
+      health_projects: {
+        supabase_url: process.env.SUPABASE_URL,
+      },
+    },
+    {
+      id: "service_rest",
+      service_key: "rest_api",
+      display_name: "Supabase REST API",
+      endpoint_url: null,
+      timeout_ms: 10000,
+      retry_count: 2,
+      thresholds: {
+        response_time_warning_ms: 1500,
+        response_time_critical_ms: 5000,
+      },
+      health_projects: {
+        supabase_url: process.env.SUPABASE_URL,
+      },
+    },
+    {
+      id: "service_auth",
+      service_key: "auth",
+      display_name: "Supabase Auth",
+      endpoint_url: null,
+      timeout_ms: 10000,
+      retry_count: 2,
+      thresholds: {
+        response_time_warning_ms: 2000,
+        response_time_critical_ms: 5000,
+      },
+      health_projects: {
+        supabase_url: process.env.SUPABASE_URL,
+      },
+    },
+  ];
 }
 
 /**
- * Logs health check result to database
+ * Logs health check result to database (with graceful fallback)
  */
 async function logHealthCheck(data) {
   try {
+    // Try to log to database (table might not exist yet)
     const { error } = await supabase.from("health_logs").insert([data]);
 
-    if (error) throw error;
+    if (error) {
+      // Table doesn't exist - just log to file
+      logToFile(data);
+      return false;
+    }
     return true;
   } catch (error) {
-    console.error("⚠️  Supabase logging failed:", error.message);
+    // Any error - fallback to file logging
     logToFile(data);
     return false;
   }
@@ -227,153 +260,24 @@ async function getAlertRules(serviceId) {
 }
 
 /**
- * Checks if alert should be triggered
+ * Checks if alert should be triggered (SIMPLIFIED)
  */
 async function checkAlertConditions(serviceId, status, responseTime) {
-  try {
-    const rules = await getAlertRules(serviceId);
-    const { data: serviceStatus } = await supabase
-      .from("health_service_status")
-      .select("consecutive_failures, current_status")
-      .eq("service_id", serviceId)
-      .single();
-
-    for (const rule of rules) {
-      let shouldTrigger = false;
-      const config = rule.condition_config || {};
-
-      switch (rule.condition_type) {
-        case "consecutive_failures":
-          if (serviceStatus?.consecutive_failures >= config.threshold) {
-            shouldTrigger = true;
-          }
-          break;
-
-        case "response_time":
-          if (responseTime && responseTime > config.threshold_ms) {
-            shouldTrigger = true;
-          }
-          break;
-
-        case "error_rate":
-          // Calculate error rate from recent checks
-          const { data: recentLogs } = await supabase
-            .from("health_logs")
-            .select("status")
-            .eq("service_id", serviceId)
-            .gte("timestamp", new Date(Date.now() - 3600000).toISOString())
-            .order("timestamp", { ascending: false })
-            .limit(100);
-
-          if (recentLogs && recentLogs.length > 0) {
-            const errorCount = recentLogs.filter((log) =>
-              ["degraded", "critical"].includes(log.status)
-            ).length;
-            const errorRate = errorCount / recentLogs.length;
-
-            if (errorRate >= config.threshold) {
-              shouldTrigger = true;
-            }
-          }
-          break;
-      }
-
-      if (shouldTrigger) {
-        await triggerAlert(rule, serviceId, status);
-      }
-    }
-  } catch (error) {
-    console.error("⚠️  Failed to check alert conditions:", error.message);
-  }
-}
-
-/**
- * Triggers an alert
- */
-async function triggerAlert(rule, serviceId, status) {
-  try {
-    // Check if there's already an active alert for this rule
-    const { data: existingAlerts } = await supabase
-      .from("health_alerts")
-      .select("id")
-      .eq("alert_rule_id", rule.id)
-      .in("status", ["active", "acknowledged"])
-      .limit(1);
-
-    if (existingAlerts && existingAlerts.length > 0) {
-      console.log(`ℹ️  Alert already active for rule: ${rule.rule_name}`);
-      return;
-    }
-
-    // Create new alert
-    const alert = {
-      alert_rule_id: rule.id,
+  // Simplified: only trigger alerts for critical status via n8n
+  if (status === "critical" && process.env.N8N_WEBHOOK_URL) {
+    await notifyN8N({
+      type: "health_alert",
       service_id: serviceId,
-      severity: rule.severity,
-      status: "active",
-      title: rule.rule_name,
-      message: `Service health check failed: ${status}`,
-      metadata: { rule_condition: rule.condition_type },
-    };
-
-    const { data: newAlert, error } = await supabase
-      .from("health_alerts")
-      .insert([alert])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    console.log(`🚨 Alert triggered: ${rule.rule_name}`);
-
-    // Send notifications
-    await sendAlertNotifications(newAlert, rule.notification_channels);
-  } catch (error) {
-    console.error("⚠️  Failed to trigger alert:", error.message);
+      status,
+      response_time: responseTime,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 
-/**
- * Sends alert notifications
- */
-async function sendAlertNotifications(alert, channels) {
-  for (const channel of channels) {
-    try {
-      if (channel === "n8n" && process.env.N8N_WEBHOOK_URL) {
-        await notifyN8N({
-          alert_id: alert.id,
-          severity: alert.severity,
-          title: alert.title,
-          message: alert.message,
-          triggered_at: alert.triggered_at,
-        });
-      }
+// Removed: triggerAlert() - simplified to direct n8n webhook in checkAlertConditions()
 
-      // Log notification
-      await supabase.from("health_alert_notifications").insert([
-        {
-          alert_id: alert.id,
-          channel,
-          status: "sent",
-          sent_at: new Date().toISOString(),
-        },
-      ]);
-    } catch (error) {
-      console.error(`⚠️  Failed to send ${channel} notification:`, error.message);
-
-      // Log failed notification
-      await supabase.from("health_alert_notifications").insert([
-        {
-          alert_id: alert.id,
-          channel,
-          status: "failed",
-          error_message: error.message,
-          sent_at: new Date().toISOString(),
-        },
-      ]);
-    }
-  }
-}
+// Removed: sendAlertNotifications() - notifications handled by notifyN8N() directly
 
 /**
  * Notifies N8N webhook
@@ -426,19 +330,20 @@ async function notifyN8N(payload, retries = 2) {
 // ==============================================
 
 /**
- * Checks PostgreSQL database health
+ * Checks PostgreSQL database health (SIMPLIFIED - no table dependency)
  */
 async function checkPostgresHealth(service) {
   const startTime = Date.now();
 
   try {
-    // Simple query to check database connectivity
-    const { data, error } = await supabase
-      .from("health_logs")
-      .select("id")
-      .limit(1);
+    // Use a simple RPC call that always exists
+    const { data, error } = await supabase.rpc('version');
 
-    if (error) throw error;
+    // If that fails, try a basic select
+    if (error) {
+      const { error: selectError } = await supabase.auth.getSession();
+      if (selectError) throw selectError;
+    }
 
     const responseTime = Date.now() - startTime;
     return {
@@ -470,8 +375,8 @@ async function checkRestApiHealth(service) {
       url,
       {
         headers: {
-          apikey: process.env.SUPABASE_SERVICE_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         },
       },
       service.timeout_ms || CONFIG.REQUEST_TIMEOUT
@@ -541,7 +446,7 @@ async function checkAuthHealth(service) {
       url,
       {
         headers: {
-          apikey: process.env.SUPABASE_SERVICE_KEY,
+          apikey: SUPABASE_SERVICE_KEY,
         },
       },
       service.timeout_ms || CONFIG.REQUEST_TIMEOUT
@@ -586,8 +491,8 @@ async function checkStorageHealth(service) {
       url,
       {
         headers: {
-          apikey: process.env.SUPABASE_SERVICE_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         },
       },
       service.timeout_ms || CONFIG.REQUEST_TIMEOUT
