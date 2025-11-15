@@ -5,7 +5,7 @@
  * Shared UI component library for NØID Labs ecosystem
  * 
  * Usage:
- * import { Card, CTAButton, Logo, LUXGRID_COLORS } from '@noid/ui';
+ * import { Card, CTAButton, Logo, luxgridColors } from '@noid/ui';
  */
 
 // Export all LuxGrid components

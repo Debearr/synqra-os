@@ -13,13 +13,13 @@ import { createClient } from '@supabase/supabase-js';
  * - SUPABASE_SERVICE_ROLE: Your Supabase service role key (secret!)
  */
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://mock.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || 'mock-service-role-key';
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE in environment. ' +
-    'Set these in .env.local for development or Vercel for production.'
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+  console.warn(
+    '⚠️  Supabase admin credentials not configured. Using mock client. ' +
+    'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE in .env.local for development.'
   );
 }
 
