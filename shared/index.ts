@@ -281,3 +281,16 @@ export {
   type ScoringWeights,
   type DecisionOutput,
 } from "./intelligence/decision-engine";
+
+// ============================================================
+// ORCHESTRATION (Conflict-Free Coordination)
+// ============================================================
+
+export {
+  SystemCoordinator,
+  lockManager,
+  isProcessing,
+  getOwner,
+  SYSTEM_OWNERSHIP,
+  CONFLICT_PREVENTION,
+} from "./orchestration/system-coordinator";
