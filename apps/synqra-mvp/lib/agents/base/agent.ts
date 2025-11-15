@@ -8,6 +8,7 @@ import {
   ConversationContext,
 } from "./types";
 import { agentConfig } from "./config";
+import { checkBudget, recordCost, estimateRequestCost } from "../budgetGuardrails";
 
 /**
  * ============================================================
@@ -109,11 +110,49 @@ export abstract class BaseAgent {
       // Prepare messages for Claude API
       const messages = this.prepareMessages(request, history);
 
-      // Determine token budget based on tier
+      // Determine token budget
       const responseTier = options.responseTier || "standard";
       const tokenBudget = agentConfig.agent.tokenBudgets[responseTier];
+
+      // Estimate input tokens (rough calculation)
+      const estimatedInputTokens = JSON.stringify(messages).length / 4;
       
-      // Make API call with optimized token budget
+      // Estimate cost BEFORE making request
+      const estimatedCost = estimateRequestCost(
+        estimatedInputTokens,
+        tokenBudget,
+        agentConfig.anthropic.model
+      );
+
+      // BUDGET GUARDRAIL - Check if request is allowed
+      const budgetCheck = checkBudget(estimatedCost);
+      
+      if (!budgetCheck.allowed) {
+        console.error(`🚫 Request blocked by budget guardrail: ${budgetCheck.reason}`);
+        
+        // Return safe fallback response
+        return {
+          answer: `I apologize, but I cannot process this request right now due to budget constraints. ${budgetCheck.reason}`,
+          confidence: 0.0,
+          sources: [],
+          reasoning: "Request blocked by budget guardrail",
+          tokenUsage: {
+            input: 0,
+            output: 0,
+            total: 0,
+            estimatedCost: 0,
+          },
+          metadata: {
+            budgetBlocked: true,
+            reason: budgetCheck.reason,
+            currentCost: budgetCheck.currentCost,
+            remainingBudget: budgetCheck.remainingBudget,
+            alertLevel: budgetCheck.alertLevel,
+          },
+        };
+      }
+
+      // Make API call with optimized token budget (budget already checked above)
       const response = await this.anthropic.messages.create({
         model: agentConfig.anthropic.model,
         max_tokens: Math.min(
@@ -131,10 +170,15 @@ export abstract class BaseAgent {
         .map((block) => ("text" in block ? block.text : ""))
         .join("\n");
 
-      // Calculate cost (Claude 3.5 Sonnet pricing: $3/1M input, $15/1M output)
-      const inputCost = (response.usage.input_tokens / 1_000_000) * 3;
-      const outputCost = (response.usage.output_tokens / 1_000_000) * 15;
-      const totalCost = inputCost + outputCost;
+      // Calculate actual cost
+      const totalCost = estimateRequestCost(
+        response.usage.input_tokens,
+        response.usage.output_tokens,
+        agentConfig.anthropic.model
+      );
+
+      // Record cost for tracking
+      recordCost(totalCost);
       
       // Build response with cost tracking
       const agentResponse: AgentResponse = {
