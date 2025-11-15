@@ -241,3 +241,43 @@ export {
   type AgentDecision,
   type LearningPattern,
 } from "./autonomous/evolving-agents";
+
+// ============================================================
+// MARKET INTELLIGENCE
+// ============================================================
+
+export {
+  MarketIntelligenceEngine,
+  IntelligenceAggregator,
+  getMarketIntelligence,
+  startMarketIntelligence,
+  type MarketSignal,
+  type Lead,
+  type CompetitorActivity,
+  type TrendInsight,
+  type SignalSource,
+  type SignalType,
+  type LeadQuality,
+} from "./intelligence/market-watch";
+
+export {
+  TwitterScraper,
+  LinkedInScraper,
+  RedditScraper,
+  HackerNewsScraper,
+  ProductHuntScraper,
+  GitHubScraper,
+  GoogleTrendsScraper,
+  UnifiedScraper,
+  type ScrapedContent,
+} from "./intelligence/scrapers";
+
+export {
+  FilterEngine,
+  ScoringEngine,
+  DecisionEngine,
+  IntelligenceRouter,
+  type FilterCriteria,
+  type ScoringWeights,
+  type DecisionOutput,
+} from "./intelligence/decision-engine";
