@@ -315,3 +315,15 @@ export * from "./thumbnails";
 export * from "./railway/webhook-handler";
 export * from "./railway/health-bridge";
 
+// ============================================================
+// ENGAGEMENT AGENT
+// ============================================================
+
+export * from "./engagement-agent/types";
+export * from "./engagement-agent/tone-engine";
+export * from "./engagement-agent/sentiment-analyzer";
+export * from "./engagement-agent/classifier";
+export * from "./engagement-agent/spam-filter";
+export * from "./engagement-agent/reply-generator";
+export * from "./engagement-agent/product-router";
+
