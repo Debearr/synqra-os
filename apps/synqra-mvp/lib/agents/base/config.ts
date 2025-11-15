@@ -15,8 +15,14 @@ export const agentConfig = {
   // Agent behavior
   agent: {
     mode: (process.env.AGENT_MODE || "mock") as "mock" | "live",
-    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || "4096", 10),
+    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || "1024", 10), // Reduced from 4096 to 1024 for cost optimization
     temperature: parseFloat(process.env.AGENT_TEMPERATURE || "0.7"),
+    // Token budgets by response tier
+    tokenBudgets: {
+      quick: 300,    // Short, direct answers
+      standard: 600, // Normal responses
+      detailed: 1024 // Complex, detailed responses
+    },
   },
 
   // Voice providers
@@ -82,8 +88,8 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
     errors.push("AGENT_TEMPERATURE must be between 0 and 1");
   }
 
-  if (agentConfig.agent.maxTokens < 1 || agentConfig.agent.maxTokens > 8192) {
-    errors.push("AGENT_MAX_TOKENS must be between 1 and 8192");
+  if (agentConfig.agent.maxTokens < 1 || agentConfig.agent.maxTokens > 2048) {
+    errors.push("AGENT_MAX_TOKENS must be between 1 and 2048 (optimized for cost)");
   }
 
   if (
