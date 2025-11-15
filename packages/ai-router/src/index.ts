@@ -33,11 +33,40 @@ export type * from './types';
 export { TaskClassifier, taskClassifier } from './routing/classifier';
 export { ModelRouter, modelRouter } from './routing/router';
 
-// Main AI Router class (to be implemented)
+// Export model management
+export { ModelManager, modelManager } from './models/manager';
+
+// Export caching
+export { CacheManager, cacheManager } from './cache/manager';
+
+// Export guardrails
+export { BrandAlignmentChecker, brandAlignmentChecker } from './guardrails/brand-alignment';
+export { SafetyChecker, safetyChecker } from './guardrails/safety';
+
+// Export orchestrator
+export { AIRouterOrchestrator, aiRouterOrchestrator } from './orchestrator';
+
+// Main AI Router class
 export class AIRouter {
-  // TODO: Implement main orchestration class
+  /**
+   * Main inference method
+   */
   async infer(input: string, options?: any): Promise<any> {
-    throw new Error('Not implemented yet - use blueprint/ai-routing.md for implementation guide');
+    return aiRouterOrchestrator.infer(input, options);
+  }
+  
+  /**
+   * Get router statistics
+   */
+  getStats(): Record<string, any> {
+    return aiRouterOrchestrator.getStats();
+  }
+  
+  /**
+   * Clear all caches
+   */
+  async clearCache(): Promise<void> {
+    return cacheManager.clear();
   }
 }
 
