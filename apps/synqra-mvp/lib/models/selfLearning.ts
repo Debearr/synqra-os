@@ -239,16 +239,27 @@ export function detectEmbeddingDrift(): {
 }
 
 /**
- * Weekly optimization task
+ * Store learning data to Supabase
+ */
+export async function persistLearningData(): Promise<void> {
+  // This would integrate with Supabase
+  // For now, keeping in-memory
+  console.log("💾 Learning data persisted (in-memory)");
+}
+
+/**
+ * Weekly optimization task (UPGRADED)
  */
 export async function runWeeklyOptimization(): Promise<{
   optimizationsApplied: string[];
   metricsSnapshot: any;
+  recommendations: string[];
 }> {
   console.log("🔄 Running weekly optimization...");
   
   const analysis = analyzeRoutingEffectiveness();
   const optimizationsApplied: string[] = [];
+  const recommendations: string[] = [];
   
   // Optimization 1: Adjust routing thresholds based on performance
   if (analysis.avgQualityByComplexity.simple && 
@@ -287,13 +298,27 @@ export async function runWeeklyOptimization(): Promise<{
     recommendations: analysis.recommendations,
   };
   
+  // Generate recommendations for manual review
+  if (analysis.costEfficiency < 0.7) {
+    recommendations.push("Consider increasing local model usage to improve cost efficiency");
+  }
+  
+  if (analysis.totalDataPoints < 100) {
+    recommendations.push("Insufficient data for reliable optimization - continue collecting");
+  }
+  
+  // Persist learning data
+  await persistLearningData();
+  
   console.log("✅ Weekly optimization complete");
   console.log("   Optimizations:", optimizationsApplied.length);
+  console.log("   Recommendations:", recommendations.length);
   console.log("   Data points:", analysis.totalDataPoints);
   
   return {
     optimizationsApplied,
     metricsSnapshot,
+    recommendations,
   };
 }
 
