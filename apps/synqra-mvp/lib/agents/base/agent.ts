@@ -109,10 +109,17 @@ export abstract class BaseAgent {
       // Prepare messages for Claude API
       const messages = this.prepareMessages(request, history);
 
-      // Make API call
+      // Determine token budget based on tier
+      const responseTier = options.responseTier || "standard";
+      const tokenBudget = agentConfig.agent.tokenBudgets[responseTier];
+      
+      // Make API call with optimized token budget
       const response = await this.anthropic.messages.create({
         model: agentConfig.anthropic.model,
-        max_tokens: this.config.maxTokens || agentConfig.agent.maxTokens,
+        max_tokens: Math.min(
+          tokenBudget,
+          this.config.maxTokens || agentConfig.agent.maxTokens
+        ),
         temperature: this.config.temperature || agentConfig.agent.temperature,
         system: this.config.systemPrompt,
         messages: messages,
@@ -124,15 +131,28 @@ export abstract class BaseAgent {
         .map((block) => ("text" in block ? block.text : ""))
         .join("\n");
 
-      // Build response
+      // Calculate cost (Claude 3.5 Sonnet pricing: $3/1M input, $15/1M output)
+      const inputCost = (response.usage.input_tokens / 1_000_000) * 3;
+      const outputCost = (response.usage.output_tokens / 1_000_000) * 15;
+      const totalCost = inputCost + outputCost;
+      
+      // Build response with cost tracking
       const agentResponse: AgentResponse = {
         answer: textContent,
         confidence: 0.85, // TODO: Implement confidence scoring
         sources: [],
         reasoning: `Live response from ${agentConfig.anthropic.model}`,
+        tokenUsage: {
+          input: response.usage.input_tokens,
+          output: response.usage.output_tokens,
+          total: response.usage.input_tokens + response.usage.output_tokens,
+          estimatedCost: totalCost,
+        },
         metadata: {
           model: response.model,
           stopReason: response.stop_reason,
+          responseTier: responseTier,
+          tokenBudget: tokenBudget,
           usage: {
             inputTokens: response.usage.input_tokens,
             outputTokens: response.usage.output_tokens,

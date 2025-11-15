@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     if (agentConfig.dev.debugAgents) {
       console.log(`🔀 Routing to ${routing.agent} agent (${(routing.confidence * 100).toFixed(0)}% confidence)`);
       console.log(`   Reason: ${routing.reason}`);
+      console.log(`   Response Tier: ${routing.responseTier} (cost optimization)`);
     }
 
     // Get the appropriate agent
@@ -66,19 +67,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Invoke the agent
-    const response = await agent.invoke(enhancedRequest);
+    // Invoke the agent with optimized response tier
+    const response = await agent.invoke(enhancedRequest, {
+      responseTier: routing.responseTier, // Smart token budgeting
+    });
 
     // Apply safety guardrails
     const { response: safeResponse, safetyReport } =
       applySafetyGuardrails(response);
 
-    // Build API response
+    // Build API response with cost tracking
     const apiResponse = {
       agent: routing.agent,
       routing: {
         confidence: routing.confidence,
         reason: routing.reason,
+        responseTier: routing.responseTier,
       },
       response: safeResponse,
       safety: {
@@ -93,6 +97,7 @@ export async function POST(request: NextRequest) {
               ]
             : [],
       },
+      tokenUsage: response.tokenUsage, // Expose cost metrics
       timestamp: new Date().toISOString(),
     };
 
