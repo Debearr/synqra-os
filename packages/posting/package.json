@@ -1,0 +1,20 @@
+{
+  "name": "@noid/posting",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Social media posting engine and background queue for NØID Labs ecosystem",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Lint not configured yet'"
+  },
+  "dependencies": {
+    "@noid/database": "workspace:*",
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "@noid/tsconfig": "workspace:*",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,17 +1,26 @@
 {
-  "name": "synqra",
+  "name": "noid-monorepo",
   "version": "1.0.0",
+  "private": true,
+  "description": "NØID Labs Ecosystem - Synqra, NØID Dashboard, NØID Cards, AuraFX",
   "scripts": {
-    "dev": "npm --prefix apps/synqra-mvp run dev",
-    "dev:3004": "npm --prefix apps/synqra-mvp run dev:3004",
-    "build": "npm --prefix apps/synqra-mvp run build",
-    "start": "npm --prefix apps/synqra-mvp run start",
-    "lint": "npm --prefix apps/synqra-mvp run lint"
+    "dev": "turbo run dev",
+    "dev:synqra": "turbo run dev --filter=synqra",
+    "dev:dashboard": "turbo run dev --filter=noid-dashboard",
+    "dev:cards": "turbo run dev --filter=noid-cards",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules .turbo"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.3"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.1",
     "axios": "^1.12.2",
@@ -22,5 +31,13 @@
     "pg": "^8.16.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "keywords": ["monorepo", "synqra", "noid", "aurafx"],
+  "author": "NØID Labs",
+  "license": "ISC"
 }
