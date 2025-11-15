@@ -75,6 +75,18 @@ export {
 
 export type { Template } from './templates';
 
+// Recipes
+export {
+  loadRecipe,
+  executeRecipe,
+  listRecipes,
+  searchRecipes,
+  getRecipeStats,
+  testRecipe,
+} from './recipes';
+
+export type { Recipe, RecipeExecution } from './recipes';
+
 /**
  * QUICK START EXAMPLE
  * 
