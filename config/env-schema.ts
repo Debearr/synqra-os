@@ -11,10 +11,13 @@
 export type EnvironmentTier = "production" | "staging" | "development" | "pr";
 
 export type EnvSchema = {
-  // Supabase
+  // Supabase (supports multiple naming conventions)
   NEXT_PUBLIC_SUPABASE_URL: string;
+  SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_KEY: string; // Primary
+  SUPABASE_SERVICE_ROLE_KEY: string; // Legacy fallback
   
   // AI
   ANTHROPIC_API_KEY: string;
@@ -55,31 +58,29 @@ export type EnvSchema = {
  */
 const REQUIRED_VARS_BY_TIER: Record<EnvironmentTier, (keyof EnvSchema)[]> = {
   production: [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_KEY",
     "ANTHROPIC_API_KEY",
-    "RAILWAY_WEBHOOK_SECRET",
     "NODE_ENV",
   ],
   
   staging: [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "ANTHROPIC_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_KEY",
     "NODE_ENV",
   ],
   
   development: [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
     "NODE_ENV",
   ],
   
   pr: [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
     "NODE_ENV",
   ],
 };
@@ -113,17 +114,18 @@ export function validateEnv(
   // Validate specific formats
   
   // Supabase URL should be a valid URL
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
     try {
-      new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
+      new URL(supabaseUrl);
     } catch {
-      invalid.push("NEXT_PUBLIC_SUPABASE_URL (not a valid URL)");
+      invalid.push("SUPABASE_URL (not a valid URL)");
     }
   }
   
   // API keys should not be placeholder values
-  const placeholderPatterns = ["your-", "example", "placeholder", "xxx"];
-  const apiKeyVars = ["ANTHROPIC_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const placeholderPatterns = ["your-", "example", "placeholder", "xxx", "mock"];
+  const apiKeyVars = ["ANTHROPIC_API_KEY", "SUPABASE_SERVICE_KEY"];
   
   for (const key of apiKeyVars) {
     const value = process.env[key];
@@ -164,10 +166,13 @@ export function validateEnv(
  */
 export function getEnv(): EnvSchema {
   return {
-    // Supabase
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    // Supabase (with fallbacks for both naming conventions)
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "",
+    SUPABASE_URL: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "",
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || "",
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || ""
     
     // AI
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
