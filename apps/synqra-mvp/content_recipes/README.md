@@ -232,11 +232,12 @@ console.log('Time:', result.generationTime);
    - Cost: $0.015-0.020
    - Use: Product drops, collab announcements
 
-2. **voai_lifestyle_model_generator** - AI lifestyle model content packages
+2. **voai_lifestyle_model_generator** (v2.0) - Cinematic AI lifestyle visual generation
    - Complexity: Very High (0.90-0.95)
    - Model: Claude
    - Cost: $0.020-0.025
-   - Use: Brand positioning, lifestyle marketing, aspirational campaigns
+   - Use: AI image generation, luxury visual campaigns, brand lifestyle photography
+   - Industries: Automotive, wellness, salon, street-lux, fitness, hospitality
 
 More recipes coming soon...
 
