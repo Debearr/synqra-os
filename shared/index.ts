@@ -294,3 +294,11 @@ export {
   SYSTEM_OWNERSHIP,
   CONFLICT_PREVENTION,
 } from "./orchestration/system-coordinator";
+
+
+// ============================================================
+// REVENUE & GROWTH
+// ============================================================
+
+export * from "./revenue/autonomous-revenue-system";
+

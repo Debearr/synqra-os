@@ -14,7 +14,7 @@ function SubmitButton() {
       className="flex w-full items-center justify-center rounded-full bg-noid-teal px-6 py-3 text-sm font-semibold text-noid-black transition-all duration-500 hover:-translate-y-0.5 hover:shadow-teal-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noid-teal/40 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={status.pending}
     >
-      {status.pending ? 'Adding you to the list…' : 'Secure my invite'}
+      {status.pending ? 'Activating access…' : 'Activate my access'}
     </button>
   );
 }
@@ -33,9 +33,9 @@ export function NewsletterForm() {
     <section id="waitlist" className="mx-auto mt-24 max-w-3xl rounded-3xl border border-white/5 bg-noid-charcoal/70 p-10 shadow-teal-glow backdrop-blur">
       <div className="flex flex-col gap-3">
         <span className="text-xs uppercase tracking-[0.3em] text-noid-gray/80">Newsletter + Waitlist</span>
-        <h2 className="text-3xl font-semibold text-noid-white">Be first in line for the Synqra release.</h2>
+        <h2 className="text-3xl font-semibold text-noid-white">Claim early architect access.</h2>
         <p className="text-sm text-noid-gray/80">
-          Receive curated updates, early access slots, and concierge onboarding invitations the moment Synqra opens.
+          Join executives shaping Synqra's future. Get early access, priority onboarding, and direct influence on roadmap priorities.
         </p>
       </div>
 
