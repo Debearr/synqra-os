@@ -1,11 +1,12 @@
-{
+﻿{
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm --prefix apps/synqra-mvp run build"
+    "buildCommand": "cd apps/synqra-mvp && pnpm install --frozen-lockfile && pnpm run build"
   },
   "deploy": {
-    "startCommand": "npm --prefix apps/synqra-mvp run start",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "startCommand": "cd apps/synqra-mvp && pnpm start",
+    "healthcheckPath": "/api/health",
+    "restartPolicyType": "ON_FAILURE"
   }
 }
