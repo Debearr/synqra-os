@@ -1,0 +1,17 @@
+{
+  "name": "@noid/utils",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared utility functions for NØID Labs ecosystem",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Lint not configured yet'"
+  },
+  "devDependencies": {
+    "@noid/tsconfig": "workspace:*",
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}
