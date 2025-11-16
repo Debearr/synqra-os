@@ -1,5 +1,5 @@
 ﻿[phases.setup]
-nixPkgs = ['nodejs-18_x', 'pnpm-9_x']
+nixPkgs = ['nodejs-20_x', 'pnpm-9_x']
 
 [phases.install]
 cmds = ['cd apps/synqra-mvp && pnpm install --frozen-lockfile']
