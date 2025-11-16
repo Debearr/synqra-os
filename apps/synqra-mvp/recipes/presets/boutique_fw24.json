@@ -1,0 +1,19 @@
+{
+  "name": "Luxury Boutique — FW24 Try-On Drop",
+  "slug": "boutique_fw24",
+  "recipe": "try_on_react_campaign",
+  "industry": "fashion",
+  "description": "Seasonal collection try-on reactions for luxury boutiques",
+  "variables": {
+    "BRAND_NAME": "[Boutique Name]",
+    "COLLAB_OR_PRODUCT": "FW24 Collection — Exclusive Try-On Experience",
+    "TALENT_TYPE": "VIP clients + fashion insiders + style influencers",
+    "PRIMARY_PLATFORM": "Instagram Reels + TikTok",
+    "VIBE": "Curatorial vision. Luxury retail expertise. Style authority. Fashion-forward confidence. Think: closet goals, insider access energy.",
+    "GOAL": "In-store appointments + collection pre-orders"
+  },
+  "archetype": "The Boutique Owner",
+  "color_palette": ["#E8E4D9", "#1A1A1A", "#F5E6E8", "#C9A66B"],
+  "lighting": "boutique_soft_shadows",
+  "version": "1.0"
+}
