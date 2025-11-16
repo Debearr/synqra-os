@@ -1,0 +1,9 @@
+{
+  "name": "supabase-reader",
+  "version": "1.0.0",
+  "description": "Vector search, analytics, and query operations for Supabase",
+  "type": "tool",
+  "capabilities": ["read", "vector-search", "analytics", "query-logs"],
+  "requiredEnv": ["SUPABASE_URL", "SUPABASE_SERVICE_KEY"],
+  "cost": { "perRequest": 0.0 }
+}

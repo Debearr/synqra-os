@@ -1,4 +1,4 @@
-import { AgentRole } from "../base/types";
+import { AgentRole, ResponseTier } from "../base/types";
 
 /**
  * ============================================================
@@ -11,6 +11,7 @@ interface RoutingResult {
   agent: AgentRole;
   confidence: number;
   reason: string;
+  responseTier: ResponseTier; // Smart token budget allocation
 }
 
 /**
@@ -151,11 +152,70 @@ export function routeToAgent(message: string): RoutingResult {
   const totalScore = scores.sales + scores.support + scores.service;
   const confidence = totalScore > 0 ? maxScore / totalScore : 0.5;
 
+  // Determine response tier based on message complexity
+  const responseTier = determineResponseTier(message);
+
   return {
     agent: selectedAgent,
     confidence,
     reason,
+    responseTier,
   };
+}
+
+/**
+ * Determine optimal response tier for cost optimization
+ * - "quick" (300 tokens): Simple yes/no, quick facts
+ * - "standard" (600 tokens): Normal inquiries
+ * - "detailed" (1024 tokens): Complex, multi-part questions
+ */
+function determineResponseTier(message: string): ResponseTier {
+  const lowerMessage = message.toLowerCase();
+  
+  // Simple queries get quick responses
+  const simpleIndicators = [
+    "yes or no",
+    "true or false",
+    "what is",
+    "when is",
+    "who is",
+    "define",
+    "status",
+    "available",
+    "open",
+    "closed",
+  ];
+  
+  const isSimple = simpleIndicators.some(ind => lowerMessage.includes(ind)) &&
+                   message.length < 100;
+  
+  if (isSimple) return "quick";
+  
+  // Complex queries need detailed responses
+  const complexIndicators = [
+    "explain",
+    "how to",
+    "step by step",
+    "detailed",
+    "compare",
+    "difference between",
+    "pros and cons",
+    "comprehensive",
+    "walk me through",
+    "tutorial",
+  ];
+  
+  const questionCount = (message.match(/\?/g) || []).length;
+  const hasMultipleQuestions = questionCount > 1;
+  const isLongMessage = message.length > 200;
+  const hasComplexIndicator = complexIndicators.some(ind => lowerMessage.includes(ind));
+  
+  if (hasMultipleQuestions || isLongMessage || hasComplexIndicator) {
+    return "detailed";
+  }
+  
+  // Default to standard
+  return "standard";
 }
 
 /**
