@@ -1,0 +1,9 @@
+{
+  "name": "supabase-writer",
+  "version": "1.0.0",
+  "description": "CRUD operations for Supabase (content, analytics, logs)",
+  "type": "tool",
+  "capabilities": ["create", "update", "delete", "batch-insert"],
+  "requiredEnv": ["SUPABASE_URL", "SUPABASE_SERVICE_KEY"],
+  "cost": { "perRequest": 0.0 }
+}

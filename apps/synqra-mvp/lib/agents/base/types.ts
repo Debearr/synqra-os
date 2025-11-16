@@ -43,6 +43,12 @@ export const AgentResponseSchema = z.object({
   toolCalls: z.array(ToolCallSchema).optional(),
   reasoning: z.string().optional(),
   metadata: z.record(z.string(), z.any()).optional(),
+  tokenUsage: z.object({ // New: Track token usage for cost monitoring
+    input: z.number().optional(),
+    output: z.number().optional(),
+    total: z.number().optional(),
+    estimatedCost: z.number().optional(),
+  }).optional(),
 });
 
 export type AgentResponse = z.infer<typeof AgentResponseSchema>;
@@ -112,11 +118,15 @@ export interface SafetyCheckResult {
   reason?: string;
 }
 
+// Response tier for token budgeting
+export type ResponseTier = "quick" | "standard" | "detailed";
+
 // Agent invocation options
 export interface InvocationOptions {
   mode?: AgentMode;
   useRAG?: boolean;
   useSafety?: boolean;
   maxHistory?: number;
+  responseTier?: ResponseTier; // New: Control response length for cost optimization
   metadata?: Record<string, any>;
 }

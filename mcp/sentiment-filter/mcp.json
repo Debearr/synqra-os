@@ -1,0 +1,8 @@
+{
+  "name": "sentiment-filter",
+  "version": "1.0.0",
+  "description": "DistilBERT sentiment analysis for content filtering",
+  "type": "tool",
+  "capabilities": ["sentiment-analysis", "classification", "filtering"],
+  "cost": { "perRequest": 0.0001 }
+}

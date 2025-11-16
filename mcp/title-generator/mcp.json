@@ -1,0 +1,10 @@
+{
+  "name": "title-generator",
+  "version": "1.0.0",
+  "description": "A/B test title generation for YouTube with SEO optimization",
+  "type": "tool",
+  "capabilities": ["title-generation", "ab-testing", "seo-optimization"],
+  "requiredEnv": [],
+  "optionalEnv": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
+  "cost": { "perRequest": 0.0005 }
+}

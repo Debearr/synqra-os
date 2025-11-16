@@ -1,0 +1,8 @@
+{
+  "name": "description-optimizer",
+  "version": "1.0.0",
+  "description": "SEO-optimized YouTube descriptions with A/B testing",
+  "type": "tool",
+  "capabilities": ["description-generation", "seo-optimization", "ab-testing"],
+  "cost": { "perRequest": 0.001 }
+}

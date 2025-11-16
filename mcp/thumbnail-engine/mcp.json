@@ -1,0 +1,33 @@
+{
+  "name": "thumbnail-engine",
+  "version": "1.0.0",
+  "description": "Generate platform-optimized thumbnails with brand DNA validation",
+  "type": "tool",
+  "author": "NØID Labs",
+  "capabilities": [
+    "thumbnail-generation",
+    "platform-optimization",
+    "brand-validation",
+    "metadata-export"
+  ],
+  "requiredEnv": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_KEY"
+  ],
+  "optionalEnv": [
+    "OPENAI_API_KEY"
+  ],
+  "endpoints": {
+    "generate": "/generate",
+    "validate": "/validate",
+    "health": "/health"
+  },
+  "rateLimit": {
+    "perMinute": 60,
+    "perHour": 1000
+  },
+  "cost": {
+    "perRequest": 0.001,
+    "currency": "USD"
+  }
+}
