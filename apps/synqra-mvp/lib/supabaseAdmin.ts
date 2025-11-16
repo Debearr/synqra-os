@@ -17,22 +17,45 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE
 // Support multiple naming conventions for backwards compatibility
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
+// CRITICAL FIX: Don't throw at module level - this crashes the entire app on Railway!
+// Instead, create a safe client that will fail gracefully on actual use
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
-    'Set these in .env.local for development or Railway for production.'
+  console.error(
+    '❌ CRITICAL: Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
+    'Admin client will not function. Set these in Railway environment variables.'
   );
+  console.error('Current env check:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlPrefix: supabaseUrl?.substring(0, 20),
+  });
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-  auth: { 
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-  db: { 
-    schema: 'public' 
-  },
-});
+// Create client with fallback to prevent module-level crash
+// If credentials are missing, operations will fail gracefully with proper error messages
+export const supabaseAdmin = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseKey || 'placeholder-key-replace-with-real-service-role-key',
+  {
+    auth: { 
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: { 
+      schema: 'public' 
+    },
+  }
+);
+
+// Helper to check if admin client is properly configured
+export const isSupabaseAdminConfigured = () => {
+  return !!(
+    supabaseUrl && 
+    supabaseUrl !== 'https://placeholder.supabase.co' &&
+    supabaseKey && 
+    supabaseKey !== 'placeholder-key-replace-with-real-service-role-key'
+  );
+};
 
 /**
  * Type definitions for waitlist

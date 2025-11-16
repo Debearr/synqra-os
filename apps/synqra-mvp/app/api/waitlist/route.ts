@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
 
 /**
  * ============================================================
@@ -19,6 +19,19 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
   try {
+    // CRITICAL: Check if Supabase is configured before attempting to use it
+    if (!isSupabaseAdminConfigured()) {
+      console.error('[Waitlist API] Supabase admin not configured - cannot save waitlist entries');
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: 'Service temporarily unavailable. Please contact support.',
+          debug: process.env.NODE_ENV === 'development' ? 'Supabase credentials not configured' : undefined
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { email, full_name } = body;
 
@@ -98,6 +111,11 @@ export async function POST(req: Request) {
  */
 export async function GET() {
   try {
+    // Return 0 if Supabase not configured
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json({ count: 0 });
+    }
+
     const { count, error } = await supabaseAdmin
       .from('waitlist')
       .select('*', { count: 'exact', head: true });
