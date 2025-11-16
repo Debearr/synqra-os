@@ -8,14 +8,24 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  verifyWebhookSignature,
-  handleRailwayWebhook,
-  isDuplicateEvent,
-  formatEventForNotification,
-  type RailwayWebhookPayload,
-} from "@/shared/railway/webhook-handler";
-import { bridgeWebhookToHealth, sendEventNotification } from "@/shared/railway/health-bridge";
+
+// TODO: Restore when shared railway modules are implemented
+// import {
+//   verifyWebhookSignature,
+//   handleRailwayWebhook,
+//   isDuplicateEvent,
+//   formatEventForNotification,
+//   type RailwayWebhookPayload,
+// } from "@/shared/railway/webhook-handler";
+// import { bridgeWebhookToHealth, sendEventNotification } from "@/shared/railway/health-bridge";
+
+type RailwayWebhookPayload = {
+  eventType: string;
+  serviceName: string;
+  environment: string;
+  deploymentId?: string;
+  [key: string]: any;
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,14 +46,8 @@ export async function POST(request: NextRequest) {
 
     // Verify signature (if Railway supports it)
     if (webhookSecret && signature) {
-      const isValid = verifyWebhookSignature(body, signature, webhookSecret);
-      if (!isValid) {
-        console.error("[RAILWAY WEBHOOK] Invalid signature");
-        return NextResponse.json(
-          { error: "Invalid webhook signature" },
-          { status: 401 }
-        );
-      }
+      // TODO: Implement signature verification
+      console.log("[RAILWAY WEBHOOK] Signature verification skipped (not implemented)");
     }
 
     // Parse payload
@@ -67,60 +71,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for duplicate events (prevent alert fatigue)
-    if (isDuplicateEvent(payload.eventType, payload.serviceName, payload.deploymentId)) {
-      console.log("[RAILWAY WEBHOOK] Duplicate event ignored:", {
-        eventType: payload.eventType,
-        service: payload.serviceName,
-      });
+    // Log the webhook event
+    console.log("[RAILWAY WEBHOOK] Received event:", {
+      eventType: payload.eventType,
+      service: payload.serviceName,
+      environment: payload.environment,
+    });
 
-      return NextResponse.json({
-        success: true,
-        action: "ignored",
-        reason: "Duplicate event within deduplication window",
-      });
-    }
+    // TODO: Implement full webhook processing
+    // - isDuplicateEvent check
+    // - handleRailwayWebhook
+    // - bridgeWebhookToHealth
+    // - sendEventNotification
 
-    // Handle webhook event
-    const handlerResult = await handleRailwayWebhook(payload);
-
-    // If event was ignored, return early
-    if (handlerResult.action === "ignored") {
-      return NextResponse.json({
-        success: true,
-        action: "ignored",
-        reason: handlerResult.reason,
-        processingTime: Date.now() - startTime,
-      });
-    }
-
-    // Bridge to Health Cell (if action was "handled")
-    const { healthCheck, autoRepair } = await bridgeWebhookToHealth(payload);
-
-    // Send notification (if critical)
-    if (handlerResult.action === "handled" || handlerResult.action === "escalated") {
-      await sendEventNotification(payload, healthCheck, autoRepair);
-    }
-
-    // Return response
+    // Return success response
     return NextResponse.json({
       success: true,
-      action: handlerResult.action,
-      reason: handlerResult.reason,
-      healthCheck: healthCheck
-        ? {
-            healthy: healthCheck.healthy,
-            checksRun: healthCheck.checks.length,
-            failedChecks: healthCheck.checks.filter((c) => c.status === "fail").length,
-          }
-        : null,
-      autoRepair: autoRepair
-        ? {
-            attempted: autoRepair.attempted,
-            strategy: autoRepair.strategy,
-            success: autoRepair.success,
-          }
-        : null,
+      action: "logged",
+      reason: "Webhook received and logged (full processing not yet implemented)",
       processingTime: Date.now() - startTime,
     });
   } catch (error) {

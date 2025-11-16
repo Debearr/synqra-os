@@ -13,16 +13,10 @@
  * @version 1.0.0
  */
 
-export { LuxGridLogo, default as Logo } from "./Logo";
-export { LuxGridBarcode, default as Barcode } from "./Barcode";
 export { LuxGridSignature, default as Signature } from "./Signature";
-export { LuxGridEndCard, default as EndCard } from "./EndCard";
 export { LuxGridDivider, default as Divider } from "./Divider";
 export { LuxGridPageHeader, default as PageHeader } from "./PageHeader";
-export { LuxGridCTAButton, default as CTAButton } from "./CTAButton";
 export { LuxGridTag, default as Tag } from "./Tag";
-export { LuxGridCard, default as Card } from "./Card";
-export { default as ColorSwatch } from "./ColorSwatch";
 
 // Re-export color system for convenience
 export { luxgridColors } from "@/lib/luxgrid/colors";

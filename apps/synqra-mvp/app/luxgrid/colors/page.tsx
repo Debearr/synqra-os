@@ -10,16 +10,30 @@
  * Design system page - Fully coded, browsable internal reference
  */
 
-import { ColorSwatch } from "@/components/luxgrid/ColorSwatch";
+import { luxgridColors } from "@/lib/luxgrid/colors";
+
+// Simple ColorSwatch component (TODO: move to components/luxgrid)
+function ColorSwatch({ name, value }: { name: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div 
+        className="w-full h-32 border border-white/10"
+        style={{ backgroundColor: value }}
+      />
+      <div className="text-white text-sm font-mono">{name}</div>
+      <div className="text-neutral-500 text-xs font-mono">{value}</div>
+    </div>
+  );
+}
 
 export default function LuxgridColorSystem() {
   const colors = [
-    "primaryBlack",
-    "goldAccent",
-    "emeraldAccent",
-    "pureWhite",
-    "futureAccentA",
-    "futureAccentB",
+    { name: "primaryBlack", value: luxgridColors.primaryBlack },
+    { name: "goldAccent", value: luxgridColors.goldAccent },
+    { name: "emeraldAccent", value: luxgridColors.emeraldAccent },
+    { name: "pureWhite", value: luxgridColors.pureWhite },
+    { name: "futureAccentA", value: luxgridColors.futureAccentA },
+    { name: "futureAccentB", value: luxgridColors.futureAccentB },
   ];
 
   return (
@@ -32,7 +46,7 @@ export default function LuxgridColorSystem() {
 
       <div className="grid grid-cols-3 gap-16">
         {colors.map((c) => (
-          <ColorSwatch name={c as any} key={c} />
+          <ColorSwatch name={c.name} value={c.value} key={c.name} />
         ))}
       </div>
 
