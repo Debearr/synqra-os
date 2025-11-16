@@ -1,0 +1,19 @@
+{
+  "name": "Coffee Shop — Seasonal Drink Try + React",
+  "slug": "coffee_seasonal",
+  "recipe": "try_on_react_campaign",
+  "industry": "hospitality",
+  "description": "Authentic first-taste reactions for seasonal coffee launches",
+  "variables": {
+    "BRAND_NAME": "[Coffee Shop Name]",
+    "COLLAB_OR_PRODUCT": "[Seasonal Drink] — First Taste Reaction",
+    "TALENT_TYPE": "Baristas + regulars + coffee enthusiasts",
+    "PRIMARY_PLATFORM": "TikTok + Instagram Reels",
+    "VIBE": "Warm connection. Natural chemistry. Community energy. Authentic moments. Think: cozy neighborhood spot, genuine reactions.",
+    "GOAL": "In-store traffic + seasonal drink orders"
+  },
+  "archetype": "The Lifestyle Couple",
+  "color_palette": ["#F0E6D2", "#E8CCD7", "#A8A8A8", "#D4AF37"],
+  "lighting": "warm_cafe_ambient",
+  "version": "1.0"
+}

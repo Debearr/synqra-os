@@ -1,0 +1,19 @@
+{
+  "name": "Salon — Transformation Reveal",
+  "slug": "salon_transformation",
+  "recipe": "try_on_react_campaign",
+  "industry": "salon",
+  "description": "Before/after transformation reveal content for hair salons",
+  "variables": {
+    "BRAND_NAME": "[Salon Name]",
+    "COLLAB_OR_PRODUCT": "[Service] Transformation — New Look Reveal",
+    "TALENT_TYPE": "Real clients + stylists + transformation stories",
+    "PRIMARY_PLATFORM": "TikTok + Instagram Reels",
+    "VIBE": "Creative precision. Texture obsessed. Detail-oriented artistry. Confidence transformation. Think: before-the-mirror awe moment.",
+    "GOAL": "New client bookings + service inquiries"
+  },
+  "archetype": "The Urban Stylist",
+  "color_palette": ["#F5F1E8", "#A89F91", "#B76E79", "#2C2C2C"],
+  "lighting": "high_texture_studio",
+  "version": "1.0"
+}

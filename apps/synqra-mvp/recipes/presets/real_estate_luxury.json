@@ -1,0 +1,19 @@
+{
+  "name": "Real Estate — Luxury Viewing Experience",
+  "slug": "real_estate_luxury",
+  "recipe": "try_on_react_campaign",
+  "industry": "real-estate",
+  "description": "First-viewing reactions for luxury real estate properties",
+  "variables": {
+    "BRAND_NAME": "[Real Estate Agency / Property Name]",
+    "COLLAB_OR_PRODUCT": "[Property Address] — Exclusive Viewing Experience",
+    "TALENT_TYPE": "Prospective buyers + real estate agents + luxury clients",
+    "PRIMARY_PLATFORM": "YouTube Shorts + Instagram Reels + LinkedIn",
+    "VIBE": "Curated experiences. Hospitality mastery. Luxury service. Attention to detail. Think: dream home reveal, aspirational living.",
+    "GOAL": "Viewing appointments + buyer inquiries"
+  },
+  "archetype": "The Hotel Experience Curator",
+  "color_palette": ["#FFF8DC", "#F5F5F5", "#2C3E50", "#D4AF37"],
+  "lighting": "golden_hour_architectural",
+  "version": "1.0"
+}
