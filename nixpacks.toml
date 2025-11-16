@@ -1,8 +1,11 @@
-[phases.setup]
-cmds = ["npm --prefix apps/synqra-mvp install"]
+﻿[phases.setup]
+nixPkgs = ['nodejs-18_x', 'pnpm-9_x']
+
+[phases.install]
+cmds = ['cd apps/synqra-mvp && pnpm install --frozen-lockfile']
 
 [phases.build]
-cmds = ["npm --prefix apps/synqra-mvp run build"]
+cmds = ['cd apps/synqra-mvp && pnpm run build']
 
 [start]
-cmd = "npm --prefix apps/synqra-mvp run start"
+cmd = 'cd apps/synqra-mvp && pnpm start'
