@@ -1,15 +1,15 @@
 ﻿[phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "pnpm"]
 
 [phases.install]
 cmds = [
-  "npm --prefix apps/synqra-mvp install"
+  "pnpm install --frozen-lockfile --prod"
 ]
 
 [phases.build]
 cmds = [
-  "npm --prefix apps/synqra-mvp run build"
+  "pnpm --filter apps/synqra-mvp run build"
 ]
 
 [phases.start]
-cmd = "npm --prefix apps/synqra-mvp start"
+cmd = "pnpm --filter apps/synqra-mvp start"
