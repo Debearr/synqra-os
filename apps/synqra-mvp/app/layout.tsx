@@ -5,14 +5,28 @@ import "../styles/globals.css";
 // Google Fonts can fail during build when network is restricted
 
 export const metadata: Metadata = {
-  title: "Synqra | Perfect Draft Engine",
-  description: "Synqra crafts premium, production-ready drafts instantly with zero friction.",
+  title: "Synqra — AI Content Orchestration for Executives | NØID Labs",
+  description: "Generate executive-grade content in seconds. Synqra learns your voice, maintains brand consistency, and produces publish-ready copy across LinkedIn, Twitter, and newsletters. Built by NØID Labs.",
+  keywords: "AI content generation, executive content, brand voice AI, content orchestration, LinkedIn automation, Twitter automation, CEO content tools, NØID Labs",
   openGraph: {
-    title: "Synqra | Perfect Draft Engine",
-    description: "Synqra crafts premium, production-ready drafts instantly with zero friction.",
-    url: "https://synqra.local",
-    siteName: "Synqra",
+    title: "Synqra — AI Content Orchestration for Executives",
+    description: "Generate executive-grade content in seconds with AI that learns your voice. Built by NØID Labs.",
+    url: "https://synqra.app",
+    siteName: "Synqra by NØID Labs",
     type: "website",
+    images: [{
+      url: "/og-synqra.jpg",
+      width: 1200,
+      height: 630,
+      alt: "Synqra - AI Content Orchestration Platform",
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Synqra — AI Content Orchestration for Executives",
+    description: "Generate executive-grade content in seconds with AI that learns your voice.",
+    creator: "@noidlabs",
+    images: ["/og-synqra.jpg"],
   },
   themeColor: "#0B0B0B",
   icons: {

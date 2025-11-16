@@ -10,24 +10,23 @@ export function Hero() {
             Luxury automation suite
           </span>
           <h1 className="font-display text-4xl font-semibold tracking-tight text-noid-white sm:text-5xl lg:text-6xl">
-            Guide every social moment with concierge precision.
+            Your executive voice, perfectly timed, everywhere.
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-noid-gray sm:text-lg">
-            Synqra orchestrates your executive social presence end-to-end—predictive scheduling,
-            brand-consistent storytelling, and AuraFX intelligence in one motion-smooth dashboard.
+            LinkedIn, Twitter, newsletters: written, scheduled, and published with your voice—while you focus on leading. No switching tools. No manual posting. Just intelligence.
           </p>
           <div className="flex flex-wrap items-center gap-4 pt-4">
             <Link
               href="#waitlist"
               className="rounded-full bg-noid-gold px-6 py-3 text-sm font-semibold text-noid-black transition-transform duration-500 hover:-translate-y-0.5 hover:shadow-gold-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noid-gold/50"
             >
-              Join the waitlist
+              Reserve your concierge slot
             </Link>
             <Link
               href="/dashboard"
               className="rounded-full border border-noid-teal/40 px-6 py-3 text-sm font-semibold text-noid-teal transition-all duration-500 hover:border-noid-teal hover:bg-noid-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noid-teal/50"
             >
-              Preview the dashboard
+              See the intelligence layer
             </Link>
           </div>
         </div>

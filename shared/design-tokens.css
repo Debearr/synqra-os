@@ -1,0 +1,284 @@
+/**
+ * ============================================================
+ * NØID LABS DESIGN TOKENS
+ * ============================================================
+ * Unified design system for Apple-like simplicity + Tesla-like intelligence
+ * 
+ * RPRD DNA Standards:
+ * - Consistent spacing scale
+ * - Premium typography hierarchy  
+ * - Luxury color palette
+ * - Smooth motion timing
+ * - Responsive breakpoints
+ */
+
+:root {
+  /* ========================================
+     COLOR SYSTEM — Luxury Dark Theme
+     ======================================== */
+  
+  /* Foundation Colors */
+  --noid-obsidian: #050506;        /* Darkest background */
+  --noid-charcoal: #0F0F11;        /* Card backgrounds */
+  --noid-ink: #1A1A1D;             /* Elevated surfaces */
+  --noid-charcoal-light: #1C1C1E;  /* Lighter cards */
+  
+  /* Text Colors */
+  --noid-platinum: #F7F7F5;        /* Primary text */
+  --noid-silver: #C4C4C2;          /* Secondary text */
+  --noid-steel: #888886;           /* Tertiary text */
+  --noid-gray: #A0A0A0;            /* Muted text */
+  
+  /* Brand Accent Colors */
+  --noid-teal: #4FE0D9;            /* Primary action */
+  --noid-teal-dark: #2DB5AF;       /* Hover state */
+  --noid-gold: #D4AF37;            /* Secondary action */
+  --noid-gold-dark: #B8941F;       /* Hover state */
+  --noid-indigo: #4B52FF;          /* Tertiary accent */
+  
+  /* Semantic Colors */
+  --color-success: #3DD68C;
+  --color-warning: #FFB020;
+  --color-error: #FF4757;
+  --color-info: #4FE0D9;
+  
+  /* ========================================
+     SPACING SCALE — Consistent Rhythm
+     ======================================== */
+  
+  --space-xs: 0.5rem;    /* 8px - Tight spacing */
+  --space-sm: 0.75rem;   /* 12px - Small gaps */
+  --space-md: 1rem;      /* 16px - Base unit */
+  --space-lg: 1.5rem;    /* 24px - Component gaps */
+  --space-xl: 2rem;      /* 32px - Section gaps */
+  --space-2xl: 3rem;     /* 48px - Large sections */
+  --space-3xl: 4rem;     /* 64px - Major sections */
+  --space-4xl: 6rem;     /* 96px - Hero sections */
+  
+  /* ========================================
+     TYPOGRAPHY SCALE — Premium Hierarchy
+     ======================================== */
+  
+  /* Font Sizes */
+  --text-micro: 0.70rem;      /* 11.2px - Timestamps, badges */
+  --text-caption: 0.8125rem;  /* 13px - Form labels, hints */
+  --text-body: 1.0625rem;     /* 17px - Body text (slightly larger for readability) */
+  --text-lead: 1.25rem;       /* 20px - Lead paragraphs */
+  --text-h4: 1.5rem;          /* 24px - Heading 4 */
+  --text-h3: 1.875rem;        /* 30px - Heading 3 */
+  --text-h2: 2.5rem;          /* 40px - Heading 2 */
+  --text-h1: 3.5rem;          /* 56px - Heading 1 */
+  --text-display: 4.5rem;     /* 72px - Hero display */
+  
+  /* Line Heights */
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  --leading-loose: 2;
+  
+  /* Font Weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  
+  /* ========================================
+     MOTION TIMING — Smooth Interactions
+     ======================================== */
+  
+  /* Durations */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+  
+  /* Easing Curves */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* Bouncy */
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);   /* Smooth */
+  
+  /* ========================================
+     SHADOWS — Depth & Elevation
+     ======================================== */
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 24px 80px rgba(0, 0, 0, 0.7);
+  
+  /* Brand Glows */
+  --shadow-teal-glow: 0 8px 32px rgba(79, 224, 217, 0.3);
+  --shadow-gold-glow: 0 8px 32px rgba(212, 175, 55, 0.3);
+  --shadow-indigo-glow: 0 8px 32px rgba(75, 82, 255, 0.3);
+  
+  /* ========================================
+     BORDER RADIUS — Consistent Corners
+     ======================================== */
+  
+  --radius-sm: 0.5rem;    /* 8px - Buttons, inputs */
+  --radius-md: 0.75rem;   /* 12px - Cards */
+  --radius-lg: 1rem;      /* 16px - Large cards */
+  --radius-xl: 1.5rem;    /* 24px - Hero sections */
+  --radius-2xl: 2rem;     /* 32px - Premium cards */
+  --radius-full: 9999px;  /* Pills, badges */
+  
+  /* ========================================
+     BREAKPOINTS — Responsive Design
+     ======================================== */
+  
+  --breakpoint-sm: 640px;   /* Mobile landscape */
+  --breakpoint-md: 768px;   /* Tablet portrait */
+  --breakpoint-lg: 1024px;  /* Tablet landscape */
+  --breakpoint-xl: 1280px;  /* Desktop */
+  --breakpoint-2xl: 1536px; /* Large desktop */
+  
+  /* ========================================
+     Z-INDEX SCALE — Layering Order
+     ======================================== */
+  
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+}
+
+/* ========================================
+   GLOBAL RESETS — Clean Foundation
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--noid-obsidian);
+  color: var(--noid-platinum);
+  min-height: 100vh;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--noid-teal);
+  color: var(--noid-obsidian);
+  opacity: 0.4;
+}
+
+::-moz-selection {
+  background-color: var(--noid-teal);
+  color: var(--noid-obsidian);
+  opacity: 0.4;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 224, 217, 0.3);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 224, 217, 0.5);
+}
+
+/* Focus Indicators */
+*:focus-visible {
+  outline: 2px solid var(--noid-teal);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   UTILITY CLASSES — Common Patterns
+   ======================================== */
+
+/* Spacing Utilities */
+.space-y-xs > * + * { margin-top: var(--space-xs); }
+.space-y-sm > * + * { margin-top: var(--space-sm); }
+.space-y-md > * + * { margin-top: var(--space-md); }
+.space-y-lg > * + * { margin-top: var(--space-lg); }
+.space-y-xl > * + * { margin-top: var(--space-xl); }
+
+/* Typography Utilities */
+.text-micro { font-size: var(--text-micro); }
+.text-caption { font-size: var(--text-caption); }
+.text-body { font-size: var(--text-body); }
+.text-lead { font-size: var(--text-lead); }
+.text-h4 { font-size: var(--text-h4); }
+.text-h3 { font-size: var(--text-h3); }
+.text-h2 { font-size: var(--text-h2); }
+.text-h1 { font-size: var(--text-h1); }
+.text-display { font-size: var(--text-display); }
+
+/* Shadow Utilities */
+.shadow-teal-glow { box-shadow: var(--shadow-teal-glow); }
+.shadow-gold-glow { box-shadow: var(--shadow-gold-glow); }
+.shadow-indigo-glow { box-shadow: var(--shadow-indigo-glow); }
+
+/* Transition Utilities */
+.transition-fast { transition: all var(--duration-fast) var(--ease-out); }
+.transition-normal { transition: all var(--duration-normal) var(--ease-out); }
+.transition-slow { transition: all var(--duration-slow) var(--ease-out); }
+.transition-spring { transition: all var(--duration-normal) var(--ease-spring); }
+
+/* ========================================
+   RESPONSIVE HELPERS
+   ======================================== */
+
+@media (max-width: 640px) {
+  :root {
+    --text-display: 3rem;  /* Smaller on mobile */
+    --text-h1: 2.5rem;
+    --text-h2: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  /* Optional: Light mode support (not implemented yet) */
+}
