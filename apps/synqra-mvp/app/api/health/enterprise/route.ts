@@ -8,12 +8,13 @@
  * RPRD DNA: Bulletproof, clear reporting, auto-recovery
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServiceClient } from "@/shared/db/supabase";
 import { validateEnv } from "@/config/env-schema";
 import { RAILWAY_SERVICES } from "@/config/railway-services";
 
 export const runtime = "nodejs";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 60 seconds max
 
@@ -153,11 +154,14 @@ async function checkEnvironmentVariables(): Promise<HealthCheck> {
         message: `Missing or invalid: ${[...validation.missing, ...validation.invalid].join(", ")}`,
         duration: Date.now() - start,
         timestamp: new Date(),
-        metadata: { missing: validation.missing, invalid: validation.invalid },
+        metadata: { 
+          missing: validation.missing ?? [], 
+          invalid: validation.invalid ?? [] 
+        },
       };
     }
 
-    if (validation.warnings.length > 0) {
+    if (validation.warnings && validation.warnings.length > 0) {
       return {
         name: "environment_variables",
         status: "warn",
@@ -424,3 +428,11 @@ async function logHealthReport(report: HealthReport): Promise<void> {
     console.error("[ENTERPRISE HEALTH] Failed to log report:", error);
   }
 }
+function validateEnv(tier: any) {
+  throw new Error("Function not implemented.");
+}
+
+function getSupabaseServiceClient() {
+  throw new Error("Function not implemented.");
+}
+
