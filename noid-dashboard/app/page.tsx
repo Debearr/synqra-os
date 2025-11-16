@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function Home() {
+export default async function HomePage() {
   const cookieStore = await cookies();
   const hasSession = Boolean(
     cookieStore.get("sb-access-token")?.value ||
@@ -14,4 +14,6 @@ export default async function Home() {
   }
 
   redirect("/landing");
+
+  return null;
 }

@@ -1,52 +1,92 @@
 import React from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  TrendingUp, 
-  Users, 
-  FileText, 
+import {
+  TrendingUp,
+  Users,
+  FileText,
   Target,
-  ArrowUp,
-  ArrowDown,
   Clock,
   CheckCircle2,
   Zap
 } from 'lucide-react';
+import { calculateCampaignLimitCheck } from '@/lib/subscription';
 
-const OverviewPage = () => {
-  const metrics = [
+const OverviewPage = ({ metrics, usage, tier }) => {
+  const safeMetrics = metrics ?? {
+    liveUsers: 0,
+    scheduledContent: 0,
+    automationsTriggered: 0,
+    averageEngagementRate: 0,
+  };
+
+  const safeUsage = {
+    campaignsUsed: usage?.campaignsUsed ?? 0,
+    campaignsLimit:
+      usage?.campaignsLimit ?? tier?.campaignsPerInterval ?? null,
+    nextRenewalDate: usage?.nextRenewalDate ?? null,
+    tier: usage?.tier ?? tier?.slug ?? 'creator',
+  };
+
+  const plan = tier ?? {
+    slug: 'creator',
+    name: 'Atelier',
+    priceLabel: '$197',
+    intervalLabel: 'per month',
+    badge: undefined,
+    highlight: false,
+  };
+
+  const metricCards = [
     {
-      title: 'Total Posts',
-      value: '1,247',
-      change: '+12.5%',
-      trend: 'up',
-      icon: FileText,
-      color: 'gold'
-    },
-    {
-      title: 'Engagement Rate',
-      value: '8.4%',
-      change: '+2.3%',
-      trend: 'up',
-      icon: TrendingUp,
-      color: 'gold'
-    },
-    {
-      title: 'Reach',
-      value: '2.4M',
-      change: '+18.2%',
-      trend: 'up',
+      title: 'Live Users',
+      value: safeMetrics.liveUsers.toLocaleString(),
       icon: Users,
-      color: 'gold'
+      description: 'Total accounts connected to Synqra',
     },
     {
-      title: 'Automation Score',
-      value: '94%',
-      change: '+5%',
-      trend: 'up',
+      title: 'Scheduled Content',
+      value: safeMetrics.scheduledContent.toLocaleString(),
+      icon: FileText,
+      description: 'Campaigns queued for publication',
+    },
+    {
+      title: 'Automations Triggered',
+      value: safeMetrics.automationsTriggered.toLocaleString(),
       icon: Zap,
-      color: 'gold'
-    }
+      description: 'Flows executed in the last 30 days',
+    },
+    {
+      title: 'Avg Engagement',
+      value: `${safeMetrics.averageEngagementRate}%`,
+      icon: TrendingUp,
+      description: 'Weighted engagement rate across channels',
+    },
   ];
+
+  const limitCheck = calculateCampaignLimitCheck({
+    ...safeUsage,
+    tier: plan.slug,
+  });
+  const tierBadge = plan.badge ?? (plan.highlight ? 'Highlighted' : null);
+  const campaignsLimitLabel =
+    safeUsage.campaignsLimit === null
+      ? `Unlimited ${plan.intervalLabel}`
+      : `${safeUsage.campaignsLimit} ${plan.intervalLabel}`;
+  const renewalLabel = safeUsage.nextRenewalDate
+    ? safeUsage.nextRenewalDate.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Pending';
+  const campaignsRemainingLabel =
+    limitCheck.remainingCampaigns === null
+      ? 'Unlimited'
+      : `${limitCheck.remainingCampaigns} left`;
+  const usageProgress =
+    safeUsage.campaignsLimit === null || safeUsage.campaignsLimit === 0
+      ? 0
+      : Math.min((safeUsage.campaignsUsed / safeUsage.campaignsLimit) * 100, 100);
 
   const recentActivity = [
     {
@@ -104,12 +144,50 @@ const OverviewPage = () => {
 
   return (
     <DashboardLayout activePage="overview">
-      {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {metrics.map((metric) => {
+        <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all hover:shadow-gold-glow">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="text-xs uppercase tracking-[0.3em] text-noid-gray/80">Current Tier</span>
+              <h3 className="mt-2 text-2xl font-semibold text-noid-white">{plan.name}</h3>
+              <p className="text-sm text-noid-silver mt-2">
+                {plan.priceLabel === 'Contact Us'
+                  ? plan.priceLabel
+                  : `${plan.priceLabel} ${plan.intervalLabel}`}
+              </p>
+            </div>
+            <div className="p-3 bg-gradient-gold rounded-lg">
+              <Target className="w-6 h-6 text-noid-black" />
+            </div>
+          </div>
+          {tierBadge && (
+            <span className="mt-4 inline-flex items-center rounded-full border border-noid-gold/40 bg-noid-black/20 px-3 py-1 text-xs uppercase tracking-wide text-noid-gold">
+              {tierBadge}
+            </span>
+          )}
+
+          <div className="mt-6">
+            <p className="text-sm text-noid-silver">
+              {safeUsage.campaignsUsed} used · {campaignsLimitLabel}
+            </p>
+            {safeUsage.campaignsLimit !== null && (
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-noid-charcoal-light">
+                <div
+                  className="h-full rounded-full bg-gradient-gold transition-all duration-500"
+                  style={{ width: `${usageProgress}%` }}
+                />
+              </div>
+            )}
+            <div className="mt-3 flex items-center justify-between text-xs text-noid-silver/70">
+              <span>Remaining: {campaignsRemainingLabel}</span>
+              <span>Renews: {renewalLabel}</span>
+            </div>
+          </div>
+        </div>
+
+        {metricCards.map((metric) => {
           const Icon = metric.icon;
-          const TrendIcon = metric.trend === 'up' ? ArrowUp : ArrowDown;
-          
+
           return (
             <div 
               key={metric.title}
@@ -119,15 +197,10 @@ const OverviewPage = () => {
                 <div className={`p-3 bg-gradient-gold rounded-lg`}>
                   <Icon className="w-6 h-6 text-noid-black" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm ${
-                  metric.trend === 'up' ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  <TrendIcon className="w-4 h-4" />
-                  <span>{metric.change}</span>
-                </div>
               </div>
               <h3 className="text-sm text-noid-silver mb-1">{metric.title}</h3>
               <p className="text-3xl font-bold text-noid-white">{metric.value}</p>
+              <p className="mt-2 text-xs text-noid-silver/70">{metric.description}</p>
             </div>
           );
         })}

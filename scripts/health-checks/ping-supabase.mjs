@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+
+/**
+ * Supabase Health Check - Production Version
+ * Handles both migrated and non-migrated database states gracefully
+ */
+
 import { createClient } from "@supabase/supabase-js";
 import fetch from "node-fetch";
 import fs from "fs";

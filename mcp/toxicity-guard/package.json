@@ -1,0 +1,23 @@
+{
+  "name": "@mcp/toxicity-guard",
+  "version": "1.0.0",
+  "description": "MCP Tool: RoBERTa toxicity detection and content safety",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": ["mcp", "toxicity", "roberta", "safety", "moderation"],
+  "author": "NØID Labs",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

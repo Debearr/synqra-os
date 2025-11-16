@@ -1,0 +1,18 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="320" rx="48" fill="#09090F"/>
+  <path d="M64 96C64 82.7452 74.7452 72 88 72H232C245.255 72 256 82.7452 256 96V224C256 237.255 245.255 248 232 248H88C74.7452 248 64 237.255 64 224V96Z" fill="url(#paint0_linear_5_1)" fill-opacity="0.32" stroke="url(#paint1_linear_5_1)" stroke-width="2"/>
+  <path d="M112 114H208" stroke="#4FE0D9" stroke-width="8" stroke-linecap="round" stroke-dasharray="20 20"/>
+  <path d="M112 206H208" stroke="#4FE0D9" stroke-width="8" stroke-linecap="round" stroke-dasharray="14 18"/>
+  <text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle" font-family="'Poppins', 'DM Serif Display', serif" font-size="88" fill="#F7F7F5">JK</text>
+  <defs>
+    <linearGradient id="paint0_linear_5_1" x1="64" y1="72" x2="256" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1C3A4D"/>
+      <stop offset="1" stop-color="#050C15"/>
+    </linearGradient>
+    <linearGradient id="paint1_linear_5_1" x1="88" y1="72" x2="232" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EF8D5"/>
+      <stop offset="0.46" stop-color="#23C2DB"/>
+      <stop offset="1" stop-color="#1A6AD4"/>
+    </linearGradient>
+  </defs>
+</svg>
