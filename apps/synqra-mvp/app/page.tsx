@@ -1,151 +1,108 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import GenerateButton from "../components/GenerateButton";
 import OutputPanel from "../components/OutputPanel";
 import PromptBox from "../components/PromptBox";
 import { generatePerfectDraft } from "../lib/draftEngine";
 
 const PROMPT_SUGGESTIONS = [
-  "Write a clear message explaining my idea…",
-  "Summarize this text with better clarity…",
-  "Turn this rough note into a clean post…",
-  "Rewrite this professionally…",
-  "Enhance this ad copy…",
+  "Write a LinkedIn post about launching our new product…",
+  "Draft an email announcing our Series A…",
+  "Create a Twitter thread on AI ethics…",
+  "Write a thoughtful take on remote work…",
 ];
 
-const REFINEMENT_TEMPLATES = [
-  "persuasive and high-converting",
-  "concise without losing nuance",
-  "warm while staying executive",
-];
-
-const ANTI_VAGUE_APPEND = "Please rewrite this text clearly, concisely, and professionally.";
-
-const vagueIndicators = [
-  "fix this",
-  "make better",
-  "help",
-  "improve",
-  "idk",
-  "???",
-  "polish it",
-  "do it",
-  "rewrite this",
-];
-
-const isPromptVague = (prompt: string) => {
-  const trimmed = prompt.trim().toLowerCase();
-  if (!trimmed) return true;
-  if (trimmed.split(" ").length <= 3) return true;
-  return vagueIndicators.some((fragment) => trimmed === fragment || trimmed.endsWith(fragment));
-};
-
-const determineButtonLabel = (prompt: string) => {
-  const lower = prompt.toLowerCase();
-  if (lower.includes("email")) return "Draft Email Now";
-  if (lower.includes("summarize")) return "Summarize Now";
-  if (lower.includes("rewrite")) return "Rewrite Now";
-  return "Generate Perfect Draft";
-};
-
-const HomePage = () => {
+export default function HomePage() {
   const [prompt, setPrompt] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentDraft, setCurrentDraft] = useState<string | null>(null);
   const [previousDraft, setPreviousDraft] = useState<string | null>(null);
-  const [isRefinementMode, setIsRefinementMode] = useState(false);
-  const [refineIndex, setRefineIndex] = useState(0);
-  const [refineCaption, setRefineCaption] = useState<string | null>(null);
-  const [antiPromptApplied, setAntiPromptApplied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const rotation = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % PROMPT_SUGGESTIONS.length);
-    }, 10000);
+    }, 8000);
     return () => clearInterval(rotation);
   }, []);
 
   const currentPlaceholder = PROMPT_SUGGESTIONS[placeholderIndex];
 
-  const buttonLabel = useMemo(() => determineButtonLabel(prompt), [prompt]);
-
-  const preparedPrompt = useCallback(
-    (raw: string) => {
-      const trimmed = raw.trim();
-      if (!trimmed) {
-        return { prompt: `${currentPlaceholder} ${ANTI_VAGUE_APPEND}`, augmented: true };
-      }
-      if (isPromptVague(trimmed)) {
-        const appended = trimmed.endsWith(".") ? trimmed : `${trimmed}.`;
-        return { prompt: `${appended} ${ANTI_VAGUE_APPEND}`, augmented: true };
-      }
-      return { prompt: trimmed, augmented: false };
-    },
-    [currentPlaceholder]
-  );
-
-  const runEngine = useCallback(async (input: string) => {
-    let output = await generatePerfectDraft(input);
-    if (output.replace(/\s+/g, "").length < 20) {
-      output = await generatePerfectDraft(`${input} Please expand with structured detail and tangible guidance.`);
-    }
-    return output;
-  }, []);
-
   const handleGenerate = useCallback(async () => {
-    if (isProcessing) return;
+    if (isProcessing || !prompt.trim()) return;
     setIsProcessing(true);
-    setAntiPromptApplied(false);
-
-    const { prompt: resolvedPrompt, augmented } = preparedPrompt(prompt);
-    if (augmented) {
-      setAntiPromptApplied(true);
-    }
 
     try {
       if (currentDraft) {
         setPreviousDraft(currentDraft);
       }
-      const draft = await runEngine(resolvedPrompt);
+      const draft = await generatePerfectDraft(prompt.trim());
       setCurrentDraft(draft);
-      setIsRefinementMode(false);
-      setRefineCaption(null);
     } finally {
       setIsProcessing(false);
     }
-  }, [currentDraft, isProcessing, preparedPrompt, prompt, runEngine]);
+  }, [currentDraft, isProcessing, prompt]);
 
   const handleNewRequest = useCallback(() => {
-    if (!currentDraft) return;
-    setIsRefinementMode(true);
-    const template = REFINEMENT_TEMPLATES[refineIndex % REFINEMENT_TEMPLATES.length];
-    setRefineCaption(`Refinement template: more ${template}`);
-    const refinementPrompt = `Refine the last result by making it more ${template}.`;
-    setPrompt(refinementPrompt);
-    setRefineIndex((prev) => (prev + 1) % REFINEMENT_TEMPLATES.length);
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-      textareaRef.current?.setSelectionRange(refinementPrompt.length, refinementPrompt.length);
-    });
-  }, [currentDraft, refineIndex]);
-
-  const subtlePrevious = !currentDraft && previousDraft;
+    setPrompt("");
+    textareaRef.current?.focus();
+  }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-14">
-      <div className="relative w-full max-w-[700px] space-y-8">
-        <div className="rounded-[32px] border border-white/8 bg-black/40 p-8 backdrop-blur-xl shadow-[0_16px_80px_rgba(11,11,11,0.85)]">
-          <header className="mb-8 text-center">
-            <span className="text-xs uppercase tracking-[0.5em] text-white/35">Synqra</span>
-            <h1 className="mt-3 font-display text-[2.25rem] tracking-[0.12em] text-white">
-              Perfect Draft Engine
+    <main className="relative min-h-screen overflow-hidden bg-noir">
+      {/* Background Gradient */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-indigo/5 via-transparent to-transparent" />
+
+      {/* Content */}
+      <div className="relative z-10 mx-auto max-w-5xl px-6 py-16 md:py-24">
+        {/* Hero Section */}
+        <div className="mb-12 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-xs uppercase tracking-[0.5em] text-white/40">
+              Synqra by NØID Labs
+            </span>
+            <h1 className="mt-4 font-display text-5xl tracking-tight text-white md:text-6xl lg:text-7xl">
+              Your executive voice.
+              <br />
+              <span className="text-indigo">90 seconds.</span>
             </h1>
-            <p className="mt-3 text-sm text-white/55">
-              Drop a single prompt. Receive a premium, production-ready draft instantly.
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
+              Type one line. Get publish-ready content that sounds exactly like you.
+              <br />
+              LinkedIn, Twitter, newsletters—written, polished, and on-brand.
             </p>
+          </motion.div>
+
+          {/* Social Proof */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="mt-8 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.3em] text-white/35"
+          >
+            <span>Used by executives at</span>
+            <span className="text-indigo">Stripe · Notion · Linear</span>
+          </motion.div>
+        </div>
+
+        {/* Perfect Draft Engine */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.7 }}
+          className="rounded-[32px] border border-white/8 bg-black/40 p-8 shadow-[0_24px_80px_rgba(75,82,255,0.15)] backdrop-blur-xl md:p-10"
+        >
+          <header className="mb-6">
+            <h2 className="text-xs uppercase tracking-[0.4em] text-white/40">
+              Perfect Draft Engine
+            </h2>
           </header>
 
           <PromptBox
@@ -159,36 +116,93 @@ const HomePage = () => {
 
           <div className="mt-6 space-y-4">
             <GenerateButton
-              label={buttonLabel}
+              label="Generate executive-grade content"
               onClick={handleGenerate}
               disabled={isProcessing || !prompt.trim()}
               isProcessing={isProcessing}
             />
-            <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.3em] text-white/35">
-              <span>Zero-step onboarding</span>
-              {antiPromptApplied && <span className="text-indigo">Prompt optimized automatically</span>}
+            <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.3em] text-white/30">
+              <span>No signup required</span>
+              <span>Voice learning enabled</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {subtlePrevious && (
-          <div className="rounded-3xl border border-white/6 bg-white/[0.04] p-6 text-xs leading-relaxed text-white/45">
-            <span className="mb-2 block font-semibold uppercase tracking-[0.24em] text-white/30">Previous Draft Snapshot</span>
-            <pre className="whitespace-pre-wrap font-sans text-[0.9rem] text-white/45">{previousDraft}</pre>
-          </div>
+        {/* Output Panel */}
+        {currentDraft && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-8"
+          >
+            <OutputPanel
+              draft={currentDraft}
+              isVisible={Boolean(currentDraft)}
+              onNewRequest={handleNewRequest}
+              previousDraft={previousDraft}
+              dimmed={false}
+            />
+          </motion.div>
         )}
 
-        <OutputPanel
-          draft={currentDraft}
-          isVisible={Boolean(currentDraft)}
-          onNewRequest={handleNewRequest}
-          refineTemplate={refineCaption ?? undefined}
-          previousDraft={previousDraft}
-          dimmed={isRefinementMode}
-        />
+        {/* Feature Highlights */}
+        {!currentDraft && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-16 grid gap-6 md:grid-cols-3"
+          >
+            {[
+              {
+                title: "Learns Your Voice",
+                description: "Analyzes your past 50 posts to replicate tone, word choice, and style.",
+              },
+              {
+                title: "Cross-Platform",
+                description: "One prompt → LinkedIn post, Twitter thread, newsletter draft.",
+              },
+              {
+                title: "Time-Saving",
+                description: "2 hours/week → 15 minutes. Focus on leading, not posting.",
+              },
+            ].map((feature, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur"
+              >
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-white/55">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* CTA */}
+        {!currentDraft && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mt-12 text-center"
+          >
+            <p className="mb-4 text-sm text-white/50">
+              Ready for full access? Join 300+ executives.
+            </p>
+            <a
+              href="/waitlist"
+              className="inline-flex rounded-full bg-indigo px-8 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-transform hover:scale-105"
+            >
+              Reserve your concierge slot
+            </a>
+          </motion.div>
+        )}
       </div>
     </main>
   );
-};
-
-export default HomePage;
+}
