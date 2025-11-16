@@ -6,36 +6,37 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://synqra.app";
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Synqra — Luxury Social Automation",
-    template: "%s · Synqra",
+    default: "Synqra Dashboard — Executive Social Command Center | NØID Labs",
+    template: "%s · Synqra Dashboard",
   },
   description:
-    "Synqra unifies NØID Studio intelligence, concierge automations, and AuraFX insights into one luxury social media command center.",
+    "Orchestrate your entire social presence from one intelligent dashboard. Predictive scheduling, AuraFX voice modeling, and concierge-level automation for LinkedIn, Twitter, and beyond. Built by NØID Labs.",
+  keywords: "social media dashboard, executive social media, LinkedIn automation, Twitter scheduling, brand voice consistency, social media management, CEO content tools, NØID Labs",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Synqra — Luxury Social Automation",
+    title: "Synqra Dashboard — Executive Social Command Center",
     description:
-      "Command social storytelling with the Synqra dashboard. Concierge workflows, predictive insights, and AuraFX intelligence in one seamless experience.",
+      "Orchestrate your entire social presence from one intelligent dashboard. No switching between tools. Built by NØID Labs.",
     type: "website",
     url: baseUrl,
-    siteName: "Synqra",
+    siteName: "Synqra by NØID Labs",
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-synqra-dashboard.jpg",
         width: 1200,
         height: 630,
-        alt: "Synqra dashboard preview",
+        alt: "Synqra Dashboard - Executive Social Command Center",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Synqra — Luxury Social Automation",
+    title: "Synqra Dashboard — Executive Social Command Center",
     description:
-      "Preview the Synqra dashboard and join the NØID ecosystem waitlist for concierge-level social media automation.",
-    creator: "@noid",
+      "Orchestrate your entire social presence from one intelligent dashboard. Built by NØID Labs.",
+    creator: "@noidlabs",
   },
 };
 

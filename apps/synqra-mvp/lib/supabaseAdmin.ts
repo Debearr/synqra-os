@@ -13,13 +13,14 @@ import { createClient } from '@supabase/supabase-js';
  * - SUPABASE_SERVICE_ROLE: Your Supabase service role key (secret!)
  */
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+// Support multiple naming conventions for backwards compatibility
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error(
-    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE in environment. ' +
-    'Set these in .env.local for development or Vercel for production.'
+    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
+    'Set these in .env.local for development or Railway for production.'
   );
 }
 

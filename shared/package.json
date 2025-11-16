@@ -1,0 +1,31 @@
+{
+  "name": "@noid-labs/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities for NØID Labs ecosystem (Synqra × NØID × AuraFX)",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "scripts": {
+    "test": "echo 'Tests not yet implemented'",
+    "lint": "tsc --noEmit",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "noid-labs",
+    "synqra",
+    "ai",
+    "automation",
+    "shared-utilities"
+  ],
+  "author": "NØID Labs",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@supabase/supabase-js": "^2.80.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}

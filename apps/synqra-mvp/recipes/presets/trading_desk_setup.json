@@ -1,0 +1,19 @@
+{
+  "name": "Trading / Finance — Desk Setup Reaction",
+  "slug": "trading_desk_setup",
+  "recipe": "try_on_react_campaign",
+  "industry": "finance",
+  "description": "Workspace setup and tool reveal reactions for trading/finance brands",
+  "variables": {
+    "BRAND_NAME": "[Trading Platform / Finance Brand]",
+    "COLLAB_OR_PRODUCT": "[Product/Tool] — Setup Experience",
+    "TALENT_TYPE": "Traders + analysts + finance professionals",
+    "PRIMARY_PLATFORM": "LinkedIn + X (Twitter) + YouTube Shorts",
+    "VIBE": "Decisive authority. Bold confidence. Leadership presence. Professional edge. Think: power setup, serious tools, results focus.",
+    "GOAL": "Platform signups + tool trials + professional community engagement"
+  },
+  "archetype": "The Shot Caller",
+  "color_palette": ["#0A0A0A", "#FFD700", "#8B0000", "#E5E4E2"],
+  "lighting": "dramatic_power_lighting",
+  "version": "1.0"
+}
