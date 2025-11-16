@@ -314,7 +314,7 @@ async function checkMemoryUsage(): Promise<HealthCheck> {
     const used = process.memoryUsage();
     const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
     const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
-    const rss MB = Math.round(used.rss / 1024 / 1024);
+    const rssMB = Math.round(used.rss / 1024 / 1024);
 
     // Warn if heap usage > 80%
     const heapUsagePercent = (heapUsedMB / heapTotalMB) * 100;

@@ -1,0 +1,6 @@
+packages:
+  - 'apps/*'
+  - 'shared'
+  - 'noid-dashboard'
+  - 'noid-digital-cards'
+  - 'scripts/health-checks'

@@ -34,7 +34,7 @@ export async function logModelUsage(log: ModelUsageLog): Promise<void> {
   // Store in Supabase if available
   if (supabase) {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('ai_model_usage')
         .insert({
           task_id: log.taskId,
@@ -129,14 +129,14 @@ export async function getUsageStats(options: {
     }
     
     // Calculate statistics
-    const totalCost = data.reduce((sum, log) => sum + (log.actual_cost || 0), 0);
+    const totalCost = (data as any[]).reduce((sum: number, log: any) => sum + (log.actual_cost || 0), 0);
     const totalTasks = data.length;
-    const cacheHits = data.filter(log => log.cache_hit).length;
+    const cacheHits = (data as any[]).filter((log: any) => log.cache_hit).length;
     const cacheHitRate = totalTasks > 0 ? cacheHits / totalTasks : 0;
     
     // Group by model
     const byModel: Record<string, { count: number; cost: number }> = {};
-    for (const log of data) {
+    for (const log of (data as any[])) {
       const model = log.model;
       if (!byModel[model]) {
         byModel[model] = { count: 0, cost: 0 };
