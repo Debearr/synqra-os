@@ -171,7 +171,8 @@ export async function checkBrandConsistencyWithVision(
     // For now, return text-based check as fallback
     // In production, would compare embeddings against brand reference library
     if (typeof outputImageOrText === "string") {
-      return await checkBrandConsistency(outputImageOrText, brandId);
+      const result = await checkBrandConsistency(outputImageOrText, brandId);
+      return { ...result, styleMatch: result.score };
     }
     
     // For images, use heuristic scoring
@@ -184,7 +185,8 @@ export async function checkBrandConsistencyWithVision(
     console.error("OpenCLIP check failed, falling back to text analysis");
     
     if (typeof outputImageOrText === "string") {
-      return await checkBrandConsistency(outputImageOrText, brandId);
+      const result = await checkBrandConsistency(outputImageOrText, brandId);
+      return { ...result, styleMatch: result.score };
     }
     
     return {

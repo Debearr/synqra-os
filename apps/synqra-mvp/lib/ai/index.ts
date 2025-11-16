@@ -91,9 +91,7 @@ export type { Recipe, RecipeExecution } from './recipes';
 export {
   classifyTask,
   optimizeModelSelection,
-  compressInput,
   detectBatchableTasks,
-  generateCostReport,
   getBrandProfileCacheKey,
   getArchetypeCacheKey,
   detectWaste,
