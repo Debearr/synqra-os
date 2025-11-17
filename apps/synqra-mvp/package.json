@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:3004": "next dev -p 3004",
     "build": "next build",
-    "start": "next start -p ${PORT:-3004} --hostname 0.0.0.0",
+    "start": "next start -p ${PORT:-3000} --hostname 0.0.0.0",
     "lint": "next lint || echo 'lint skipped'"
   },
   "dependencies": {
