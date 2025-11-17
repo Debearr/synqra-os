@@ -85,3 +85,7 @@ n8n-data/
 .turbo
 .vercel
 .contentlayer
+
+# Railway cache
+.railway/
+.railway.json
