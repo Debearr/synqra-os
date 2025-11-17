@@ -46,7 +46,11 @@ export default function LuxgridColorSystem() {
 
       <div className="grid grid-cols-3 gap-16">
         {colors.map((c) => (
-          <ColorSwatch name={c.name} value={c.value} key={c.name} />
+          <ColorSwatch 
+            name={c.name} 
+            value={typeof c.value === 'string' ? c.value : (c.value?.hex || '#000000')} 
+            key={c.name} 
+          />
         ))}
       </div>
 

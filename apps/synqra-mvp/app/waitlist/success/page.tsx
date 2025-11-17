@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LinkedInIcon, InstagramIcon } from '../../../components/icons/PlatformIcons';
 
 /**
  * ============================================================
@@ -45,10 +46,11 @@ export default function SuccessPage() {
             href="https://www.linkedin.com/company/noidlabs"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block w-full rounded-xl bg-emerald-400 text-black font-semibold py-3
-                       hover:bg-emerald-300 transition-all duration-200
+            className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-emerald-400 text-black font-semibold py-3
+                       hover:bg-emerald-300 transition-all duration-200 transform hover:scale-[1.02]
                        focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-black"
           >
+            <LinkedInIcon className="text-black" size={20} />
             Follow NØID on LinkedIn
           </a>
           
@@ -56,10 +58,11 @@ export default function SuccessPage() {
             href="https://instagram.com/duskopoppington"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block w-full rounded-xl border border-zinc-800 text-white font-semibold py-3
-                       hover:bg-zinc-900 transition-all duration-200
+            className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-zinc-800 text-white font-semibold py-3
+                       hover:bg-zinc-900 transition-all duration-200 transform hover:scale-[1.02]
                        focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black"
           >
+            <InstagramIcon className="text-[#E1306C]" size={20} />
             Follow on Instagram
           </a>
 
