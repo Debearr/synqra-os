@@ -131,10 +131,10 @@ export function optimizeModelSelection(
 }
 
 /**
- * COMPRESS INPUT
+ * COMPRESS INPUT FOR COST OPTIMIZER
  * Reduces verbose input to compact variables
  */
-export function compressInput(input: string): string {
+export function compressInputForCostOptimizer(input: string): string {
   // Remove filler phrases
   const fillers = [
     'I want you to',
@@ -285,7 +285,7 @@ export function applyMinimalMode(task: AITask): AITask {
   console.warn('Suggestions:', waste.suggestions);
   
   // Compress input
-  const compressedInput = compressInput(task.input);
+  const compressedInput = compressInputForCostOptimizer(task.input);
   
   // Add minimal mode instruction
   const minimalInstruction = `
