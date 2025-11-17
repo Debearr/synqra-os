@@ -1,114 +1,159 @@
 #!/bin/bash
 
-# Enterprise Health Cell - GitHub Secrets Setup Script
-# This script helps you configure GitHub repository secrets
+# ============================================================================
+# GitHub Secrets Setup Script
+# ============================================================================
+# This script automatically configures GitHub Actions secrets for the
+# Enterprise Health Cell system using the gh CLI.
+#
+# Prerequisites:
+#   - gh CLI installed (https://cli.github.com/)
+#   - gh auth login completed
+#   - .env file with all required variables
+# ============================================================================
 
 set -e
 
-REPO="Debearr/synqra-os"
-
-echo "🔐 Enterprise Health Cell - GitHub Secrets Setup"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔐 GitHub Secrets Setup for Enterprise Health Cell"
+echo "=================================================="
 echo ""
 
 # Check if gh CLI is installed
 if ! command -v gh &> /dev/null; then
-    echo "❌ GitHub CLI (gh) is not installed."
+    echo "❌ GitHub CLI (gh) is not installed"
     echo ""
-    echo "📥 Install GitHub CLI:"
-    echo "   • macOS: brew install gh"
-    echo "   • Ubuntu: https://github.com/cli/cli/blob/trunk/docs/install_linux.md"
-    echo "   • Windows: https://github.com/cli/cli#installation"
+    echo "Please install it:"
+    echo "  macOS:   brew install gh"
+    echo "  Linux:   sudo apt install gh"
+    echo "  Windows: choco install gh"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "📝 MANUAL SETUP INSTRUCTIONS:"
-    echo ""
-    echo "1. Go to: https://github.com/$REPO/settings/secrets/actions"
-    echo ""
-    echo "2. Click 'New repository secret' for each of these:"
-    echo ""
-    echo "   Name: SUPABASE_URL"
-    echo "   Value: https://tjfeindwmpuyayjvftke.supabase.co"
-    echo ""
-    echo "   Name: SUPABASE_ANON_KEY"
-    echo "   Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MTg1NzYsImV4cCI6MjA3NTE5NDU3Nn0.knBEboY-VvRWUVLmCFWavQbJHo_Mpjvw6oslHlh3oi0"
-    echo ""
-    echo "   Name: SUPABASE_SERVICE_KEY"
-    echo "   Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTYxODU3NiwiZXhwIjoyMDc1MTk0NTc2fQ.VEHAj85_x8LZFh0TA9ojv_DYPQdH02g8stsoIT9nNBI"
-    echo ""
-    echo "   Name: N8N_WEBHOOK_URL"
-    echo "   Value: https://n8n.production.synqra.com/webhook/health-alerts"
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Then run: gh auth login"
     exit 1
 fi
 
-# Check authentication
-echo "🔍 Checking GitHub CLI authentication..."
+# Check if user is authenticated
 if ! gh auth status &> /dev/null; then
-    echo "❌ Not authenticated with GitHub CLI"
+    echo "❌ Not authenticated with GitHub"
     echo ""
-    echo "Run: gh auth login"
+    echo "Please run: gh auth login"
     exit 1
 fi
 
-echo "✅ GitHub CLI authenticated"
+# Check if .env file exists
+if [ ! -f ".env" ]; then
+    echo "❌ .env file not found"
+    echo ""
+    echo "Please create .env file with all required variables"
+    exit 1
+fi
+
+# Load environment variables
+source .env
+
+echo "📋 Checking required environment variables..."
 echo ""
 
-# Read secrets from .env file
-if [ -f "../../.env" ]; then
-    source ../../.env
-fi
+# Function to check if variable is set
+check_var() {
+    local var_name=$1
+    local var_value="${!var_name}"
 
-# Set secrets
-echo "🔐 Setting GitHub repository secrets..."
-echo ""
+    if [ -z "$var_value" ]; then
+        echo "  ✗ $var_name (missing)"
+        return 1
+    else
+        echo "  ✓ $var_name"
+        return 0
+    fi
+}
 
-# SUPABASE_URL
-if [ -n "$SUPABASE_URL" ]; then
-    echo "Setting SUPABASE_URL..."
-    echo "$SUPABASE_URL" | gh secret set SUPABASE_URL --repo "$REPO"
-    echo "✅ SUPABASE_URL set"
-else
-    echo "⚠️  SUPABASE_URL not found in .env"
-fi
+# Check all required variables
+all_present=true
 
-# SUPABASE_ANON_KEY
-if [ -n "$SUPABASE_ANON_KEY" ]; then
-    echo "Setting SUPABASE_ANON_KEY..."
-    echo "$SUPABASE_ANON_KEY" | gh secret set SUPABASE_ANON_KEY --repo "$REPO"
-    echo "✅ SUPABASE_ANON_KEY set"
-else
-    echo "⚠️  SUPABASE_ANON_KEY not found in .env"
-fi
-
-# SUPABASE_SERVICE_KEY
-if [ -n "$SUPABASE_SERVICE_KEY" ]; then
-    echo "Setting SUPABASE_SERVICE_KEY..."
-    echo "$SUPABASE_SERVICE_KEY" | gh secret set SUPABASE_SERVICE_KEY --repo "$REPO"
-    echo "✅ SUPABASE_SERVICE_KEY set"
-else
-    echo "⚠️  SUPABASE_SERVICE_KEY not found in .env"
-fi
-
-# N8N_WEBHOOK_URL
-if [ -n "$N8N_WEBHOOK_URL" ]; then
-    echo "Setting N8N_WEBHOOK_URL..."
-    echo "$N8N_WEBHOOK_URL" | gh secret set N8N_WEBHOOK_URL --repo "$REPO"
-    echo "✅ N8N_WEBHOOK_URL set"
-else
-    echo "⚠️  N8N_WEBHOOK_URL not found in .env"
-fi
+check_var "SUPABASE_URL" || all_present=false
+check_var "SUPABASE_SERVICE_KEY" || all_present=false
+check_var "SUPABASE_ANON_KEY" || all_present=false
+check_var "N8N_WEBHOOK_URL" || all_present=false
+check_var "TELEGRAM_BOT_TOKEN" || all_present=false
+check_var "TELEGRAM_CHANNEL_ID" || all_present=false
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ "$all_present" = false ]; then
+    echo "❌ Some required variables are missing in .env"
+    echo ""
+    echo "Please add all required variables to .env file"
+    exit 1
+fi
+
+echo "✅ All required variables present"
+echo ""
+
+# Get repository (current directory)
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
+
+if [ -z "$REPO" ]; then
+    echo "❌ Could not detect GitHub repository"
+    echo ""
+    echo "Please run this script from within your Git repository"
+    exit 1
+fi
+
+echo "📦 Repository: $REPO"
+echo ""
+
+# Confirm before proceeding
+echo "⚠️  This will set/update the following secrets in $REPO:"
+echo ""
+echo "  - SUPABASE_URL"
+echo "  - SUPABASE_SERVICE_KEY"
+echo "  - SUPABASE_ANON_KEY"
+echo "  - N8N_WEBHOOK_URL"
+echo "  - TELEGRAM_BOT_TOKEN"
+echo "  - TELEGRAM_CHANNEL_ID"
+echo ""
+read -p "Continue? (y/N): " -n 1 -r
+echo ""
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Aborted."
+    exit 1
+fi
+
+echo ""
+echo "🔒 Setting GitHub Actions secrets..."
+echo ""
+
+# Function to set secret
+set_secret() {
+    local secret_name=$1
+    local secret_value=$2
+
+    if echo "$secret_value" | gh secret set "$secret_name" --repo="$REPO"; then
+        echo "  ✓ $secret_name"
+        return 0
+    else
+        echo "  ✗ $secret_name (failed)"
+        return 1
+    fi
+}
+
+# Set all secrets
+set_secret "SUPABASE_URL" "$SUPABASE_URL"
+set_secret "SUPABASE_SERVICE_KEY" "$SUPABASE_SERVICE_KEY"
+set_secret "SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY"
+set_secret "N8N_WEBHOOK_URL" "$N8N_WEBHOOK_URL"
+set_secret "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
+set_secret "TELEGRAM_CHANNEL_ID" "$TELEGRAM_CHANNEL_ID"
+
+echo ""
 echo "✅ GitHub secrets configured successfully!"
 echo ""
-echo "📋 Verify secrets:"
-echo "   gh secret list --repo $REPO"
+echo "🔗 View secrets at:"
+echo "   https://github.com/$REPO/settings/secrets/actions"
 echo ""
-echo "🚀 Trigger health check:"
-echo "   gh workflow run enterprise-health-cell.yml --repo $REPO"
+echo "🚀 Next steps:"
+echo "   1. Apply database migration (see DEPLOYMENT_GUIDE.md)"
+echo "   2. Test workflow: gh workflow run enterprise-health-cell.yml"
+echo "   3. Monitor: https://github.com/$REPO/actions"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

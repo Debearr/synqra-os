@@ -1,4 +1,0 @@
-# This file intentionally blocks Docker mode
-# Railway should use Nixpacks with nixpacks.toml instead
-*
-

@@ -1,0 +1,91 @@
+name: Supabase Health Cell
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/health-checks/**'
+      - '.github/workflows/supabase-health.yml'
+
+jobs:
+  ping-supabase:
+    name: Check Supabase Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Create log directory
+        run: mkdir -p .healthcell
+      
+      - name: Install dependencies
+        working-directory: scripts/health-checks
+        run: npm install @supabase/supabase-js node-fetch
+      
+      - name: Verify environment variables
+        run: |
+          echo "🔍 Verifying environment configuration..."
+          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "❌ SUPABASE_URL is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SUPABASE_SERVICE_KEY }}" ]; then
+            echo "❌ SUPABASE_SERVICE_KEY is not set"
+            exit 1
+          fi
+          echo "✅ Environment variables verified"
+          echo "📍 Supabase URL: ${{ secrets.SUPABASE_URL }}"
+      
+      - name: Run health check
+        working-directory: scripts/health-checks
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          echo "🚀 Starting health check..."
+          node ping-supabase.mjs
+          echo "✅ Health check completed"
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-check-logs-${{ github.run_number }}
+          path: .healthcell/local-logs.jsonl
+          retention-days: 7
+          if-no-files-found: warn
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Health check passed"
+            echo "📊 Supabase is operational"
+          else
+            echo "❌ Health check failed"
+            echo "🚨 Recovery notification sent to N8N webhook"
+            echo "📋 Check artifacts for detailed logs"
+          fi
+      
+      - name: Send Telegram notification on failure
+        if: failure() && secrets.TELEGRAM_BOT_TOKEN != ''
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHANNEL_ID }}" \
+            -d text="🚨 Supabase Health Check Failed%0A%0AWorkflow: ${{ github.workflow }}%0ARun: ${{ github.run_number }}%0ATime: $(date -u '+%Y-%m-%d %H:%M:%S UTC')%0A%0A🔗 Details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -d parse_mode="HTML" || echo "⚠️ Telegram notification failed"

@@ -1,696 +1,510 @@
--- Enterprise Health Cell System - Complete Database Schema
--- Monitors Supabase infrastructure for Synqra OS, NØID Labs, and AuraFX
--- Created: 2025-11-06
+-- =====================================================
+-- Enterprise Health Cell Schema Migration
+-- =====================================================
+-- This migration creates the complete Enterprise Health Cell
+-- database system with all 11 tables, indexes, constraints,
+-- triggers, and utility functions.
+-- =====================================================
 
--- Enable necessary extensions
+-- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ==============================================
--- ENUMS AND TYPES
--- ==============================================
+-- =====================================================
+-- UTILITY FUNCTIONS
+-- =====================================================
 
-CREATE TYPE health_status AS ENUM ('healthy', 'degraded', 'critical', 'unknown');
-CREATE TYPE service_type AS ENUM ('supabase', 'postgres', 'rest_api', 'auth', 'storage', 'realtime', 'functions', 'n8n', 'external');
-CREATE TYPE project_name AS ENUM ('synqra_os', 'noid_labs', 'aurafx', 'shared');
-CREATE TYPE alert_severity AS ENUM ('info', 'warning', 'error', 'critical');
-CREATE TYPE alert_status AS ENUM ('active', 'acknowledged', 'resolved', 'suppressed');
-CREATE TYPE incident_status AS ENUM ('investigating', 'identified', 'monitoring', 'resolved');
-CREATE TYPE recovery_action_type AS ENUM ('auto_restart', 'manual_intervention', 'escalate', 'notify_only');
-
--- ==============================================
--- CORE HEALTH MONITORING TABLES
--- ==============================================
-
--- Projects configuration table
-CREATE TABLE public.health_projects (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    project_key project_name UNIQUE NOT NULL,
-    display_name TEXT NOT NULL,
-    description TEXT,
-    supabase_url TEXT NOT NULL,
-    supabase_project_id TEXT,
-    owner_email TEXT,
-    notification_emails TEXT[] DEFAULT '{}',
-    is_active BOOLEAN DEFAULT TRUE,
-    config JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Services configuration table
-CREATE TABLE public.health_services (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    project_id UUID REFERENCES public.health_projects(id) ON DELETE CASCADE NOT NULL,
-    service_key service_type NOT NULL,
-    display_name TEXT NOT NULL,
-    description TEXT,
-    endpoint_url TEXT,
-    check_interval_seconds INTEGER DEFAULT 300 NOT NULL,
-    timeout_ms INTEGER DEFAULT 10000 NOT NULL,
-    retry_count INTEGER DEFAULT 3 NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    thresholds JSONB DEFAULT '{"response_time_warning_ms": 2000, "response_time_critical_ms": 5000, "error_rate_warning": 0.05, "error_rate_critical": 0.1}'::jsonb,
-    config JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    UNIQUE(project_id, service_key)
-);
-
--- Health check logs table
-CREATE TABLE public.health_logs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    check_id TEXT NOT NULL,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    status health_status NOT NULL,
-    response_time_ms INTEGER,
-    attempt_number INTEGER DEFAULT 1,
-    message TEXT,
-    error_stack TEXT,
-    metadata JSONB DEFAULT '{}',
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Service status rollup (current state)
-CREATE TABLE public.health_service_status (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE UNIQUE NOT NULL,
-    current_status health_status NOT NULL DEFAULT 'unknown',
-    last_check_at TIMESTAMP WITH TIME ZONE,
-    last_success_at TIMESTAMP WITH TIME ZONE,
-    last_failure_at TIMESTAMP WITH TIME ZONE,
-    consecutive_failures INTEGER DEFAULT 0,
-    consecutive_successes INTEGER DEFAULT 0,
-    avg_response_time_ms DECIMAL(10,2),
-    uptime_percentage DECIMAL(5,2),
-    total_checks INTEGER DEFAULT 0,
-    successful_checks INTEGER DEFAULT 0,
-    failed_checks INTEGER DEFAULT 0,
-    last_error_message TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- ==============================================
--- ALERTING AND NOTIFICATIONS
--- ==============================================
-
--- Alert rules configuration
-CREATE TABLE public.health_alert_rules (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    rule_name TEXT NOT NULL,
-    description TEXT,
-    condition_type TEXT NOT NULL CHECK (condition_type IN ('consecutive_failures', 'response_time', 'error_rate', 'uptime', 'custom')),
-    condition_config JSONB NOT NULL DEFAULT '{}',
-    severity alert_severity NOT NULL DEFAULT 'warning',
-    notification_channels TEXT[] DEFAULT ARRAY['n8n', 'email'],
-    cooldown_minutes INTEGER DEFAULT 30,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Active alerts table
-CREATE TABLE public.health_alerts (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    alert_rule_id UUID REFERENCES public.health_alert_rules(id) ON DELETE CASCADE NOT NULL,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    severity alert_severity NOT NULL,
-    status alert_status NOT NULL DEFAULT 'active',
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    triggered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    acknowledged_at TIMESTAMP WITH TIME ZONE,
-    acknowledged_by TEXT,
-    resolved_at TIMESTAMP WITH TIME ZONE,
-    resolved_by TEXT,
-    resolution_notes TEXT,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Alert notification log
-CREATE TABLE public.health_alert_notifications (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    alert_id UUID REFERENCES public.health_alerts(id) ON DELETE CASCADE NOT NULL,
-    channel TEXT NOT NULL,
-    recipient TEXT,
-    payload JSONB DEFAULT '{}',
-    sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'sent', 'failed', 'retrying')),
-    error_message TEXT,
-    retry_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- ==============================================
--- INCIDENT MANAGEMENT
--- ==============================================
-
--- Incidents table
-CREATE TABLE public.health_incidents (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    incident_number SERIAL UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    severity alert_severity NOT NULL,
-    status incident_status NOT NULL DEFAULT 'investigating',
-    service_id UUID REFERENCES public.health_services(id) ON DELETE SET NULL,
-    affected_services UUID[] DEFAULT '{}',
-    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    detected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    resolved_at TIMESTAMP WITH TIME ZONE,
-    duration_minutes INTEGER,
-    impact_description TEXT,
-    root_cause TEXT,
-    resolution_summary TEXT,
-    assigned_to TEXT,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Incident timeline/updates
-CREATE TABLE public.health_incident_updates (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    incident_id UUID REFERENCES public.health_incidents(id) ON DELETE CASCADE NOT NULL,
-    update_type TEXT NOT NULL CHECK (update_type IN ('investigating', 'identified', 'update', 'monitoring', 'resolved')),
-    message TEXT NOT NULL,
-    created_by TEXT,
-    is_public BOOLEAN DEFAULT TRUE,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- ==============================================
--- RECOVERY AUTOMATION
--- ==============================================
-
--- Recovery actions configuration
-CREATE TABLE public.health_recovery_actions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    action_name TEXT NOT NULL,
-    action_type recovery_action_type NOT NULL,
-    trigger_condition TEXT NOT NULL,
-    action_config JSONB NOT NULL DEFAULT '{}',
-    max_retries INTEGER DEFAULT 3,
-    retry_delay_seconds INTEGER DEFAULT 60,
-    is_enabled BOOLEAN DEFAULT TRUE,
-    priority INTEGER DEFAULT 10,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- Recovery execution log
-CREATE TABLE public.health_recovery_log (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    recovery_action_id UUID REFERENCES public.health_recovery_actions(id) ON DELETE CASCADE NOT NULL,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    incident_id UUID REFERENCES public.health_incidents(id) ON DELETE SET NULL,
-    action_type recovery_action_type NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'success', 'failed', 'cancelled')),
-    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    duration_seconds INTEGER,
-    result_message TEXT,
-    error_details TEXT,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
--- ==============================================
--- METRICS AND ANALYTICS
--- ==============================================
-
--- Service metrics rollup (hourly)
-CREATE TABLE public.health_metrics_hourly (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    hour_start TIMESTAMP WITH TIME ZONE NOT NULL,
-    total_checks INTEGER DEFAULT 0,
-    successful_checks INTEGER DEFAULT 0,
-    failed_checks INTEGER DEFAULT 0,
-    avg_response_time_ms DECIMAL(10,2),
-    min_response_time_ms INTEGER,
-    max_response_time_ms INTEGER,
-    p50_response_time_ms INTEGER,
-    p95_response_time_ms INTEGER,
-    p99_response_time_ms INTEGER,
-    uptime_percentage DECIMAL(5,2),
-    downtime_minutes INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    UNIQUE(service_id, hour_start)
-);
-
--- Service metrics rollup (daily)
-CREATE TABLE public.health_metrics_daily (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    service_id UUID REFERENCES public.health_services(id) ON DELETE CASCADE NOT NULL,
-    date DATE NOT NULL,
-    total_checks INTEGER DEFAULT 0,
-    successful_checks INTEGER DEFAULT 0,
-    failed_checks INTEGER DEFAULT 0,
-    avg_response_time_ms DECIMAL(10,2),
-    min_response_time_ms INTEGER,
-    max_response_time_ms INTEGER,
-    uptime_percentage DECIMAL(5,2),
-    downtime_minutes INTEGER DEFAULT 0,
-    incidents_count INTEGER DEFAULT 0,
-    alerts_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    UNIQUE(service_id, date)
-);
-
--- ==============================================
--- INDEXES FOR PERFORMANCE
--- ==============================================
-
--- Health projects
-CREATE INDEX idx_health_projects_active ON public.health_projects(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_health_projects_key ON public.health_projects(project_key);
-
--- Health services
-CREATE INDEX idx_health_services_project ON public.health_services(project_id);
-CREATE INDEX idx_health_services_active ON public.health_services(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_health_services_type ON public.health_services(service_key);
-
--- Health logs
-CREATE INDEX idx_health_logs_service ON public.health_logs(service_id);
-CREATE INDEX idx_health_logs_timestamp ON public.health_logs(timestamp DESC);
-CREATE INDEX idx_health_logs_status ON public.health_logs(status);
-CREATE INDEX idx_health_logs_check_id ON public.health_logs(check_id);
-CREATE INDEX idx_health_logs_service_timestamp ON public.health_logs(service_id, timestamp DESC);
-
--- Service status
-CREATE INDEX idx_health_service_status_service ON public.health_service_status(service_id);
-CREATE INDEX idx_health_service_status_current ON public.health_service_status(current_status);
-
--- Alert rules
-CREATE INDEX idx_health_alert_rules_service ON public.health_alert_rules(service_id);
-CREATE INDEX idx_health_alert_rules_active ON public.health_alert_rules(is_active) WHERE is_active = TRUE;
-
--- Alerts
-CREATE INDEX idx_health_alerts_service ON public.health_alerts(service_id);
-CREATE INDEX idx_health_alerts_status ON public.health_alerts(status);
-CREATE INDEX idx_health_alerts_severity ON public.health_alerts(severity);
-CREATE INDEX idx_health_alerts_triggered ON public.health_alerts(triggered_at DESC);
-CREATE INDEX idx_health_alerts_active ON public.health_alerts(status) WHERE status IN ('active', 'acknowledged');
-
--- Alert notifications
-CREATE INDEX idx_health_alert_notifications_alert ON public.health_alert_notifications(alert_id);
-CREATE INDEX idx_health_alert_notifications_status ON public.health_alert_notifications(status);
-
--- Incidents
-CREATE INDEX idx_health_incidents_status ON public.health_incidents(status);
-CREATE INDEX idx_health_incidents_severity ON public.health_incidents(severity);
-CREATE INDEX idx_health_incidents_started ON public.health_incidents(started_at DESC);
-CREATE INDEX idx_health_incidents_service ON public.health_incidents(service_id);
-
--- Incident updates
-CREATE INDEX idx_health_incident_updates_incident ON public.health_incident_updates(incident_id);
-CREATE INDEX idx_health_incident_updates_created ON public.health_incident_updates(created_at DESC);
-
--- Recovery actions
-CREATE INDEX idx_health_recovery_actions_service ON public.health_recovery_actions(service_id);
-CREATE INDEX idx_health_recovery_actions_enabled ON public.health_recovery_actions(is_enabled) WHERE is_enabled = TRUE;
-
--- Recovery log
-CREATE INDEX idx_health_recovery_log_action ON public.health_recovery_log(recovery_action_id);
-CREATE INDEX idx_health_recovery_log_service ON public.health_recovery_log(service_id);
-CREATE INDEX idx_health_recovery_log_incident ON public.health_recovery_log(incident_id);
-CREATE INDEX idx_health_recovery_log_started ON public.health_recovery_log(started_at DESC);
-
--- Metrics hourly
-CREATE INDEX idx_health_metrics_hourly_service ON public.health_metrics_hourly(service_id);
-CREATE INDEX idx_health_metrics_hourly_time ON public.health_metrics_hourly(hour_start DESC);
-CREATE INDEX idx_health_metrics_hourly_service_time ON public.health_metrics_hourly(service_id, hour_start DESC);
-
--- Metrics daily
-CREATE INDEX idx_health_metrics_daily_service ON public.health_metrics_daily(service_id);
-CREATE INDEX idx_health_metrics_daily_date ON public.health_metrics_daily(date DESC);
-CREATE INDEX idx_health_metrics_daily_service_date ON public.health_metrics_daily(service_id, date DESC);
-
--- ==============================================
--- FUNCTIONS
--- ==============================================
-
--- Function to update service status
-CREATE OR REPLACE FUNCTION public.update_health_service_status()
+-- Function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
-DECLARE
-    v_status health_status;
-    v_consecutive_failures INTEGER;
-    v_consecutive_successes INTEGER;
 BEGIN
-    -- Get current consecutive failures/successes
-    SELECT consecutive_failures, consecutive_successes
-    INTO v_consecutive_failures, v_consecutive_successes
-    FROM public.health_service_status
-    WHERE service_id = NEW.service_id;
-
-    -- Update consecutive counts
-    IF NEW.status IN ('healthy') THEN
-        v_consecutive_successes := COALESCE(v_consecutive_successes, 0) + 1;
-        v_consecutive_failures := 0;
-    ELSE
-        v_consecutive_failures := COALESCE(v_consecutive_failures, 0) + 1;
-        v_consecutive_successes := 0;
-    END IF;
-
-    -- Insert or update service status
-    INSERT INTO public.health_service_status (
-        service_id,
-        current_status,
-        last_check_at,
-        last_success_at,
-        last_failure_at,
-        consecutive_failures,
-        consecutive_successes,
-        total_checks,
-        successful_checks,
-        failed_checks,
-        last_error_message
-    ) VALUES (
-        NEW.service_id,
-        NEW.status,
-        NEW.timestamp,
-        CASE WHEN NEW.status = 'healthy' THEN NEW.timestamp ELSE NULL END,
-        CASE WHEN NEW.status IN ('degraded', 'critical') THEN NEW.timestamp ELSE NULL END,
-        v_consecutive_failures,
-        v_consecutive_successes,
-        1,
-        CASE WHEN NEW.status = 'healthy' THEN 1 ELSE 0 END,
-        CASE WHEN NEW.status IN ('degraded', 'critical') THEN 1 ELSE 0 END,
-        NEW.message
-    )
-    ON CONFLICT (service_id) DO UPDATE SET
-        current_status = NEW.status,
-        last_check_at = NEW.timestamp,
-        last_success_at = CASE
-            WHEN NEW.status = 'healthy' THEN NEW.timestamp
-            ELSE health_service_status.last_success_at
-        END,
-        last_failure_at = CASE
-            WHEN NEW.status IN ('degraded', 'critical') THEN NEW.timestamp
-            ELSE health_service_status.last_failure_at
-        END,
-        consecutive_failures = v_consecutive_failures,
-        consecutive_successes = v_consecutive_successes,
-        total_checks = health_service_status.total_checks + 1,
-        successful_checks = health_service_status.successful_checks +
-            CASE WHEN NEW.status = 'healthy' THEN 1 ELSE 0 END,
-        failed_checks = health_service_status.failed_checks +
-            CASE WHEN NEW.status IN ('degraded', 'critical') THEN 1 ELSE 0 END,
-        last_error_message = CASE
-            WHEN NEW.status IN ('degraded', 'critical') THEN NEW.message
-            ELSE health_service_status.last_error_message
-        END,
-        updated_at = NOW();
-
+    NEW.updated_at = NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to calculate service uptime
-CREATE OR REPLACE FUNCTION public.calculate_service_uptime(
-    p_service_id UUID,
-    p_hours_back INTEGER DEFAULT 24
+-- Function to calculate service uptime percentage
+CREATE OR REPLACE FUNCTION calculate_uptime_percentage(
+    service_uuid UUID,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP
 )
-RETURNS DECIMAL AS $$
+RETURNS NUMERIC AS $$
 DECLARE
-    v_total_checks INTEGER;
-    v_successful_checks INTEGER;
-    v_uptime DECIMAL;
+    total_seconds NUMERIC;
+    downtime_seconds NUMERIC;
+    uptime_percentage NUMERIC;
 BEGIN
-    SELECT
-        COUNT(*),
-        COUNT(*) FILTER (WHERE status = 'healthy')
-    INTO v_total_checks, v_successful_checks
-    FROM public.health_logs
-    WHERE service_id = p_service_id
-    AND timestamp >= NOW() - (p_hours_back || ' hours')::INTERVAL;
+    -- Calculate total seconds in the period
+    total_seconds := EXTRACT(EPOCH FROM (end_date - start_date));
 
-    IF v_total_checks = 0 THEN
-        RETURN 0;
+    -- Calculate total downtime in seconds
+    SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (resolved_at - detected_at))), 0)
+    INTO downtime_seconds
+    FROM incidents
+    WHERE service_id = service_uuid
+    AND detected_at >= start_date
+    AND detected_at <= end_date
+    AND resolved_at IS NOT NULL;
+
+    -- Calculate uptime percentage
+    IF total_seconds > 0 THEN
+        uptime_percentage := ((total_seconds - downtime_seconds) / total_seconds) * 100;
+    ELSE
+        uptime_percentage := 100;
     END IF;
 
-    v_uptime := (v_successful_checks::DECIMAL / v_total_checks::DECIMAL) * 100;
-    RETURN ROUND(v_uptime, 2);
+    RETURN ROUND(uptime_percentage, 2);
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to aggregate hourly metrics
-CREATE OR REPLACE FUNCTION public.aggregate_health_metrics_hourly()
-RETURNS void AS $$
-BEGIN
-    INSERT INTO public.health_metrics_hourly (
-        service_id,
-        hour_start,
-        total_checks,
-        successful_checks,
-        failed_checks,
-        avg_response_time_ms,
-        min_response_time_ms,
-        max_response_time_ms,
-        uptime_percentage
-    )
-    SELECT
-        service_id,
-        date_trunc('hour', timestamp) AS hour_start,
-        COUNT(*) AS total_checks,
-        COUNT(*) FILTER (WHERE status = 'healthy') AS successful_checks,
-        COUNT(*) FILTER (WHERE status IN ('degraded', 'critical')) AS failed_checks,
-        ROUND(AVG(response_time_ms)::NUMERIC, 2) AS avg_response_time_ms,
-        MIN(response_time_ms) AS min_response_time_ms,
-        MAX(response_time_ms) AS max_response_time_ms,
-        ROUND((COUNT(*) FILTER (WHERE status = 'healthy')::DECIMAL / COUNT(*)::DECIMAL * 100)::NUMERIC, 2) AS uptime_percentage
-    FROM public.health_logs
-    WHERE timestamp >= NOW() - INTERVAL '2 hours'
-    AND timestamp < date_trunc('hour', NOW())
-    GROUP BY service_id, date_trunc('hour', timestamp)
-    ON CONFLICT (service_id, hour_start) DO UPDATE SET
-        total_checks = EXCLUDED.total_checks,
-        successful_checks = EXCLUDED.successful_checks,
-        failed_checks = EXCLUDED.failed_checks,
-        avg_response_time_ms = EXCLUDED.avg_response_time_ms,
-        min_response_time_ms = EXCLUDED.min_response_time_ms,
-        max_response_time_ms = EXCLUDED.max_response_time_ms,
-        uptime_percentage = EXCLUDED.uptime_percentage;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to aggregate daily metrics
-CREATE OR REPLACE FUNCTION public.aggregate_health_metrics_daily()
-RETURNS void AS $$
-BEGIN
-    INSERT INTO public.health_metrics_daily (
-        service_id,
-        date,
-        total_checks,
-        successful_checks,
-        failed_checks,
-        avg_response_time_ms,
-        min_response_time_ms,
-        max_response_time_ms,
-        uptime_percentage,
-        incidents_count,
-        alerts_count
-    )
-    SELECT
-        hm.service_id,
-        DATE(hm.hour_start) AS date,
-        SUM(hm.total_checks) AS total_checks,
-        SUM(hm.successful_checks) AS successful_checks,
-        SUM(hm.failed_checks) AS failed_checks,
-        ROUND(AVG(hm.avg_response_time_ms)::NUMERIC, 2) AS avg_response_time_ms,
-        MIN(hm.min_response_time_ms) AS min_response_time_ms,
-        MAX(hm.max_response_time_ms) AS max_response_time_ms,
-        ROUND(AVG(hm.uptime_percentage)::NUMERIC, 2) AS uptime_percentage,
-        COUNT(DISTINCT i.id) FILTER (WHERE DATE(i.started_at) = DATE(hm.hour_start)) AS incidents_count,
-        COUNT(DISTINCT a.id) FILTER (WHERE DATE(a.triggered_at) = DATE(hm.hour_start)) AS alerts_count
-    FROM public.health_metrics_hourly hm
-    LEFT JOIN public.health_incidents i ON i.service_id = hm.service_id
-    LEFT JOIN public.health_alerts a ON a.service_id = hm.service_id
-    WHERE DATE(hm.hour_start) >= CURRENT_DATE - INTERVAL '7 days'
-    AND DATE(hm.hour_start) < CURRENT_DATE
-    GROUP BY hm.service_id, DATE(hm.hour_start)
-    ON CONFLICT (service_id, date) DO UPDATE SET
-        total_checks = EXCLUDED.total_checks,
-        successful_checks = EXCLUDED.successful_checks,
-        failed_checks = EXCLUDED.failed_checks,
-        avg_response_time_ms = EXCLUDED.avg_response_time_ms,
-        min_response_time_ms = EXCLUDED.min_response_time_ms,
-        max_response_time_ms = EXCLUDED.max_response_time_ms,
-        uptime_percentage = EXCLUDED.uptime_percentage,
-        incidents_count = EXCLUDED.incidents_count,
-        alerts_count = EXCLUDED.alerts_count;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to clean old logs
-CREATE OR REPLACE FUNCTION public.cleanup_old_health_logs(days_to_keep INTEGER DEFAULT 30)
-RETURNS INTEGER AS $$
+-- Function to generate incident number
+CREATE OR REPLACE FUNCTION generate_incident_number()
+RETURNS TEXT AS $$
 DECLARE
-    deleted_count INTEGER;
+    next_number INTEGER;
+    incident_number TEXT;
 BEGIN
-    DELETE FROM public.health_logs
-    WHERE timestamp < NOW() - (days_to_keep || ' days')::INTERVAL;
+    -- Get the next incident number
+    SELECT COALESCE(MAX(CAST(SUBSTRING(incident_number FROM 5) AS INTEGER)), 0) + 1
+    INTO next_number
+    FROM incidents
+    WHERE incident_number LIKE 'INC-%';
 
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
+    -- Format as INC-XXXXX
+    incident_number := 'INC-' || LPAD(next_number::TEXT, 5, '0');
+
+    RETURN incident_number;
 END;
 $$ LANGUAGE plpgsql;
 
--- ==============================================
--- TRIGGERS
--- ==============================================
+-- =====================================================
+-- TABLE 1: SERVICES
+-- =====================================================
+-- Core services being monitored in the health system
 
--- Trigger to update service status on new health log
-CREATE TRIGGER trigger_update_health_service_status
-    AFTER INSERT ON public.health_logs
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_health_service_status();
+CREATE TABLE IF NOT EXISTS services (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    service_type VARCHAR(50), -- e.g., 'api', 'database', 'frontend', 'third-party'
+    status VARCHAR(50) DEFAULT 'operational', -- 'operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance'
+    url TEXT, -- Service endpoint or URL
+    metadata JSONB DEFAULT '{}', -- Flexible metadata storage
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
 
--- Trigger to update timestamps
-CREATE TRIGGER trigger_health_projects_updated_at
-    BEFORE UPDATE ON public.health_projects
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER trigger_health_services_updated_at
-    BEFORE UPDATE ON public.health_services
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER trigger_health_alert_rules_updated_at
-    BEFORE UPDATE ON public.health_alert_rules
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER trigger_health_alerts_updated_at
-    BEFORE UPDATE ON public.health_alerts
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER trigger_health_incidents_updated_at
-    BEFORE UPDATE ON public.health_incidents
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER trigger_health_recovery_actions_updated_at
-    BEFORE UPDATE ON public.health_recovery_actions
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
--- ==============================================
--- INITIAL DATA
--- ==============================================
-
--- Insert default projects
-INSERT INTO public.health_projects (project_key, display_name, description, supabase_url, owner_email, notification_emails) VALUES
-('synqra_os', 'Synqra OS', 'Luxury social media automation platform', 'https://tjfeindwmpuyayjvftke.supabase.co', 'debear@noidlux.com', ARRAY['debear@noidlux.com']),
-('noid_labs', 'NØID Labs', 'Innovation and research division', 'https://tjfeindwmpuyayjvftke.supabase.co', 'debear@noidlux.com', ARRAY['debear@noidlux.com']),
-('aurafx', 'AuraFX', 'Creative effects platform', 'https://tjfeindwmpuyayjvftke.supabase.co', 'debear@noidlux.com', ARRAY['debear@noidlux.com']),
-('shared', 'Shared Infrastructure', 'Shared services across all projects', 'https://tjfeindwmpuyayjvftke.supabase.co', 'debear@noidlux.com', ARRAY['debear@noidlux.com'])
-ON CONFLICT (project_key) DO NOTHING;
-
--- Insert default services for each project
-DO $$
-DECLARE
-    synqra_project_id UUID;
-    noid_project_id UUID;
-    aurafx_project_id UUID;
-    shared_project_id UUID;
-BEGIN
-    SELECT id INTO synqra_project_id FROM public.health_projects WHERE project_key = 'synqra_os';
-    SELECT id INTO noid_project_id FROM public.health_projects WHERE project_key = 'noid_labs';
-    SELECT id INTO aurafx_project_id FROM public.health_projects WHERE project_key = 'aurafx';
-    SELECT id INTO shared_project_id FROM public.health_projects WHERE project_key = 'shared';
-
-    -- Synqra OS services
-    INSERT INTO public.health_services (project_id, service_key, display_name, description, endpoint_url, check_interval_seconds) VALUES
-    (synqra_project_id, 'postgres', 'PostgreSQL Database', 'Main database for Synqra OS', NULL, 300),
-    (synqra_project_id, 'rest_api', 'REST API', 'Supabase REST API', 'https://tjfeindwmpuyayjvftke.supabase.co/rest/v1/', 300),
-    (synqra_project_id, 'auth', 'Authentication', 'Supabase Auth service', 'https://tjfeindwmpuyayjvftke.supabase.co/auth/v1/health', 300),
-    (synqra_project_id, 'storage', 'Storage', 'Supabase Storage service', 'https://tjfeindwmpuyayjvftke.supabase.co/storage/v1/bucket', 300),
-    (synqra_project_id, 'realtime', 'Realtime', 'Supabase Realtime service', NULL, 300)
-    ON CONFLICT (project_id, service_key) DO NOTHING;
-
-    -- NØID Labs services
-    INSERT INTO public.health_services (project_id, service_key, display_name, description, endpoint_url, check_interval_seconds) VALUES
-    (noid_project_id, 'postgres', 'PostgreSQL Database', 'Main database for NØID Labs', NULL, 300),
-    (noid_project_id, 'rest_api', 'REST API', 'Supabase REST API', 'https://tjfeindwmpuyayjvftke.supabase.co/rest/v1/', 300)
-    ON CONFLICT (project_id, service_key) DO NOTHING;
-
-    -- AuraFX services
-    INSERT INTO public.health_services (project_id, service_key, display_name, description, endpoint_url, check_interval_seconds) VALUES
-    (aurafx_project_id, 'postgres', 'PostgreSQL Database', 'Main database for AuraFX', NULL, 300),
-    (aurafx_project_id, 'rest_api', 'REST API', 'Supabase REST API', 'https://tjfeindwmpuyayjvftke.supabase.co/rest/v1/', 300)
-    ON CONFLICT (project_id, service_key) DO NOTHING;
-
-    -- Shared services
-    INSERT INTO public.health_services (project_id, service_key, display_name, description, endpoint_url, check_interval_seconds) VALUES
-    (shared_project_id, 'n8n', 'N8N Automation', 'N8N workflow automation', NULL, 600)
-    ON CONFLICT (project_id, service_key) DO NOTHING;
-END $$;
-
--- Insert default alert rules
-INSERT INTO public.health_alert_rules (service_id, rule_name, description, condition_type, condition_config, severity, notification_channels)
-SELECT
-    hs.id,
-    'Consecutive Failures Alert',
-    'Trigger alert after 3 consecutive failures',
-    'consecutive_failures',
-    '{"threshold": 3}'::jsonb,
-    'critical',
-    ARRAY['n8n', 'email']
-FROM public.health_services hs
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.health_alert_rules har
-    WHERE har.service_id = hs.id AND har.rule_name = 'Consecutive Failures Alert'
+    CONSTRAINT services_name_unique UNIQUE(name),
+    CONSTRAINT services_status_check CHECK (status IN ('operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance'))
 );
 
--- ==============================================
--- SECURITY AND PERMISSIONS
--- ==============================================
+CREATE INDEX IF NOT EXISTS idx_services_status ON services(status);
+CREATE INDEX IF NOT EXISTS idx_services_type ON services(service_type);
+CREATE INDEX IF NOT EXISTS idx_services_metadata ON services USING gin(metadata);
 
--- Row Level Security (RLS) is disabled for health monitoring tables
--- These tables are managed by service accounts only
-ALTER TABLE public.health_projects DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_services DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_service_status DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_alert_rules DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_alerts DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_alert_notifications DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_incidents DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_incident_updates DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_recovery_actions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_recovery_log DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_metrics_hourly DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_metrics_daily DISABLE ROW LEVEL SECURITY;
+-- =====================================================
+-- TABLE 2: HEALTH_CHECKS
+-- =====================================================
+-- Individual health check configurations for services
 
--- Grant permissions to authenticated users (dashboard access)
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+CREATE TABLE IF NOT EXISTS health_checks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    check_name VARCHAR(255) NOT NULL,
+    check_type VARCHAR(50) NOT NULL, -- 'http', 'tcp', 'ping', 'script', 'database'
+    endpoint TEXT,
+    interval_seconds INTEGER DEFAULT 60, -- How often to run the check
+    timeout_seconds INTEGER DEFAULT 30,
+    expected_status_code INTEGER DEFAULT 200,
+    retry_count INTEGER DEFAULT 3,
+    enabled BOOLEAN DEFAULT TRUE,
+    config JSONB DEFAULT '{}', -- Additional check-specific configuration
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
 
--- ==============================================
--- COMMENTS
--- ==============================================
+    CONSTRAINT health_checks_interval_positive CHECK (interval_seconds > 0),
+    CONSTRAINT health_checks_timeout_positive CHECK (timeout_seconds > 0)
+);
 
-COMMENT ON TABLE public.health_projects IS 'Configuration for monitored projects (Synqra OS, NØID Labs, AuraFX)';
-COMMENT ON TABLE public.health_services IS 'Services to monitor within each project';
-COMMENT ON TABLE public.health_logs IS 'Detailed logs of all health checks performed';
-COMMENT ON TABLE public.health_service_status IS 'Current status rollup for each service';
-COMMENT ON TABLE public.health_alert_rules IS 'Configurable alert rules for services';
-COMMENT ON TABLE public.health_alerts IS 'Active and historical alerts';
-COMMENT ON TABLE public.health_alert_notifications IS 'Log of all alert notifications sent';
-COMMENT ON TABLE public.health_incidents IS 'Major incidents requiring investigation';
-COMMENT ON TABLE public.health_incident_updates IS 'Timeline of incident updates';
-COMMENT ON TABLE public.health_recovery_actions IS 'Automated recovery actions configuration';
-COMMENT ON TABLE public.health_recovery_log IS 'Log of recovery actions executed';
-COMMENT ON TABLE public.health_metrics_hourly IS 'Hourly aggregated metrics';
-COMMENT ON TABLE public.health_metrics_daily IS 'Daily aggregated metrics';
+CREATE INDEX IF NOT EXISTS idx_health_checks_service ON health_checks(service_id);
+CREATE INDEX IF NOT EXISTS idx_health_checks_enabled ON health_checks(enabled);
+CREATE INDEX IF NOT EXISTS idx_health_checks_type ON health_checks(check_type);
+
+-- =====================================================
+-- TABLE 3: METRICS
+-- =====================================================
+-- Time-series metrics data for services
+
+CREATE TABLE IF NOT EXISTS metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    metric_name VARCHAR(255) NOT NULL,
+    metric_value NUMERIC NOT NULL,
+    metric_unit VARCHAR(50), -- 'ms', 'percent', 'requests', 'errors', etc.
+    metric_type VARCHAR(50), -- 'response_time', 'uptime', 'error_rate', 'throughput', 'cpu', 'memory'
+    tags JSONB DEFAULT '{}', -- Flexible tagging system
+    recorded_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT metrics_value_not_null CHECK (metric_value IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_metrics_service ON metrics(service_id);
+CREATE INDEX IF NOT EXISTS idx_metrics_recorded_at ON metrics(recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics(metric_name);
+CREATE INDEX IF NOT EXISTS idx_metrics_type ON metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_metrics_tags ON metrics USING gin(tags);
+CREATE INDEX IF NOT EXISTS idx_metrics_service_recorded ON metrics(service_id, recorded_at DESC);
+
+-- =====================================================
+-- TABLE 4: INCIDENTS
+-- =====================================================
+-- Incident tracking and management
+
+CREATE TABLE IF NOT EXISTS incidents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    incident_number VARCHAR(50) UNIQUE NOT NULL DEFAULT generate_incident_number(),
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    severity VARCHAR(50) NOT NULL, -- 'critical', 'high', 'medium', 'low'
+    status VARCHAR(50) DEFAULT 'investigating', -- 'investigating', 'identified', 'monitoring', 'resolved'
+    impact VARCHAR(50), -- 'major', 'minor', 'none'
+    detected_at TIMESTAMP DEFAULT NOW(),
+    acknowledged_at TIMESTAMP,
+    resolved_at TIMESTAMP,
+    root_cause TEXT,
+    resolution_notes TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT incidents_severity_check CHECK (severity IN ('critical', 'high', 'medium', 'low')),
+    CONSTRAINT incidents_status_check CHECK (status IN ('investigating', 'identified', 'monitoring', 'resolved')),
+    CONSTRAINT incidents_impact_check CHECK (impact IN ('major', 'minor', 'none'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_incidents_service ON incidents(service_id);
+CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+CREATE INDEX IF NOT EXISTS idx_incidents_detected_at ON incidents(detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_incidents_number ON incidents(incident_number);
+
+-- =====================================================
+-- TABLE 5: INCIDENT_UPDATES
+-- =====================================================
+-- Timeline of updates for incidents
+
+CREATE TABLE IF NOT EXISTS incident_updates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    incident_id UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+    status VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    posted_by VARCHAR(255), -- User or system identifier
+    posted_at TIMESTAMP DEFAULT NOW(),
+    is_public BOOLEAN DEFAULT TRUE,
+    metadata JSONB DEFAULT '{}',
+
+    CONSTRAINT incident_updates_status_check CHECK (status IN ('investigating', 'identified', 'monitoring', 'resolved'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_incident_updates_incident ON incident_updates(incident_id);
+CREATE INDEX IF NOT EXISTS idx_incident_updates_posted_at ON incident_updates(posted_at DESC);
+
+-- =====================================================
+-- TABLE 6: MAINTENANCE_WINDOWS
+-- =====================================================
+-- Scheduled maintenance tracking
+
+CREATE TABLE IF NOT EXISTS maintenance_windows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    scheduled_start TIMESTAMP NOT NULL,
+    scheduled_end TIMESTAMP NOT NULL,
+    actual_start TIMESTAMP,
+    actual_end TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'scheduled', -- 'scheduled', 'in_progress', 'completed', 'cancelled'
+    impact VARCHAR(50), -- 'full_outage', 'partial_outage', 'minimal'
+    notification_sent BOOLEAN DEFAULT FALSE,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT maintenance_status_check CHECK (status IN ('scheduled', 'in_progress', 'completed', 'cancelled')),
+    CONSTRAINT maintenance_impact_check CHECK (impact IN ('full_outage', 'partial_outage', 'minimal')),
+    CONSTRAINT maintenance_dates_check CHECK (scheduled_end > scheduled_start)
+);
+
+CREATE INDEX IF NOT EXISTS idx_maintenance_service ON maintenance_windows(service_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_status ON maintenance_windows(status);
+CREATE INDEX IF NOT EXISTS idx_maintenance_scheduled_start ON maintenance_windows(scheduled_start);
+
+-- =====================================================
+-- TABLE 7: ALERT_RULES
+-- =====================================================
+-- Alerting rule definitions
+
+CREATE TABLE IF NOT EXISTS alert_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID REFERENCES services(id) ON DELETE CASCADE,
+    rule_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    metric_name VARCHAR(255),
+    condition_type VARCHAR(50) NOT NULL, -- 'threshold', 'anomaly', 'pattern'
+    operator VARCHAR(20), -- '>', '<', '>=', '<=', '==', '!='
+    threshold_value NUMERIC,
+    evaluation_window_seconds INTEGER DEFAULT 300,
+    severity VARCHAR(50) DEFAULT 'medium',
+    enabled BOOLEAN DEFAULT TRUE,
+    notification_channels JSONB DEFAULT '[]', -- Array of notification channel configs
+    cooldown_seconds INTEGER DEFAULT 300, -- Prevent alert spam
+    config JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT alert_rules_severity_check CHECK (severity IN ('critical', 'high', 'medium', 'low'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_rules_service ON alert_rules(service_id);
+CREATE INDEX IF NOT EXISTS idx_alert_rules_enabled ON alert_rules(enabled);
+CREATE INDEX IF NOT EXISTS idx_alert_rules_metric ON alert_rules(metric_name);
+
+-- =====================================================
+-- TABLE 8: ALERT_HISTORY
+-- =====================================================
+-- Historical record of triggered alerts
+
+CREATE TABLE IF NOT EXISTS alert_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    alert_rule_id UUID NOT NULL REFERENCES alert_rules(id) ON DELETE CASCADE,
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+    triggered_at TIMESTAMP DEFAULT NOW(),
+    resolved_at TIMESTAMP,
+    alert_state VARCHAR(50) DEFAULT 'firing', -- 'firing', 'resolved', 'acknowledged'
+    metric_value NUMERIC,
+    threshold_value NUMERIC,
+    message TEXT,
+    notification_sent BOOLEAN DEFAULT FALSE,
+    notification_attempts INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}',
+
+    CONSTRAINT alert_history_state_check CHECK (alert_state IN ('firing', 'resolved', 'acknowledged'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_history_rule ON alert_history(alert_rule_id);
+CREATE INDEX IF NOT EXISTS idx_alert_history_service ON alert_history(service_id);
+CREATE INDEX IF NOT EXISTS idx_alert_history_triggered_at ON alert_history(triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alert_history_state ON alert_history(alert_state);
+
+-- =====================================================
+-- TABLE 9: SLA_TARGETS
+-- =====================================================
+-- Service Level Agreement targets
+
+CREATE TABLE IF NOT EXISTS sla_targets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    target_name VARCHAR(255) NOT NULL,
+    target_type VARCHAR(50) NOT NULL, -- 'uptime', 'response_time', 'error_rate'
+    target_value NUMERIC NOT NULL,
+    target_unit VARCHAR(50), -- 'percent', 'ms', 'requests_per_second'
+    measurement_period VARCHAR(50) DEFAULT 'monthly', -- 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'
+    current_value NUMERIC,
+    last_calculated_at TIMESTAMP,
+    is_met BOOLEAN DEFAULT TRUE,
+    config JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT sla_targets_value_positive CHECK (target_value >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sla_targets_service ON sla_targets(service_id);
+CREATE INDEX IF NOT EXISTS idx_sla_targets_type ON sla_targets(target_type);
+CREATE INDEX IF NOT EXISTS idx_sla_targets_is_met ON sla_targets(is_met);
+
+-- =====================================================
+-- TABLE 10: STATUS_PAGE_SUBSCRIPTIONS
+-- =====================================================
+-- User subscriptions to status page notifications
+
+CREATE TABLE IF NOT EXISTS status_page_subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) NOT NULL,
+    service_ids JSONB DEFAULT '[]', -- Array of service UUIDs to subscribe to
+    notification_types JSONB DEFAULT '["incident", "maintenance"]', -- Types of notifications
+    is_active BOOLEAN DEFAULT TRUE,
+    verification_token VARCHAR(255),
+    verified_at TIMESTAMP,
+    unsubscribe_token VARCHAR(255) UNIQUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT status_page_subscriptions_email_check CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_email ON status_page_subscriptions(email);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON status_page_subscriptions(is_active);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_unsubscribe_token ON status_page_subscriptions(unsubscribe_token);
+
+-- =====================================================
+-- TABLE 11: AUDIT_LOGS
+-- =====================================================
+-- Comprehensive audit trail for all system changes
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    table_name VARCHAR(100) NOT NULL,
+    record_id UUID NOT NULL,
+    action VARCHAR(50) NOT NULL, -- 'create', 'update', 'delete'
+    changed_by VARCHAR(255), -- User or system identifier
+    changed_at TIMESTAMP DEFAULT NOW(),
+    old_values JSONB,
+    new_values JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    metadata JSONB DEFAULT '{}',
+
+    CONSTRAINT audit_logs_action_check CHECK (action IN ('create', 'update', 'delete'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_table ON audit_logs(table_name);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_record ON audit_logs(record_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_changed_at ON audit_logs(changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_changed_by ON audit_logs(changed_by);
+
+-- =====================================================
+-- TRIGGERS FOR UPDATED_AT
+-- =====================================================
+
+CREATE TRIGGER update_services_updated_at
+    BEFORE UPDATE ON services
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_health_checks_updated_at
+    BEFORE UPDATE ON health_checks
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_incidents_updated_at
+    BEFORE UPDATE ON incidents
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_maintenance_windows_updated_at
+    BEFORE UPDATE ON maintenance_windows
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_alert_rules_updated_at
+    BEFORE UPDATE ON alert_rules
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_sla_targets_updated_at
+    BEFORE UPDATE ON sla_targets
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_status_page_subscriptions_updated_at
+    BEFORE UPDATE ON status_page_subscriptions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- VIEWS FOR COMMON QUERIES
+-- =====================================================
+
+-- View: Active Incidents
+CREATE OR REPLACE VIEW active_incidents AS
+SELECT
+    i.id,
+    i.incident_number,
+    s.name AS service_name,
+    i.title,
+    i.severity,
+    i.status,
+    i.impact,
+    i.detected_at,
+    EXTRACT(EPOCH FROM (NOW() - i.detected_at))/3600 AS hours_open
+FROM incidents i
+JOIN services s ON i.service_id = s.id
+WHERE i.status IN ('investigating', 'identified', 'monitoring')
+ORDER BY i.severity DESC, i.detected_at DESC;
+
+-- View: Service Health Summary
+CREATE OR REPLACE VIEW service_health_summary AS
+SELECT
+    s.id,
+    s.name,
+    s.service_type,
+    s.status,
+    COUNT(DISTINCT i.id) FILTER (WHERE i.status != 'resolved') AS active_incidents,
+    COUNT(DISTINCT m.id) FILTER (WHERE m.status = 'in_progress') AS active_maintenance,
+    MAX(i.detected_at) AS last_incident_at
+FROM services s
+LEFT JOIN incidents i ON s.id = i.service_id
+LEFT JOIN maintenance_windows m ON s.id = m.service_id
+GROUP BY s.id, s.name, s.service_type, s.status;
+
+-- View: Recent Metrics Summary
+CREATE OR REPLACE VIEW recent_metrics_summary AS
+SELECT
+    s.name AS service_name,
+    m.metric_name,
+    m.metric_type,
+    AVG(m.metric_value) AS avg_value,
+    MIN(m.metric_value) AS min_value,
+    MAX(m.metric_value) AS max_value,
+    m.metric_unit,
+    COUNT(*) AS sample_count
+FROM metrics m
+JOIN services s ON m.service_id = s.id
+WHERE m.recorded_at >= NOW() - INTERVAL '1 hour'
+GROUP BY s.name, m.metric_name, m.metric_type, m.metric_unit;
+
+-- =====================================================
+-- ROW LEVEL SECURITY (RLS) - OPTIONAL
+-- =====================================================
+-- Uncomment the following to enable RLS:
+
+-- ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE health_checks ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE metrics ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE incidents ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE incident_updates ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE maintenance_windows ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE alert_rules ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE alert_history ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE sla_targets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE status_page_subscriptions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Example RLS Policy (public read access):
+-- CREATE POLICY "Public read access for services" ON services
+--     FOR SELECT USING (true);
+
+-- Example RLS Policy (authenticated users can insert):
+-- CREATE POLICY "Authenticated users can insert metrics" ON metrics
+--     FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- =====================================================
+-- SEED DATA (OPTIONAL)
+-- =====================================================
+-- Uncomment to add sample services:
+
+-- INSERT INTO services (name, description, service_type, status) VALUES
+-- ('API Gateway', 'Main API gateway handling all requests', 'api', 'operational'),
+-- ('Database', 'Primary PostgreSQL database', 'database', 'operational'),
+-- ('Frontend', 'React frontend application', 'frontend', 'operational'),
+-- ('Authentication Service', 'OAuth2 authentication service', 'api', 'operational')
+-- ON CONFLICT (name) DO NOTHING;
+
+-- =====================================================
+-- MIGRATION COMPLETE
+-- =====================================================
+-- All 11 Enterprise Health Cell tables created successfully
+-- with indexes, constraints, triggers, and utility functions.
+-- =====================================================

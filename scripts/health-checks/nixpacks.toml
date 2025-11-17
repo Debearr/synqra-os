@@ -1,0 +1,8 @@
+[phases.setup]
+cmds = ["npm --prefix apps/synqra-mvp install"]
+
+[phases.build]
+cmds = ["npm --prefix apps/synqra-mvp run build"]
+
+[start]
+cmd = "npm --prefix apps/synqra-mvp run start"

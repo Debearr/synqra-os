@@ -1,0 +1,150 @@
+{
+  "name": "Content Publish Stub",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Manually trigger to publish latest content job"
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_SUPABASE_PROJECT.supabase.co/rest/v1/content_jobs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "*,content_variants(*)"
+            },
+            {
+              "name": "order",
+              "value": "created_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_ANON_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-job-node",
+      "name": "Fetch Latest Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "notes": "CONFIGURE: Replace YOUR_SUPABASE_PROJECT and YOUR_SUPABASE_ANON_KEY"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the latest content job and select best variant per platform\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const jobs = item.json;\n  if (!jobs || jobs.length === 0) {\n    results.push({\n      json: {\n        error: 'No content jobs found',\n        message: 'Create a job via /api/generate first'\n      }\n    });\n    continue;\n  }\n\n  const job = jobs[0];\n  const variants = job.content_variants || [];\n\n  // Group variants by platform\n  const byPlatform = {};\n  for (const variant of variants) {\n    if (!byPlatform[variant.platform]) {\n      byPlatform[variant.platform] = [];\n    }\n    byPlatform[variant.platform].push(variant);\n  }\n\n  // Select first variant per platform (could add logic for best-performing)\n  const selectedVariants = {};\n  for (const [platform, platformVariants] of Object.entries(byPlatform)) {\n    selectedVariants[platform] = platformVariants[0];\n  }\n\n  results.push({\n    json: {\n      jobId: job.id,\n      brief: job.brief,\n      platforms: job.platform.split(','),\n      selectedVariants,\n      message: 'Ready to publish (stub - no actual posting yet)',\n      nextSteps: [\n        'YouTube: Use YouTube Data API to upload (requires OAuth)',\n        'TikTok: Use TikTok API (requires app approval)',\n        'X: Use X API v2 (requires API keys)',\n        'LinkedIn: Use LinkedIn Share API (requires OAuth)'\n      ]\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "select-variants-node",
+      "name": "Select Best Variants",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Selects best variant per platform - extend with actual publish logic"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "output-node",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "notes": "Formats the selected variants for review"
+    },
+    {
+      "parameters": {
+        "content": "## Content Ready for Publishing\n\n**Job ID:** {{ $json.jobId }}\n\n**Brief:** {{ $json.brief }}\n\n**Platforms:** {{ $json.platforms }}\n\n**Selected Variants:**\n{{ $json.selectedVariants }}\n\n**Next Steps:**\n{{ $json.nextSteps }}\n\n---\n\n*This is a stub workflow. To enable actual publishing:*\n1. Set up platform API credentials\n2. Add HTTP Request nodes for each platform API\n3. Handle OAuth flows where required\n4. Test with draft/private posts first",
+        "options": {}
+      },
+      "id": "notification-node",
+      "name": "Show Preview",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "notes": "Preview the content - replace with actual publish nodes"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Latest Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Latest Job": {
+      "main": [
+        [
+          {
+            "node": "Select Best Variants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Best Variants": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Output": {
+      "main": [
+        [
+          {
+            "node": "Show Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "meta": {
+    "instanceId": "your-n8n-instance"
+  },
+  "tags": [
+    {
+      "name": "content-flywheel",
+      "id": "1"
+    }
+  ]
+}
