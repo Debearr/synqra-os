@@ -1,0 +1,147 @@
+{
+  "name": "NØID Labs Deployment & Infrastructure Guardrails",
+  "version": "1.0.0",
+  "applies_to": "all_repos",
+  "rules": {
+    "deployment_config_standardization": {
+      "enabled": true,
+      "description": "Delete railway.json, Dockerfile, .dockerignore. Use nixpacks.toml ONLY.",
+      "actions": [
+        "DELETE railway.json (if exists)",
+        "DELETE Dockerfile (if exists)",
+        "DELETE .dockerignore (if exists)",
+        "ENSURE nixpacks.toml exists"
+      ],
+      "auto_fix": true
+    },
+    "node_version_enforcement": {
+      "enabled": true,
+      "description": "Replace ANY Node 18 configs with Node 20",
+      "required_version": "nodejs_20",
+      "auto_fix": true,
+      "check_locations": [
+        "nixpacks.toml",
+        "package.json engines",
+        ".nvmrc",
+        "railway.toml"
+      ]
+    },
+    "port_binding_enforcement": {
+      "enabled": true,
+      "description": "Ensure package.json always uses correct PORT binding",
+      "required_start_script": "next start -p ${PORT:-3000} --hostname 0.0.0.0",
+      "auto_fix": true
+    },
+    "monorepo_context_warning": {
+      "enabled": true,
+      "description": "Warn when running builds/dev commands",
+      "message": "⚠️  Are you in the correct app directory?",
+      "trigger_on": [
+        "npm run build",
+        "npm run dev",
+        "pnpm build",
+        "pnpm dev",
+        "next build",
+        "next dev"
+      ]
+    },
+    "main_branch_protection": {
+      "enabled": true,
+      "description": "Never commit directly to main without confirmation",
+      "require_confirmation": true
+    },
+    "domain_awareness": {
+      "enabled": true,
+      "description": "Auto-suggest domain when editing app folders",
+      "domain_map_file": ".cursor/domain-map.json",
+      "actions": [
+        "SUGGEST domain for current app",
+        "WARN on environment variable mismatch",
+        "WARN on deployment config mismatch"
+      ]
+    },
+    "railway_deployment_guardrails": {
+      "enabled": true,
+      "description": "Enforce Railway deployment standards",
+      "required_env_vars": [
+        "RAILWAY_DOMAIN",
+        "APP_DOMAIN",
+        "NEXT_PUBLIC_APP_DOMAIN",
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE",
+        "SUPABASE_ANON_KEY"
+      ],
+      "pre_deploy_checks": [
+        "Builder must be Nixpacks",
+        "Node 20 must be detected",
+        "PORT binding must be correct",
+        "No Docker fallback",
+        "Monorepo root directory must be correct",
+        "Domain must match app in domain-map.json"
+      ],
+      "on_violation": "ABORT and suggest fix"
+    },
+    "supabase_guardrails": {
+      "enabled": true,
+      "description": "Ensure Supabase environment variables are correct",
+      "required_env_vars": [
+        "NEXT_PUBLIC_APP_DOMAIN",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SERVICE_ROLE"
+      ],
+      "checks": [
+        "Domain must match domain-map.json",
+        "App origin must be correct",
+        "OAuth redirect URIs must match domain"
+      ]
+    },
+    "auto_fix_heuristics": {
+      "enabled": true,
+      "description": "Automatically fix common deployment issues",
+      "fixes": {
+        "node_18_detected": "Replace with Node 20",
+        "wrong_app_directory": "Warn user",
+        "wrong_domain": "Warn and auto-correct",
+        "missing_port_binding": "Fix in package.json",
+        "missing_nixpacks": "Create nixpacks.toml",
+        "dockerfile_present": "Delete Dockerfile",
+        "wrong_railway_root": "Fix root directory",
+        "legacy_configs": "Remove legacy files"
+      }
+    }
+  },
+  "required_files": [
+    ".cursor/domain-map.json",
+    ".cursor/rules.json",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    "templates/nixpacks.toml",
+    "DEPLOYMENT_GUARDRAILS.md",
+    "cursor-agent-instructions.md"
+  ],
+  "file_management": {
+    "if_missing": "create_automatically",
+    "if_outdated": "update_automatically",
+    "if_conflicting": "ask_approval_before_overwriting"
+  },
+  "reporting": {
+    "enabled": true,
+    "end_of_task_summary": {
+      "include": [
+        "What was changed",
+        "Why it was necessary",
+        "What Cursor guardrails applied",
+        "What the user should check (if anything)"
+      ]
+    }
+  },
+  "behavior": {
+    "tone": "decisive",
+    "completeness": "never_leave_steps_incomplete",
+    "quality": "never_push_broken_configs",
+    "approach": "fix_proactively",
+    "communication": "warn_early",
+    "goal": "prevent_all_preventable_errors",
+    "consistency": "maintain_across_all_noid_labs_apps"
+  }
+}
