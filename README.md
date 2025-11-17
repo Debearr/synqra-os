@@ -1,413 +1,183 @@
-# NØID LABS ECOSYSTEM
+# Supabase CLI
 
-**Unified AI-Powered Platform: Synqra × NØID × AuraFX**
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-> Premium. Intelligent. Autonomous. Self-Healing.
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
----
+This repository contains all the functionality for Supabase CLI.
 
-## 🎯 WHAT IS THIS?
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-NØID Labs is a **masterpiece AI ecosystem** that combines:
+## Getting started
 
-- **Synqra**: AI-powered content generation and campaign management
-- **NØID**: Digital identity and decentralized cards platform  
-- **AuraFX**: Premium creative studio and design system
+### Install the CLI
 
-All powered by a **shared intelligence layer** that learns, optimizes, and evolves autonomously.
-
----
-
-## 🚀 QUICK START
-
-### 1. Clone and Setup
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-git clone <your-repo>
-cd noid-labs-ecosystem
-npm install
+npm i supabase --save-dev
 ```
 
-### 2. Configure Environment
+To install the beta release channel:
 
 ```bash
-cp .env.example .env
-# Edit .env with your actual values
+npm i supabase@beta --save-dev
 ```
 
-**Required Variables:**
-- `ANTHROPIC_API_KEY` - Your Claude API key
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-### 3. Run Database Migrations
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-psql $DATABASE_URL -f supabase/migrations/intelligence_logging.sql
-psql $DATABASE_URL -f supabase/migrations/rprd_infrastructure.sql
-psql $DATABASE_URL -f supabase/migrations/autonomous_infrastructure.sql
-psql $DATABASE_URL -f supabase/migrations/market_intelligence.sql
+supabase bootstrap
 ```
 
-### 4. Verify Codebase
+Or using npx:
 
 ```bash
-npm run noid:verify
+npx supabase bootstrap
 ```
 
-### 5. Start Development
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-```bash
-# Synqra MVP
-npm run dev:synqra
+## Docs
 
-# NØID Dashboard
-npm run dev:noid
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
 ```
-
----
-
-## 📦 PROJECT STRUCTURE
-
-```
-/workspace/
-├── shared/                      # Shared utilities (AI, DB, workflows, etc.)
-│   ├── ai/                      # Unified AI client
-│   ├── rprd/                    # RPRD DNA patterns
-│   ├── db/                      # Supabase client + intelligence logging
-│   ├── prompts/                 # Centralized prompt library
-│   ├── types/                   # Shared TypeScript types
-│   ├── validation/              # Validation pipeline
-│   ├── workflows/               # Workflow orchestration
-│   ├── cache/                   # Intelligent caching
-│   ├── optimization/            # Auto-optimizer
-│   ├── autonomous/              # Self-healing + evolving agents
-│   ├── intelligence/            # Market watch + scrapers
-│   ├── orchestration/           # System coordinator
-│   └── components/luxgrid/      # Shared UI components
-├── apps/
-│   └── synqra-mvp/             # Synqra application
-├── noid-dashboard/             # NØID Dashboard
-├── noid-digital-cards/         # NØID Cards
-├── n8n-workflows/              # N8N automation workflows
-├── supabase/migrations/        # Database schemas
-└── scripts/                    # Deployment & verification scripts
-```
-
----
-
-## 🛠️ NPM SCRIPTS
-
-### Verification & Deployment
-```bash
-npm run noid:verify       # Verify all files present
-npm run noid:preflight    # Pre-deployment checks
-npm run noid:deploy       # Deploy entire ecosystem
-npm run noid:test         # Post-deployment smoke tests
-```
-
-### System Management
-```bash
-npm run noid:status       # System health check
-npm run noid:optimize     # Run optimization engine
-npm run agents:evolve     # Evolve all AI agents
-```
-
-### Development
-```bash
-npm run dev:synqra        # Start Synqra dev server
-npm run dev:noid          # Start NØID dev server
-npm run build:all         # Build all workspaces
-npm run lint:all          # Lint all workspaces
-npm run clean             # Clean node_modules & dist
-```
-
----
-
-## 🔥 KEY FEATURES
-
-### 1. **RPRD DNA System**
-- Multi-version output generation
-- Intelligent refine steps
-- Prototype vs Polished modes
-- Brand-aligned content validation
-
-### 2. **Unified AI Client**
-- Cost-aware model routing (premium/standard/cheap tiers)
-- Task-based optimization
-- Centralized error handling
-- Usage intelligence logging
-
-### 3. **Self-Healing Infrastructure**
-- Continuous health monitoring
-- Auto-detection of incidents
-- Autonomous recovery strategies
-- Human escalation only when necessary
-
-### 4. **Evolving AI Agents**
-- Autonomous decision-making
-- Continuous learning from feedback
-- Pattern recognition and adaptation
-- Self-improving expertise over time
-
-### 5. **Market Intelligence Engine**
-- Zero-cost web scraping (Twitter, LinkedIn, Reddit, etc.)
-- AI-powered signal detection
-- Automated lead qualification
-- Competitor activity tracking
-
-### 6. **Intelligent Caching**
-- Semantic content matching
-- Performance-based TTL
-- Auto-eviction of stale entries
-- Supabase-backed persistence
-
-### 7. **Auto-Optimization**
-- Model performance analysis
-- Prompt effectiveness tracking
-- Workflow efficiency optimization
-- Self-improving over time
-
-### 8. **System Orchestration**
-- Centralized coordination layer
-- Execution locks (no race conditions)
-- Clear system ownership
-- Conflict-free architecture
-
----
-
-## 📚 DOCUMENTATION
-
-| Document | Description |
-|----------|-------------|
-| [DEPLOYMENT-CHECKLIST.md](DEPLOYMENT-CHECKLIST.md) | Complete pre-flight deployment checklist |
-| [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | System architecture & conflict prevention |
-| [shared/README.md](shared/README.md) | Shared utilities documentation |
-| [RPRD-DNA-UPGRADE-COMPLETE.md](RPRD-DNA-UPGRADE-COMPLETE.md) | RPRD DNA implementation guide |
-| [AUTONOMOUS-SYSTEM-COMPLETE.md](AUTONOMOUS-SYSTEM-COMPLETE.md) | Autonomous systems documentation |
-| [NOID-LABS-UPGRADE-MASTER.md](NOID-LABS-UPGRADE-MASTER.md) | Master upgrade summary |
-
----
-
-## 🚀 DEPLOYMENT
-
-### Pre-Flight Checklist
-
-```bash
-# 1. Verify codebase
-npm run noid:verify
-
-# 2. Run pre-flight checks
-npm run noid:preflight
-
-# 3. Deploy (if all checks pass)
-npm run noid:deploy
-
-# 4. Run smoke tests
-npm run noid:test
-```
-
-### Railway Deployment
-
-```bash
-# Deploy individual services
-cd apps/synqra-mvp && railway up
-cd noid-dashboard && railway up
-cd n8n-workflows && railway up
-```
-
-### Environment Variables (Railway)
-
-Set these in Railway dashboard:
-- `ANTHROPIC_API_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `DATABASE_URL` (if using direct Postgres)
-- `N8N_WEBHOOK_URL` (optional)
-- `SLACK_WEBHOOK_URL` (optional)
-
----
-
-## 🧪 TESTING
-
-### Run System Health Check
-
-```bash
-npm run noid:status
-```
-
-**Expected Output:**
-```json
-{
-  "overall": "healthy",
-  "ai": { "status": "healthy", "responseTime": 245 },
-  "database": { "status": "healthy", "responseTime": 12 },
-  "cache": { "status": "healthy", "hitRate": 0.35 }
-}
-```
-
-### Test AI Client
-
-```javascript
-import { aiClient } from './shared/ai/client.ts';
-
-const result = await aiClient.generate({
-  prompt: "Write a premium tagline for NØID Labs",
-  taskType: "creative",
-  mode: "polished"
-});
-
-console.log(result.content);
-```
-
-### Test Intelligent Cache
-
-```javascript
-import { contentCache } from './shared/cache/intelligent-cache.ts';
-
-await contentCache.set('test', { value: 'cached' });
-const retrieved = await contentCache.get('test');
-console.log(retrieved); // { value: 'cached' }
-```
-
----
-
-## 📊 MONITORING
-
-### System Health
-```bash
-npm run noid:status
-```
-
-### Optimization Metrics
-```bash
-npm run noid:optimize
-```
-
-### Agent Evolution
-```bash
-npm run agents:evolve
-```
-
-### Database Metrics
-
-```sql
--- Autonomy Score
-SELECT * FROM get_autonomy_score('synqra');
-
--- Agent Performance
-SELECT * FROM agent_performance_overview;
-
--- Intelligence Summary
-SELECT * FROM intelligence_summary;
-
--- Lead Trends
-SELECT * FROM lead_trend_insights;
-```
-
----
-
-## 🔧 TROUBLESHOOTING
-
-### TypeScript Errors
-
-```bash
-cd shared/
-npm install
-npx tsc --noEmit
-```
-
-### Database Connection Issues
-
-```bash
-# Test connection
-psql $DATABASE_URL -c "SELECT 1"
-
-# Re-run migrations
-bash scripts/deploy-all.sh
-```
-
-### Missing Files
-
-```bash
-npm run noid:verify
-```
-
-### Deployment Failures
-
-```bash
-# Check Railway logs
-railway logs --tail
-
-# Re-run pre-flight checks
-npm run noid:preflight
-```
-
----
-
-## 🎯 BEST PRACTICES
-
-### 1. **Always Run Pre-Flight Checks**
-Never deploy without running `npm run noid:preflight` first.
-
-### 2. **Monitor System Health**
-Check `npm run noid:status` regularly, especially after deployments.
-
-### 3. **Let Agents Evolve**
-Run `npm run agents:evolve` weekly to improve agent performance.
-
-### 4. **Review Optimization Recommendations**
-Check `npm run noid:optimize` monthly for cost savings.
-
-### 5. **Keep Documentation Updated**
-Update deployment URLs and configurations in docs after each deployment.
-
----
-
-## 🤝 CONTRIBUTING
-
-### Code Standards
-- TypeScript strict mode
-- No `any` types
-- Zod validation for all external inputs
-- Clear, descriptive function names
-- Brand-aligned copy (no AI slop)
-
-### Commit Messages
-```
-feat: Add new autonomous recovery strategy
-fix: Resolve cache eviction race condition
-docs: Update deployment checklist
-refactor: Consolidate AI client logic
-perf: Optimize database query for leads
-```
-
-### Pull Requests
-- All tests pass
-- TypeScript compiles without errors
-- Documentation updated
-- No security vulnerabilities
-
----
-
-## 📄 LICENSE
-
-**PROPRIETARY** - NØID Labs  
-All rights reserved.
-
----
-
-## 💬 SUPPORT
-
-- **Documentation**: See `/docs` folder
-- **Issues**: Create GitHub issue
-- **Slack**: #noid-labs-dev (if configured)
-
----
-
-**Built with precision. Deployed with confidence. Maintained autonomously.**
-
-*NØID Labs — Where intelligence evolves.*
-
