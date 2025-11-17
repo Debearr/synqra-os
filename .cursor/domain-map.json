@@ -1,0 +1,32 @@
+{
+  "synqra": {
+    "domain": "synqra.co",
+    "dns_provider": "porkbun",
+    "deployment": "railway",
+    "path": "apps/synqra-mvp"
+  },
+  "noid": {
+    "domain": "noidlux.com",
+    "dns_provider": "namecheap",
+    "deployment": "railway-or-vercel",
+    "path": "apps/noid"
+  },
+  "aurafx": {
+    "domain": "aurafx.trade",
+    "dns_provider": "namecheap",
+    "deployment": "railway-or-vercel",
+    "path": "apps/aurafx"
+  },
+  "luxgrid": {
+    "domain": "getluxgrid.com",
+    "dns_provider": "namecheap",
+    "deployment": "static-or-nextjs",
+    "path": "apps/luxgrid"
+  },
+  "ny7coffee": {
+    "domain": "ny7coffee.com",
+    "dns_provider": "namecheap",
+    "deployment": "tbd",
+    "path": "apps/ny7coffee"
+  }
+}

@@ -1,0 +1,13 @@
+# Force Railway to ignore any cached build artifacts
+.railway/
+.next/
+node_modules/
+.cache/
+dist/
+build/
+.turbo/
+.swc/
+
+# Force clean Nixpacks build
+*.log
+.DS_Store
