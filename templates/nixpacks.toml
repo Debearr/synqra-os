@@ -1,0 +1,85 @@
+# 🏛️ NØID Labs – Standard Nixpacks Configuration
+# Version: 1.0.0
+# Last Updated: 2025-11-17
+# 
+# This is the STANDARD deployment configuration for all NØID Labs Next.js apps.
+# Use this template for Railway deployments.
+#
+# ⚠️ DO NOT use Dockerfile or railway.json – Nixpacks is the standard.
+
+# ============================================================================
+# SETUP PHASE – Install Node.js 20
+# ============================================================================
+[phases.setup]
+nixPkgs = ['nodejs_20']
+
+# ============================================================================
+# INSTALL PHASE – Install dependencies
+# ============================================================================
+[phases.install]
+cmds = [
+    'npm ci --prefer-offline --no-audit'
+]
+
+# ============================================================================
+# BUILD PHASE – Build Next.js production bundle
+# ============================================================================
+[phases.build]
+cmds = [
+    'npm run build'
+]
+
+# ============================================================================
+# START PHASE – Start production server
+# ============================================================================
+[start]
+cmd = 'npm start'
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# 1. PORT BINDING
+#    Ensure package.json includes:
+#    "start": "next start -p ${PORT:-3000} --hostname 0.0.0.0"
+#
+# 2. ENVIRONMENT VARIABLES (Railway)
+#    Required:
+#    - RAILWAY_DOMAIN=<your-domain.com>
+#    - APP_DOMAIN=<your-domain.com>
+#    - NEXT_PUBLIC_APP_DOMAIN=<your-domain.com>
+#    - SUPABASE_URL=<your-supabase-url>
+#    - SUPABASE_SERVICE_ROLE=<your-service-role-key>
+#    - SUPABASE_ANON_KEY=<your-anon-key>
+#
+# 3. MONOREPO CONFIGURATION (Railway)
+#    Set "Root Directory" to the app folder:
+#    - apps/synqra-mvp (for Synqra)
+#    - apps/noid (for NØID)
+#    - apps/aurafx (for AuraFX)
+#    - apps/luxgrid (for LuxGrid)
+#    - apps/ny7coffee (for NY7 Coffee)
+#
+# 4. BUILDER CONFIGURATION (Railway)
+#    - Builder: Nixpacks (NOT Docker)
+#    - Node Version: 20.x (detected automatically)
+#
+# 5. DEPLOYMENT VERIFICATION
+#    Before deploying, verify:
+#    ✅ Node 20 is set
+#    ✅ PORT binding is correct
+#    ✅ No Dockerfile present
+#    ✅ Root directory matches app
+#    ✅ Domain matches .cursor/domain-map.json
+#
+# 6. TROUBLESHOOTING
+#    If build fails:
+#    - Check Railway logs for errors
+#    - Verify all environment variables are set
+#    - Ensure Root Directory is correct
+#    - Confirm package.json scripts are valid
+#    - Check DEPLOYMENT_GUARDRAILS.md for common issues
+#
+# ============================================================================
+# NØID Labs – Built to Last
+# ============================================================================
