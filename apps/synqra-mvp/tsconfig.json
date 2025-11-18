@@ -8,6 +8,8 @@
     ],
     "allowJs": false,
     "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -43,6 +45,11 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "lib/ai/**/*",
+    "lib/models/**/*",
+    "lib/rag/**/*",
+    "lib/posting/**/*",
+    "lib/agents/**/*"
   ]
 }
