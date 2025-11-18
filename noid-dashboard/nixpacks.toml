@@ -1,8 +1,18 @@
-[build]
-nodejsVersion = "20"
+[phases.setup]
+nixPkgs = ["nodejs_20", "pnpm"]
+
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@latest --activate",
+  "pnpm install --no-frozen-lockfile"
+]
+
+[phases.build]
+cmds = ["pnpm run build"]
 
 [start]
-cmd = "npm run start"
+cmd = "pnpm run start"
 
 [variables]
 NODE_ENV = "production"
