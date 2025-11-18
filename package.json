@@ -10,6 +10,9 @@
     "noid-digital-cards"
   ],
   "scripts": {
+    "build": "pnpm --filter synqra-mvp run build",
+    "start": "pnpm --filter synqra-mvp run start",
+    "dev": "pnpm --filter synqra-mvp run dev",
     "noid:verify": "bash scripts/verify-codebase.sh",
     "noid:preflight": "bash scripts/pre-flight-check.sh",
     "noid:deploy": "bash scripts/deploy-all.sh",
