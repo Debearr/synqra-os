@@ -354,7 +354,7 @@ Air traffic control, orchestra conductor, Swiss watch mechanism—invisible comp
 "Join us in building the orchestration layer for luxury content. This isn't a bet on 'will it work'—it's a bet on 'how fast can we scale.'"
 
 **Contact:**
-hello@noidlux.com
+debear@noidlux.com
 
 ---
 

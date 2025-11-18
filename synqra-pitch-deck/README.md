@@ -10,7 +10,7 @@ Synqra (by NØID Labs) is a luxury AI content automation platform that eliminate
 
 ## Contact Information
 
-**Official Email:** hello@noidlux.com  
+**Official Email:** debear@noidlux.com  
 **Website:** synqra.co
 
 ## Brand Guidelines
@@ -81,4 +81,4 @@ This system contains all assets needed to assemble the complete Synqra investor 
 ---
 
 **Built by NØID Labs**  
-Contact: hello@noidlux.com
+Contact: debear@noidlux.com

@@ -60,14 +60,14 @@
 - White-glove onboarding (limited spots)
 
 **For Investors:**
-- Let's talk: hello@noidlux.com
+- Let's talk: debear@noidlux.com
 - Deck, financials, product demo available
 - Moving fast—closing round in 60 days
 
 **For Partners:**
 - Agency white-label opportunities
 - Integration partnerships (Canva, Notion, Webflow)
-- Let's build together: hello@noidlux.com
+- Let's build together: debear@noidlux.com
 
 ---
 
@@ -83,7 +83,7 @@
 
 ## Contact
 
-**Email:** hello@noidlux.com  
+**Email:** debear@noidlux.com  
 **Website:** synqra.co  
 **Founder:** De Bear, NØID Labs
 
@@ -142,4 +142,4 @@
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

@@ -18,7 +18,7 @@
 
 **Presented by NØID Labs**
 
-**Contact:** hello@noidlux.com  
+**Contact:** debear@noidlux.com  
 **Website:** synqra.co
 
 ---

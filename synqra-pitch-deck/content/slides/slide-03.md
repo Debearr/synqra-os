@@ -64,4 +64,4 @@ Synqra is the conductor for the multi-model orchestra.
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

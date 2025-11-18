@@ -190,7 +190,7 @@ We're raising to accelerate what's already working.
 
 **Join us in making luxury content automation the new standard.**
 
-**Contact:** hello@noidlux.com  
+**Contact:** debear@noidlux.com  
 **Website:** synqra.co
 
 ---
@@ -218,4 +218,4 @@ We're raising to accelerate what's already working.
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

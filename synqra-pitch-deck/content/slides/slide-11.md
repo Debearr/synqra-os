@@ -191,4 +191,4 @@
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

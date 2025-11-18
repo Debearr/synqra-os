@@ -67,7 +67,7 @@
 
 ### High-Ticket Professional Services
 
-**What:** Custom automation builds (mobile workflows, Tasker systems, end-to-end business automation)
+**What:** Custom automation builds (mobile workflows, automation systems, end-to-end business automation)
 
 **Pricing:** $3K-25K per engagement
 
@@ -163,4 +163,4 @@
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

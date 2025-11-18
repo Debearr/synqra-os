@@ -54,4 +54,4 @@ High-performing founders spend their most valuable hours not building their busi
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

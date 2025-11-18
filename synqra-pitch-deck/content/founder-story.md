@@ -35,8 +35,8 @@ When you're selling a $15,000 Cartier watch, you're not selling metal and gears.
 
 ### NØID Labs Automation Suite
 - High-ticket custom automation systems
-- Clients: Gig drivers, mobile power users, small businesses
-- Projects: Tasker workflows, end-to-end business automation, custom mobile tools
+- Clients: Mobile power users, field operations teams, small businesses
+- Projects: Automation workflows, end-to-end business automation, custom mobile tools
 - **Proof point:** I can execute complex technical builds that work in production
 
 ### AuraFX
@@ -375,7 +375,7 @@ That's what I want for myself. That's what I want for every founder. That's what
 
 If that's you, let's talk.
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com
 
 ---
 
@@ -393,4 +393,4 @@ And I'm just getting started.
 
 — De Bear  
 Founder, Synqra & NØID Labs  
-hello@noidlux.com
+debear@noidlux.com

@@ -73,4 +73,4 @@ Synqra eliminates the 4-8 hour content grind by intelligently routing tasks acro
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

@@ -150,4 +150,4 @@ Synqra becomes the invisible layer every luxury creator relies on
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

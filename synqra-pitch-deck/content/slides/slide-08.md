@@ -75,7 +75,7 @@
 ## External Validation
 
 ### NØID Labs Automation Suite (Credibility Signal):
-- Built high-ticket automation systems for gig drivers, mobile workflows
+- Built high-ticket automation systems for mobile workflows and field operations
 - Demonstrates technical execution capability
 - Provides supporting revenue while Synqra scales
 - **Proof:** De Bear can build complex systems that work
@@ -124,4 +124,4 @@ This IS:
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com

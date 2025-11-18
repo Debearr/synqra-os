@@ -67,4 +67,4 @@ Synqra doesn't compete with ChatGPT or Claude.
 
 ---
 
-**Contact:** hello@noidlux.com
+**Contact:** debear@noidlux.com
