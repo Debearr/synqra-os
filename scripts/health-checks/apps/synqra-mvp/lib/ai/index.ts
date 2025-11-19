@@ -35,7 +35,7 @@ export {
 
 // Compression
 export { 
-  compressInput, 
+  compressInput as compressInputFromCompression, 
   reduceContext, 
   smartSummarize,
   precompressInput,
@@ -60,7 +60,7 @@ export {
 export {
   logModelUsage,
   getUsageStats,
-  generateCostReport,
+  // generateCostReport, // Duplicate identifier - commented out
   SUPABASE_TABLE_SQL,
 } from './logging';
 
@@ -91,7 +91,9 @@ export type { Recipe, RecipeExecution } from './recipes';
 export {
   classifyTask,
   optimizeModelSelection,
+  compressInputForCostOptimizer, // Renamed to avoid duplicate with compression.ts
   detectBatchableTasks,
+  // generateCostReport, // Duplicate with cost.ts - commented out
   getBrandProfileCacheKey,
   getArchetypeCacheKey,
   detectWaste,
