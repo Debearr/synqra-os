@@ -287,7 +287,7 @@ export async function executeTask(task: AITask): Promise<any> {
 }
 
 /**
- * CALL MODEL (placeholder - implement actual API calls)
+ * CALL MODEL (with actual API implementations + fallback)
  */
 async function callModel(
   model: ModelProvider,
@@ -295,17 +295,51 @@ async function callModel(
   systemPrompt: string | undefined,
   maxTokens: number
 ): Promise<string> {
-  // This would integrate with actual model APIs
-  // For now, return placeholder
-  console.log(`🤖 Calling ${model} with ${input.length} chars, max ${maxTokens} tokens`);
+  const { callModel: callProvider, callLocalModel } = require('./providers');
   
-  // In production, implement actual API calls:
-  // - Mistral via KIE.AI or direct API
-  // - DeepSeek via KIE.AI or direct API
-  // - Claude via Anthropic SDK (already exists)
-  // - GPT-5 via OpenAI SDK
+  try {
+    // Try primary model first
+    console.log(`🤖 Calling ${model} with ${input.length} chars, max ${maxTokens} tokens`);
+    
+    const result = await callProvider(model, input, systemPrompt, maxTokens);
+    return result.output;
+  } catch (error: any) {
+    console.warn(`⚠️  ${model} failed: ${error.message}`);
+    
+    // Implement fallback hierarchy
+    const fallbackChain: ModelProvider[] = getFallbackChain(model);
+    
+    for (const fallbackModel of fallbackChain) {
+      try {
+        console.log(`🔄 Trying fallback: ${fallbackModel}`);
+        const result = await callProvider(fallbackModel, input, systemPrompt, maxTokens);
+        console.log(`✅ Fallback successful: ${fallbackModel}`);
+        return result.output;
+      } catch (fallbackError: any) {
+        console.warn(`⚠️  Fallback ${fallbackModel} also failed: ${fallbackError.message}`);
+        continue;
+      }
+    }
+    
+    // If all fallbacks fail, return graceful error message
+    console.error('❌ All model calls failed, returning graceful error');
+    return `I apologize, but I'm experiencing technical difficulties. Please try again in a moment.`;
+  }
+}
+
+/**
+ * GET FALLBACK CHAIN
+ * Define fallback order for each model
+ */
+function getFallbackChain(model: ModelProvider): ModelProvider[] {
+  const fallbackChains: Record<string, ModelProvider[]> = {
+    'mistral': ['deepseek', 'claude'],
+    'deepseek': ['mistral', 'claude'],
+    'claude': ['deepseek', 'gpt-5'],
+    'gpt-5': ['claude', 'deepseek'],
+  };
   
-  return `Response from ${model}: Processed ${input.substring(0, 50)}...`;
+  return fallbackChains[model] || ['claude']; // Default fallback to Claude
 }
 
 /**
