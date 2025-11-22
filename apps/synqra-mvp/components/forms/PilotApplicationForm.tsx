@@ -16,9 +16,12 @@ import { pilotApplicationSchema, type PilotApplicationData } from '@/lib/validat
  * - Form input height 56px, soft 8px radius
  * - Colors: matte black #0A0A0A, warm ivory #F5F3F0, gold accent #C5A572, teal highlight #2DD4BF
  * 
- * Functionality:
+ * Functionality (Phase 3):
  * - Client-side validation with Zod
- * - No Supabase/Stripe integration (Phase 2)
+ * - API integration with /api/pilot/apply
+ * - Supabase backend storage
+ * - Email notifications (applicant + admin)
+ * - Duplicate detection
  * - Success redirect to /pilot/apply/success
  */
 
@@ -58,28 +61,65 @@ export default function PilotApplicationForm() {
     setIsSubmitting(true);
 
     try {
-      // Validate form data with Zod
+      // Validate form data with Zod (client-side)
       const validatedData = pilotApplicationSchema.parse(formData);
       
-      // Log to console for Phase 2 (no backend integration yet)
-      console.log('[Pilot Application] Validated data:', validatedData);
-      
-      // Simulate brief processing delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Redirect to success page
+      // Submit to API (Phase 3: Backend Integration)
+      const response = await fetch('/api/pilot/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validatedData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle API errors
+        if (result.error === 'duplicate_application') {
+          setErrors({
+            email: 'You have already applied. Check your email for updates.',
+          });
+          return;
+        }
+        
+        if (result.error === 'validation_failed' && result.details) {
+          // Map server validation errors to form fields
+          const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
+          result.details.forEach((err: any) => {
+            const field = err.path[0] as keyof PilotApplicationData;
+            fieldErrors[field] = err.message;
+          });
+          setErrors(fieldErrors);
+          return;
+        }
+
+        throw new Error(result.message || 'Failed to submit application');
+      }
+
+      // Success - redirect to success page
+      console.log('[Pilot Application] Submitted successfully:', result.data.id);
       router.push('/pilot/apply/success');
       
     } catch (error: any) {
+      console.error('[Pilot Application] Submit error:', error);
+      
       if (error.errors) {
-        // Parse Zod validation errors
+        // Parse Zod validation errors (client-side)
         const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
         error.errors.forEach((err: any) => {
           const field = err.path[0] as keyof PilotApplicationData;
           fieldErrors[field] = err.message;
         });
         setErrors(fieldErrors);
+      } else {
+        // Generic error - show on email field
+        setErrors({
+          email: error.message || 'Failed to submit application. Please try again.',
+        });
       }
+      
       setIsSubmitting(false);
     }
   };
