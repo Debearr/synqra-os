@@ -31,7 +31,7 @@ export async function POST(req: Request) {
           ok: false,
           error: 'validation_failed',
           message: 'Please check your form inputs',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       );
