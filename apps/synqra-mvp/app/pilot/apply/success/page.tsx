@@ -10,13 +10,13 @@ import SuccessConfirmation from '@/components/ui/SuccessConfirmation';
 export default function PilotApplicationSuccessPage() {
   return (
     <SuccessConfirmation
-      title="You're in!"
-      message="Welcome to the Synqra Founder Pilot. Check your email for next steps."
+      title="Application Received"
+      message="We're reviewing your application. If approved, you'll receive a secure payment link within 24 hours."
       nextSteps={[
-        "Check your inbox for a welcome email (arrives within 5 minutes)",
-        "Join our private Slack channel for pilot founders",
-        "Schedule your 1:1 onboarding call with our team",
-        "Get early access to exclusive founder perks and lifetime pricing",
+        "Our team will review your application within 24 hours",
+        "Check your email for approval notification and payment link",
+        "Once approved, complete payment to secure your founder spot",
+        "You'll receive onboarding instructions immediately after payment",
       ]}
     />
   );
