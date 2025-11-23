@@ -183,7 +183,7 @@ export default function HomePage() {
           </motion.div>
         )}
 
-        {/* CTA */}
+        {/* CTA Section */}
         {!currentDraft && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -191,15 +191,46 @@ export default function HomePage() {
             transition={{ delay: 0.5, duration: 0.6 }}
             className="mt-12 text-center"
           >
-            <p className="mb-4 text-sm text-white/50">
+            <p className="mb-6 text-sm text-white/50">
               Ready for full access? Join 300+ executives.
             </p>
-            <a
-              href="/waitlist"
-              className="inline-flex rounded-full bg-indigo px-8 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-transform hover:scale-105"
-            >
-              Reserve your concierge slot
-            </a>
+            
+            {/* Primary CTA - Pilot */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <a
+                href="/pilot/apply"
+                className="inline-flex rounded-lg px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:opacity-90 hover:scale-105"
+                style={{
+                  backgroundColor: '#C5A572',
+                  color: '#0A0A0A',
+                  letterSpacing: '0.025em',
+                  minHeight: '48px',
+                  alignItems: 'center',
+                }}
+              >
+                Apply for Founder Pilot
+              </a>
+              
+              {/* Secondary CTA - Subscription (Disabled) */}
+              <button
+                disabled
+                className="inline-flex rounded-lg px-8 py-4 text-sm font-bold uppercase tracking-wider cursor-not-allowed"
+                style={{
+                  backgroundColor: 'rgba(245, 243, 240, 0.05)',
+                  color: 'rgba(245, 243, 240, 0.3)',
+                  border: '1px solid rgba(245, 243, 240, 0.1)',
+                  letterSpacing: '0.025em',
+                  minHeight: '48px',
+                  alignItems: 'center',
+                }}
+              >
+                Join Subscription Waitlist
+              </button>
+            </div>
+            
+            <p className="mt-4 text-xs text-white/35">
+              Pilot: First 50 founders • Subscription: Coming soon
+            </p>
           </motion.div>
         )}
       </div>

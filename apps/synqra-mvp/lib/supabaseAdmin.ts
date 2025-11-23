@@ -17,22 +17,29 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE
 // Support multiple naming conventions for backwards compatibility
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
-    'Set these in .env.local for development or Railway for production.'
-  );
-}
+// Export a typed client or null if credentials not configured
+export const supabaseAdmin = (supabaseUrl && supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: { 
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      db: { 
+        schema: 'public' 
+      },
+    })
+  : null;
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-  auth: { 
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-  db: { 
-    schema: 'public' 
-  },
-});
+// Helper to ensure client is available
+export function requireSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    throw new Error(
+      '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
+      'Set these in .env.local for development or Railway for production.'
+    );
+  }
+  return supabaseAdmin;
+}
 
 /**
  * Type definitions for waitlist

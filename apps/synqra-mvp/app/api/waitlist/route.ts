@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 /**
  * ============================================================
@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     }
 
     // Insert into database
+    const supabaseAdmin = requireSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('waitlist')
       .insert([{ 
@@ -98,6 +99,7 @@ export async function POST(req: Request) {
  */
 export async function GET() {
   try {
+    const supabaseAdmin = requireSupabaseAdmin();
     const { count, error } = await supabaseAdmin
       .from('waitlist')
       .select('*', { count: 'exact', head: true });
