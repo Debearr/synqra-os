@@ -20,3 +20,11 @@ export { LuxGridTag, default as Tag } from "./Tag";
 
 // Re-export color system for convenience
 export { luxgridColors } from "@/lib/luxgrid/colors";
+
+// Placeholder exports for components in development
+// These will be implemented in future iterations
+export { LuxGridLogo } from "./placeholders/Logo";
+export { LuxGridBarcode } from "./placeholders/Barcode";
+export { LuxGridEndCard } from "./placeholders/EndCard";
+export { LuxGridCTAButton } from "./placeholders/CTAButton";
+export { LuxGridCard } from "./placeholders/Card";

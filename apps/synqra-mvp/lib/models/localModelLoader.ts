@@ -338,8 +338,8 @@ async function runAPIInference<T>(
   // Delegate to existing API clients
   if (config.id.includes("claude")) {
     // Use existing Claude integration
-    const { anthropic } = await import("../agents/base/config");
     // TODO: Integrate with existing agent system
+    // const { anthropic } = await import("../agents/base/config");
   }
 
   // For now, mock

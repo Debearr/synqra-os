@@ -28,12 +28,12 @@ function ColorSwatch({ name, value }: { name: string; value: string }) {
 
 export default function LuxgridColorSystem() {
   const colors = [
-    { name: "primaryBlack", value: luxgridColors.primaryBlack },
-    { name: "goldAccent", value: luxgridColors.goldAccent },
-    { name: "emeraldAccent", value: luxgridColors.emeraldAccent },
-    { name: "pureWhite", value: luxgridColors.pureWhite },
-    { name: "futureAccentA", value: luxgridColors.futureAccentA },
-    { name: "futureAccentB", value: luxgridColors.futureAccentB },
+    { name: "primaryBlack", value: luxgridColors.primaryBlack.hex || "#000000" },
+    { name: "goldAccent", value: luxgridColors.goldAccent.hex || "#D4AF37" },
+    { name: "emeraldAccent", value: luxgridColors.emeraldAccent.hex || "#00D9A3" },
+    { name: "pureWhite", value: luxgridColors.pureWhite.hex || "#FFFFFF" },
+    { name: "futureAccentA", value: luxgridColors.futureAccentA.hex || "#666666" },
+    { name: "futureAccentB", value: luxgridColors.futureAccentB.hex || "#999999" },
   ];
 
   return (

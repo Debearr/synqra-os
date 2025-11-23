@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "deployment-config-standard",
+      "description": "Use nixpacks.toml exclusively for Railway deployments",
+      "patterns": ["*"],
+      "condition": {
+        "anyFileMatches": ["railway.json", "Dockerfile", ".dockerignore"]
+      },
+      "response": {
+        "action": "delete",
+        "message": "🚨 Found legacy deployment config. Use nixpacks.toml instead. Delete this file?",
+        "replaceWith": "# Configuration moved to nixpacks.toml"
+      }
+    },
+    {
+      "name": "node-version-enforcement",
+      "description": "Ensure Node.js 20 is specified everywhere",
+      "patterns": ["nixpacks.toml", "package.json", ".nvmrc"],
+      "condition": {
+        "fileContentMatches": ["nodejs_18", "\"node\": \"18", "18\\."]
+      },
+      "response": {
+        "action": "replace",
+        "message": "❌ Node 18 detected - must use Node 20",
+        "replaceWith": "nodejs_20"
+      }
+    },
+    {
+      "name": "start-script-standard",
+      "description": "Next.js start script must use Railway PORT binding",
+      "patterns": ["package.json"],
+      "condition": {
+        "fileContentMatches": ["\"start\":", "next start"]
+      },
+      "response": {
+        "action": "replace", 
+        "message": "Start script missing Railway PORT configuration",
+        "replaceWith": "\"start\": \"next start -p ${PORT:-3000} --hostname 0.0.0.0\""
+      }
+    },
+    {
+      "name": "monorepo-context-awareness",
+      "description": "Ensure commands run in correct app directory",
+      "patterns": ["*"],
+      "condition": {
+        "commandMatches": ["npm run", "pnpm run", "next dev"]
+      },
+      "response": {
+        "action": "suggest",
+        "message": "⚠️  Are you in the correct app directory? Use: cd apps/syngra-mvp"
+      }
+    },
+    {
+      "name": "main-branch-protection", 
+      "description": "Prevent overriding stable main branch code",
+      "patterns": ["*"],
+      "condition": {
+        "branch": "main"
+      },
+      "response": {
+        "action": "confirm",
+        "message": "🚨 You're modifying main branch. Create a feature branch instead?"
+      }
+    }
+  ]
+}

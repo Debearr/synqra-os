@@ -1,0 +1,12 @@
+# RAILWAY DEPLOYMENT TEMPLATE - NODE 20 REQUIRED
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm run build"]
+
+[start]
+cmd = "next start -p ${PORT:-3000} --hostname 0.0.0.0"

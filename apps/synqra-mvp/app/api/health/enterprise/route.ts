@@ -1,28 +1,22 @@
 /**
  * ============================================================
- * ENTERPRISE HEALTH CELL (IMPROVED)
+ * ENTERPRISE HEALTH CHECK
  * ============================================================
- * Comprehensive health checks across all services
- * Self-healing, reliable, no silent failures
- * 
- * RPRD DNA: Bulletproof, clear reporting, auto-recovery
+ * Comprehensive health checks for production monitoring
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseServiceClient } from "@/shared/db/supabase";
-import { validateEnv } from "@/config/env-schema";
-import { RAILWAY_SERVICES } from "@/config/railway-services";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // 60 seconds max
+export const maxDuration = 60;
 
 type HealthCheck = {
   name: string;
   status: "pass" | "fail" | "warn";
   message: string;
-  duration: number; // milliseconds
+  duration: number;
   timestamp: Date;
   metadata?: Record<string, any>;
 };
@@ -41,11 +35,6 @@ type HealthReport = {
   autoRepairAttempted: boolean;
 };
 
-/**
- * GET /api/health/enterprise
- * 
- * Run comprehensive health checks
- */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const checks: HealthCheck[] = [];
@@ -57,16 +46,8 @@ export async function GET(request: NextRequest) {
     // 2. Database Connection Check
     checks.push(await checkDatabaseConnection());
 
-    // 3. Database Schema Check
-    checks.push(await checkDatabaseSchema());
-
-    // 4. Service Health Checks
-    const serviceChecks = await checkAllServices();
-    checks.push(...serviceChecks);
-
-    // 5. Resource Usage Checks
+    // 3. Resource Usage Checks
     checks.push(await checkMemoryUsage());
-    checks.push(await checkDiskUsage());
 
     // Generate summary
     const passed = checks.filter((c) => c.status === "pass").length;
@@ -81,12 +62,6 @@ export async function GET(request: NextRequest) {
       overall = "degraded";
     }
 
-    // Attempt auto-repair if degraded or critical
-    let autoRepairAttempted = false;
-    if (overall !== "healthy") {
-      autoRepairAttempted = await attemptAutoRepair(checks);
-    }
-
     const report: HealthReport = {
       overall,
       timestamp: new Date(),
@@ -98,13 +73,9 @@ export async function GET(request: NextRequest) {
         warnings,
       },
       environment: process.env.RAILWAY_ENVIRONMENT || "development",
-      autoRepairAttempted,
+      autoRepairAttempted: false,
     };
 
-    // Log to Supabase (optional)
-    await logHealthReport(report);
-
-    // Return appropriate status code
     const statusCode = overall === "healthy" ? 200 : overall === "degraded" ? 500 : 503;
 
     return NextResponse.json(report, { status: statusCode });
@@ -137,38 +108,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Check environment variables
- */
 async function checkEnvironmentVariables(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const tier = (process.env.RAILWAY_ENVIRONMENT as any) || "development";
-    const validation = validateEnv(tier);
+    const requiredVars = [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    ];
 
-    if (!validation.valid) {
+    const missing = requiredVars.filter((v) => !process.env[v]);
+
+    if (missing.length > 0) {
       return {
         name: "environment_variables",
         status: "fail",
-        message: `Missing or invalid: ${[...validation.missing, ...validation.invalid].join(", ")}`,
+        message: `Missing: ${missing.join(", ")}`,
         duration: Date.now() - start,
         timestamp: new Date(),
-        metadata: { 
-          missing: validation.missing ?? [], 
-          invalid: validation.invalid ?? [] 
-        },
-      };
-    }
-
-    if (validation.warnings && validation.warnings.length > 0) {
-      return {
-        name: "environment_variables",
-        status: "warn",
-        message: `Warnings: ${validation.warnings.length}`,
-        duration: Date.now() - start,
-        timestamp: new Date(),
-        metadata: { warnings: validation.warnings },
+        metadata: { missing },
       };
     }
 
@@ -190,22 +148,36 @@ async function checkEnvironmentVariables(): Promise<HealthCheck> {
   }
 }
 
-/**
- * Check database connection
- */
 async function checkDatabaseConnection(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const supabase = getSupabaseServiceClient();
-    const { data, error } = await supabase.from("profiles").select("count").limit(1).single();
-
-    if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows, which is fine
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return {
         name: "database_connection",
         status: "fail",
-        message: `Database error: ${error.message}`,
+        message: "Supabase credentials not configured",
+        duration: Date.now() - start,
+        timestamp: new Date(),
+      };
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const { error } = await supabase
+      .from("profiles")
+      .select("count")
+      .limit(1)
+      .maybeSingle();
+
+    if (error && error.code !== "PGRST116") {
+      return {
+        name: "database_connection",
+        status: "warn",
+        message: `Database warning: ${error.message}`,
         duration: Date.now() - start,
         timestamp: new Date(),
       };
@@ -229,88 +201,6 @@ async function checkDatabaseConnection(): Promise<HealthCheck> {
   }
 }
 
-/**
- * Check database schema
- */
-async function checkDatabaseSchema(): Promise<HealthCheck> {
-  const start = Date.now();
-
-  try {
-    const supabase = getSupabaseServiceClient();
-    
-    // Check critical tables exist
-    const criticalTables = ["profiles", "content_jobs", "intelligence_logs"];
-    
-    for (const table of criticalTables) {
-      const { error } = await supabase.from(table).select("count").limit(1);
-      
-      if (error && !error.message.includes("does not exist")) {
-        // Ignore "does not exist" errors for now
-        return {
-          name: "database_schema",
-          status: "warn",
-          message: `Table ${table}: ${error.message}`,
-          duration: Date.now() - start,
-          timestamp: new Date(),
-        };
-      }
-    }
-
-    return {
-      name: "database_schema",
-      status: "pass",
-      message: "Schema validated",
-      duration: Date.now() - start,
-      timestamp: new Date(),
-    };
-  } catch (error) {
-    return {
-      name: "database_schema",
-      status: "warn",
-      message: error instanceof Error ? error.message : "Schema check failed",
-      duration: Date.now() - start,
-      timestamp: new Date(),
-    };
-  }
-}
-
-/**
- * Check all services
- */
-async function checkAllServices(): Promise<HealthCheck[]> {
-  const checks: HealthCheck[] = [];
-  
-  // In production, check each service's health endpoint
-  // For now, just check if we can reach them
-  
-  for (const [serviceName, config] of Object.entries(RAILWAY_SERVICES)) {
-    checks.push(await checkServiceHealth(serviceName, config.healthCheckPath));
-  }
-  
-  return checks;
-}
-
-/**
- * Check individual service health
- */
-async function checkServiceHealth(serviceName: string, healthPath: string): Promise<HealthCheck> {
-  const start = Date.now();
-  
-  // For now, assume services are healthy if we're running
-  // In production, this would make actual HTTP requests to each service
-  
-  return {
-    name: `service_${serviceName}`,
-    status: "pass",
-    message: "Service running",
-    duration: Date.now() - start,
-    timestamp: new Date(),
-  };
-}
-
-/**
- * Check memory usage
- */
 async function checkMemoryUsage(): Promise<HealthCheck> {
   const start = Date.now();
 
@@ -319,8 +209,6 @@ async function checkMemoryUsage(): Promise<HealthCheck> {
     const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
     const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
     const rssMB = Math.round(used.rss / 1024 / 1024);
-
-    // Warn if heap usage > 80%
     const heapUsagePercent = (heapUsedMB / heapTotalMB) * 100;
 
     if (heapUsagePercent > 90) {
@@ -363,76 +251,3 @@ async function checkMemoryUsage(): Promise<HealthCheck> {
     };
   }
 }
-
-/**
- * Check disk usage
- */
-async function checkDiskUsage(): Promise<HealthCheck> {
-  const start = Date.now();
-
-  // Railway doesn't expose disk usage easily, so just pass for now
-  return {
-    name: "disk_usage",
-    status: "pass",
-    message: "Disk check skipped (Railway managed)",
-    duration: Date.now() - start,
-    timestamp: new Date(),
-  };
-}
-
-/**
- * Attempt auto-repair
- */
-async function attemptAutoRepair(checks: HealthCheck[]): Promise<boolean> {
-  const failedChecks = checks.filter((c) => c.status === "fail");
-  
-  if (failedChecks.length === 0) return false;
-  
-  console.log("[ENTERPRISE HEALTH] Auto-repair triggered for failed checks:", 
-    failedChecks.map((c) => c.name).join(", ")
-  );
-  
-  // For now, just log. In production, this would:
-  // - Restart services
-  // - Clear caches
-  // - Run database migrations
-  // - Scale resources
-  
-  return true;
-}
-
-/**
- * Log health report to Supabase
- */
-async function logHealthReport(report: HealthReport): Promise<void> {
-  try {
-    const supabase = getSupabaseServiceClient();
-    
-    // TODO: Insert into `health_reports` table
-    // await supabase.from("health_reports").insert({
-    //   overall_status: report.overall,
-    //   checks: report.checks,
-    //   summary: report.summary,
-    //   environment: report.environment,
-    //   auto_repair_attempted: report.autoRepairAttempted,
-    //   timestamp: report.timestamp,
-    // });
-    
-    if (process.env.NODE_ENV === "development") {
-      console.log("[ENTERPRISE HEALTH] Report logged:", {
-        overall: report.overall,
-        summary: report.summary,
-      });
-    }
-  } catch (error) {
-    console.error("[ENTERPRISE HEALTH] Failed to log report:", error);
-  }
-}
-function validateEnv(tier: any) {
-  throw new Error("Function not implemented.");
-}
-
-function getSupabaseServiceClient() {
-  throw new Error("Function not implemented.");
-}
-

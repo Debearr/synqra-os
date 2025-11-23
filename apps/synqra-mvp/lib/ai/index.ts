@@ -34,9 +34,9 @@ export {
 } from './cost';
 
 // Compression
-export { 
-  compressInput, 
-  reduceContext, 
+export {
+  compressInput as compressInputFromCompression,
+  reduceContext,
   smartSummarize,
   precompressInput,
   batchCompress,
@@ -91,9 +91,8 @@ export type { Recipe, RecipeExecution } from './recipes';
 export {
   classifyTask,
   optimizeModelSelection,
-  compressInput,
+  compressInput as compressInputForCostOptimizer,
   detectBatchableTasks,
-  generateCostReport,
   getBrandProfileCacheKey,
   getArchetypeCacheKey,
   detectWaste,

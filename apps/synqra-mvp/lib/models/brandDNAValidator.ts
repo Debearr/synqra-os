@@ -171,7 +171,12 @@ export async function checkBrandConsistencyWithVision(
     // For now, return text-based check as fallback
     // In production, would compare embeddings against brand reference library
     if (typeof outputImageOrText === "string") {
-      return await checkBrandConsistency(outputImageOrText, brandId);
+      const textCheck = await checkBrandConsistency(outputImageOrText, brandId);
+      return {
+        score: textCheck.score,
+        styleMatch: textCheck.score, // Use score as styleMatch for text
+        recommendation: textCheck.recommendation,
+      };
     }
     
     // For images, use heuristic scoring
@@ -182,9 +187,14 @@ export async function checkBrandConsistencyWithVision(
     };
   } catch (error) {
     console.error("OpenCLIP check failed, falling back to text analysis");
-    
+
     if (typeof outputImageOrText === "string") {
-      return await checkBrandConsistency(outputImageOrText, brandId);
+      const textCheck = await checkBrandConsistency(outputImageOrText, brandId);
+      return {
+        score: textCheck.score,
+        styleMatch: textCheck.score,
+        recommendation: textCheck.recommendation,
+      };
     }
     
     return {

@@ -1,0 +1,150 @@
+# SYNQRA-OS AUTO-REPAIR RULES
+# Automatic error detection and repair system for CI/CD pipeline
+
+name: "Synqra Auto-Repair System"
+version: "1.0.0"
+enabled: true
+
+# Triggers - when to activate auto-repair
+triggers:
+  - event: "build_failure"
+    sources: ["railway", "github_actions", "local"]
+  - event: "deploy_failure"
+    sources: ["railway"]
+  - event: "commit_hook"
+    sources: ["pre-commit", "pre-push"]
+
+# Error patterns and their automatic fixes
+repair_rules:
+  # TypeScript compilation errors
+  - pattern: "duplicate identifier"
+    description: "Duplicate export or variable names"
+    action:
+      type: "code_fix"
+      strategy: "rename_or_remove_duplicates"
+      validation: "run_type_check"
+
+  - pattern: "Module not found|Cannot resolve"
+    description: "Missing module imports"
+    action:
+      type: "dependency_fix"
+      strategy: "check_and_install_dependencies"
+      validation: "verify_imports"
+
+  - pattern: "Property .* does not exist"
+    description: "Type mismatches and missing properties"
+    action:
+      type: "type_fix"
+      strategy: "add_type_assertions"
+      validation: "run_type_check"
+
+  - pattern: "Expected a semicolon|Syntax Error"
+    description: "Syntax errors in code"
+    action:
+      type: "syntax_fix"
+      strategy: "auto_format_and_lint"
+      validation: "run_linter"
+
+  # Build-specific errors
+  - pattern: "Failed to compile"
+    description: "General compilation failures"
+    action:
+      type: "diagnose_and_repair"
+      steps:
+        - "identify_error_source_file"
+        - "apply_minimal_fix"
+        - "run_build_again"
+      validation: "full_build"
+
+  # Dependency errors
+  - pattern: "PNPM_RECURSIVE_RUN_FIRST_FAIL"
+    description: "pnpm build failures"
+    action:
+      type: "rebuild_strategy"
+      steps:
+        - "clean_node_modules"
+        - "regenerate_lockfile"
+        - "reinstall_dependencies"
+      validation: "pnpm_build"
+
+# Auto-fix behaviors
+behaviors:
+  max_attempts: 3
+  fail_fast: false
+  create_backup: true
+  auto_commit: true
+  commit_message_template: "auto-fix(build): repair ${error_type} in ${file_path}"
+  notify_on_success: true
+  notify_on_failure: true
+
+# Safety guardrails
+safety:
+  require_tests_pass: false  # Initially false, enable after test setup
+  require_manual_review: false
+  rollback_on_failure: true
+  protected_files:
+    - "package.json"
+    - "pnpm-workspace.yaml"
+    - ".env"
+    - "supabase/migrations/**"
+
+# Logging and monitoring
+logging:
+  level: "info"
+  output:
+    - "console"
+    - "file:.cursor/auto-repair.log"
+  capture_diffs: true
+  track_metrics: true
+
+# Integration settings
+integrations:
+  railway:
+    enabled: true
+    webhook_url: "${RAILWAY_WEBHOOK_URL}"
+    auto_redeploy: true
+
+  github:
+    enabled: true
+    create_issues: false  # Don't spam issues
+    add_labels: ["auto-fixed", "build"]
+
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+
+# Repair workflow
+workflow:
+  on_build_failure:
+    1_diagnose:
+      - "parse_error_output"
+      - "identify_root_cause"
+      - "determine_fix_strategy"
+
+    2_repair:
+      - "create_backup_branch"
+      - "apply_automated_fix"
+      - "validate_fix"
+
+    3_verify:
+      - "run_full_build"
+      - "check_no_regressions"
+      - "confirm_deployment_ready"
+
+    4_commit:
+      - "git_add_changes"
+      - "git_commit_with_template"
+      - "git_push_to_main"
+
+    5_monitor:
+      - "watch_deployment"
+      - "verify_health_endpoint"
+      - "report_success_or_failure"
+
+# Success criteria
+success_criteria:
+  - build_passes: true
+  - type_check_passes: true
+  - no_new_warnings: true
+  - deployment_healthy: true
+  - health_endpoint_returns_200: true

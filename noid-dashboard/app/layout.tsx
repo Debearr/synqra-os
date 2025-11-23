@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "Orchestrate your entire social presence from one intelligent dashboard. Predictive scheduling, AuraFX voice modeling, and concierge-level automation for LinkedIn, Twitter, and beyond. Built by NØID Labs.",
   keywords: "social media dashboard, executive social media, LinkedIn automation, Twitter scheduling, brand voice consistency, social media management, CEO content tools, NØID Labs",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logos/synqra-icon.svg",
   },
   openGraph: {
     title: "Synqra Dashboard — Executive Social Command Center",

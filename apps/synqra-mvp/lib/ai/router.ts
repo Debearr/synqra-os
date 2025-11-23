@@ -112,7 +112,7 @@ export async function route(task: AITask): Promise<RoutingDecision> {
   );
 
   // Step 5: Estimate cost BEFORE execution
-  const tokenLimit = TOKEN_LIMITS[selectedModel];
+  const tokenLimit = TOKEN_LIMITS[selectedModel as keyof typeof TOKEN_LIMITS] || 350;
   const estimatedTokens = {
     input: Math.min(Math.ceil(processedInput.length / 4), tokenLimit * 0.7),
     output: Math.ceil(tokenLimit * 0.3),
@@ -247,7 +247,7 @@ export async function executeTask(task: AITask): Promise<any> {
       
       case 'execute':
         // Main model execution
-        response = await callModel(model as ModelProvider, response || task.input, task.systemPrompt, TOKEN_LIMITS[model as ModelProvider]);
+        response = await callModel(model as ModelProvider, response || task.input, task.systemPrompt, TOKEN_LIMITS[model as keyof typeof TOKEN_LIMITS] || 350);
         break;
       
       case 'validate':

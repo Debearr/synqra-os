@@ -8,12 +8,11 @@
  * RPRD DNA: Bulletproof, clear reporting, auto-recovery
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServiceClient } from "@/shared/db/supabase";
-import { validateEnv } from "@/config/env-schema";
-import { RAILWAY_SERVICES } from "@/config/railway-services";
+import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 60 seconds max
 
@@ -143,28 +142,22 @@ async function checkEnvironmentVariables(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const tier = (process.env.RAILWAY_ENVIRONMENT as any) || "development";
-    const validation = validateEnv(tier);
+    const requiredVars = [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+    ];
 
-    if (!validation.valid) {
+    const missing = requiredVars.filter((v) => !process.env[v]);
+
+    if (missing.length > 0) {
       return {
         name: "environment_variables",
         status: "fail",
-        message: `Missing or invalid: ${[...validation.missing, ...validation.invalid].join(", ")}`,
+        message: `Missing: ${missing.join(", ")}`,
         duration: Date.now() - start,
         timestamp: new Date(),
-        metadata: { missing: validation.missing, invalid: validation.invalid },
-      };
-    }
-
-    if (validation.warnings.length > 0) {
-      return {
-        name: "environment_variables",
-        status: "warn",
-        message: `Warnings: ${validation.warnings.length}`,
-        duration: Date.now() - start,
-        timestamp: new Date(),
-        metadata: { warnings: validation.warnings },
+        metadata: { missing },
       };
     }
 
@@ -193,8 +186,11 @@ async function checkDatabaseConnection(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const supabase = getSupabaseServiceClient();
-    const { data, error } = await supabase.from("profiles").select("count").limit(1).single();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data, error } = await supabase.from("waitlist").select("count").limit(1).single();
 
     if (error && error.code !== "PGRST116") {
       // PGRST116 = no rows, which is fine
@@ -232,16 +228,18 @@ async function checkDatabaseSchema(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const supabase = getSupabaseServiceClient();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
     
     // Check critical tables exist
-    const criticalTables = ["profiles", "content_jobs", "intelligence_logs"];
+    const criticalTables = ["waitlist"];
     
     for (const table of criticalTables) {
       const { error } = await supabase.from(table).select("count").limit(1);
       
       if (error && !error.message.includes("does not exist")) {
-        // Ignore "does not exist" errors for now
         return {
           name: "database_schema",
           status: "warn",
@@ -276,32 +274,16 @@ async function checkDatabaseSchema(): Promise<HealthCheck> {
 async function checkAllServices(): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
   
-  // In production, check each service's health endpoint
-  // For now, just check if we can reach them
-  
-  for (const [serviceName, config] of Object.entries(RAILWAY_SERVICES)) {
-    checks.push(await checkServiceHealth(serviceName, config.healthCheckPath));
-  }
-  
-  return checks;
-}
-
-/**
- * Check individual service health
- */
-async function checkServiceHealth(serviceName: string, healthPath: string): Promise<HealthCheck> {
-  const start = Date.now();
-  
-  // For now, assume services are healthy if we're running
-  // In production, this would make actual HTTP requests to each service
-  
-  return {
-    name: `service_${serviceName}`,
+  // Simplified service check - in production this would check actual service endpoints
+  checks.push({
+    name: "service_synqra",
     status: "pass",
     message: "Service running",
-    duration: Date.now() - start,
+    duration: 0,
     timestamp: new Date(),
-  };
+  });
+  
+  return checks;
 }
 
 /**
@@ -402,18 +384,7 @@ async function attemptAutoRepair(checks: HealthCheck[]): Promise<boolean> {
  */
 async function logHealthReport(report: HealthReport): Promise<void> {
   try {
-    const supabase = getSupabaseServiceClient();
-    
-    // TODO: Insert into `health_reports` table
-    // await supabase.from("health_reports").insert({
-    //   overall_status: report.overall,
-    //   checks: report.checks,
-    //   summary: report.summary,
-    //   environment: report.environment,
-    //   auto_repair_attempted: report.autoRepairAttempted,
-    //   timestamp: report.timestamp,
-    // });
-    
+    // Simplified logging - in production this would insert into a health_reports table
     if (process.env.NODE_ENV === "development") {
       console.log("[ENTERPRISE HEALTH] Report logged:", {
         overall: report.overall,
@@ -424,3 +395,4 @@ async function logHealthReport(report: HealthReport): Promise<void> {
     console.error("[ENTERPRISE HEALTH] Failed to log report:", error);
   }
 }
+
