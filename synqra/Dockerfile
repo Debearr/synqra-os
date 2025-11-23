@@ -1,3 +1,4 @@
+# Railway deployment - updated 2025-11-23 13:30:00 UTC
 FROM node:20-alpine AS base
 
 # Install pnpm
