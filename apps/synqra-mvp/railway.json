@@ -1,4 +1,9 @@
 {
-  "build": "pnpm --prefix apps/synqra-mvp run build",
-  "start": "pnpm --prefix apps/synqra-mvp run start"
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "command": "pnpm install --frozen-lockfile && pnpm run build"
+  },
+  "start": {
+    "command": "pnpm run start"
+  }
 }
