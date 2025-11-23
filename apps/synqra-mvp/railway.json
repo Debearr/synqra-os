@@ -1,6 +1,4 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": "pnpm --prefix apps/synqra-mvp build",
-  "start": "pnpm --prefix apps/synqra-mvp start",
-  "install": "pnpm --prefix apps/synqra-mvp install"
+  "build": "pnpm --prefix apps/synqra-mvp run build",
+  "start": "pnpm --prefix apps/synqra-mvp run start"
 }
