@@ -1,0 +1,71 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "pnpm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[healthcheck]
+path = "/api/health"
+timeout = 10
+interval = 30
+```
+
+4. Save (Ctrl+S)
+
+---
+
+### **FILE 3: .dockerignore**
+
+1. New File
+2. Name: `.dockerignore`
+3. Paste:
+```
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+.next
+out
+dist
+build
+
+.git
+.gitignore
+.env.local
+.env.development
+.env.test
+
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+.DS_Store
+Thumbs.db
+
+coverage
+.nyc_output
+
+logs
+*.log
+
+.vercel
+.railway
+```
+
+4. Save
+
+---
+
+### **FILE 4: .nvmrc**
+
+1. New File
+2. Name: `.nvmrc`
+3. Paste just this:
+```
+20.11.0

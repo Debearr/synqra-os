@@ -8,8 +8,7 @@ cmds = [
   "pnpm install --no-frozen-lockfile"
 ]
 
-[phases.build]
-cmds = ["pnpm run build"]
+[phases.build]90- = ["pnpm run build"]
 
 [start]
 cmd = "pnpm run start"
