@@ -327,3 +327,32 @@ export * from "./engagement-agent/spam-filter";
 export * from "./engagement-agent/reply-generator";
 export * from "./engagement-agent/product-router";
 
+// ============================================================
+// NØID GUARDRAIL SYSTEM
+// ============================================================
+
+export {
+  NoidGuardrailSystem,
+  createGuardrailSystem,
+  quickGuardrailCheck,
+  type ProjectName,
+  type GuardrailConfig,
+  type GuardrailCheckResult,
+  type GuardrailViolation,
+  type GuardrailCategory,
+  type GuardrailLevel,
+  type BudgetGuardrailRules,
+  type SafetyGuardrailRules,
+  type PrivacyGuardrailRules,
+  type BrandGuardrailRules,
+  type RateLimitGuardrailRules,
+  type IsolationGuardrailRules,
+} from "./guardrails/noid-guardrail-system";
+
+export {
+  withGuardrails,
+  Guarded,
+  guardrailMiddleware,
+  checkGuardrails,
+} from "./guardrails/middleware";
+
