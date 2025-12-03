@@ -11,7 +11,7 @@
 - [ ] **Builder**: Nixpacks (not Docker)
 - [ ] **Node Version**: 20.x
 - [ ] **Port Binding**: ${PORT} variable
-- [ ] **Monorepo Path**: apps/syngra-mvp
+- [ ] **Monorepo Path**: apps/synqra-mvp
 
 ## Post-Deployment Check
 - [ ] Build logs show `setup │ pkgs: nodejs_20`
