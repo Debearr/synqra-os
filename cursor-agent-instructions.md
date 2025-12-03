@@ -2,7 +2,7 @@
 
 ## MANDATORY CHECKS BEFORE ANY DEPLOYMENT CHANGE
 1. **Context Validation**
-   - Am I in the correct app directory? (apps/syngra-mvp)
+   - Am I in the correct app directory? (apps/synqra-mvp)
    - Is this the main branch? (suggest feature branch if yes)
    - Are there any legacy deployment configs? (delete if found)
 
