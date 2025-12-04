@@ -3,129 +3,127 @@
  * MARKET INTELLIGENCE ENGINE - NØID LABS
  * ============================================================
  * Autonomous market watching, lead generation, and competitive analysis
- * 
- * Sources (Zero Cost):
- * - Twitter/X (trending topics, influencers, conversations)
- * - LinkedIn (decision makers, company updates, job postings)
- * - Reddit (pain points, sentiment, discussions)
- * - Hacker News (tech trends, launches, debates)
- * - Product Hunt (competitor launches, trends)
- * - GitHub (open source activity, tech stack analysis)
- * - Google Trends (search interest over time)
- * - RSS Feeds (industry blogs, news)
- * 
- * NØID Labs Brand Alignment:
- * - Premium positioning focus
- * - Luxury market signals only
- * - Executive decision-maker targeting
- * - Strategic insights, not noise
- * - Clean, actionable intelligence
+ *
+ * Creator Engine → Intelligence Layer Integration:
+ * - Scrapers collect raw data from public sources
+ * - SignalAnalyzer processes data with AI
+ * - MarketIntelligenceEngine orchestrates and stores insights
+ * - DecisionEngine prioritizes and routes signals
  */
 
 import { getSupabaseClient, logIntelligence } from "../db/supabase";
 import { aiClient } from "../ai/client";
 import { logger } from "../dev/tools";
 import type { App } from "../types";
+import type {
+  MarketSignal,
+  Lead,
+  CompetitorActivity,
+  TrendInsight,
+  ScrapedContent,
+  ScraperOptions,
+} from "./types";
+import {
+  TwitterScraper,
+  LinkedInScraper,
+  RedditScraper,
+  HackerNewsScraper,
+  ProductHuntScraper,
+  GitHubScraper,
+  UnifiedScraper,
+} from "./scrapers";
+import { SignalAnalyzer } from "./signal-analyzer";
+import { deduplicateContent, filterLowQualitySignals, sleep } from "./utils";
+
+// Re-export types for backward compatibility
+export type { MarketSignal, Lead, CompetitorActivity, TrendInsight };
 
 // ============================================================
-// TYPES
+// CONFIGURATION
 // ============================================================
 
-export type SignalSource = 
-  | "twitter" 
-  | "linkedin" 
-  | "reddit" 
-  | "hackernews" 
-  | "producthunt" 
-  | "github"
-  | "google_trends"
-  | "rss";
-
-export type SignalType = 
-  | "trend"           // Emerging trend
-  | "pain_point"      // Customer problem
-  | "competitor"      // Competitor activity
-  | "lead"            // Potential customer
-  | "opportunity"     // Market opportunity
-  | "threat"          // Competitive threat
-  | "insight";        // Strategic insight
-
-export type LeadQuality = "hot" | "warm" | "cold";
-
-export interface MarketSignal {
-  id?: string;
-  app: App;
-  source: SignalSource;
-  type: SignalType;
-  title: string;
-  content: string;
-  url: string;
-  author?: string;
-  author_profile?: string;
-  engagement_score: number; // 0-100 (reach, likes, shares, etc.)
-  relevance_score: number; // 0-100 (how relevant to our business)
-  sentiment: "positive" | "neutral" | "negative";
-  keywords: string[];
-  entities: string[]; // Companies, people, products mentioned
-  actionable: boolean; // Can we act on this?
-  action_items?: string[];
-  metadata?: Record<string, any>;
-  detected_at: string;
-  created_at?: string;
+interface MarketIntelligenceConfig {
+  scanInterval?: number;
+  minRelevanceScore?: number;
+  enableTwitter?: boolean;
+  enableLinkedIn?: boolean;
+  enableReddit?: boolean;
+  enableHackerNews?: boolean;
+  enableProductHunt?: boolean;
+  enableGitHub?: boolean;
 }
 
-export interface Lead {
-  id?: string;
-  app: App;
-  source: SignalSource;
-  quality: LeadQuality;
-  name?: string;
-  company?: string;
-  title?: string;
-  profile_url?: string;
-  contact_email?: string;
-  pain_points: string[];
-  intent_signals: string[];
-  fit_score: number; // 0-100 (how well they match ICP)
-  urgency_score: number; // 0-100 (how urgent their need is)
-  budget_indicator?: string; // Enterprise, SMB, Startup
-  next_action: string;
-  enriched_data?: Record<string, any>;
-  status: "new" | "contacted" | "qualified" | "converted" | "discarded";
-  assigned_to?: string;
-  metadata?: Record<string, any>;
-  created_at?: string;
-}
+const DEFAULT_CONFIG: Required<MarketIntelligenceConfig> = {
+  scanInterval: 3600000, // 1 hour
+  minRelevanceScore: 70,
+  enableTwitter: true,
+  enableLinkedIn: true,
+  enableReddit: true,
+  enableHackerNews: true,
+  enableProductHunt: true,
+  enableGitHub: true,
+};
 
-export interface CompetitorActivity {
-  id?: string;
-  app: App;
-  competitor_name: string;
-  activity_type: "launch" | "funding" | "hiring" | "marketing" | "feature" | "pricing";
-  description: string;
-  impact_level: "high" | "medium" | "low";
-  threat_assessment: string;
-  opportunity_assessment?: string;
-  recommended_response?: string;
-  detected_at: string;
-  created_at?: string;
-}
+// ============================================================
+// SEARCH QUERIES (NØID Brand-Aligned)
+// ============================================================
 
-export interface TrendInsight {
-  id?: string;
-  app: App;
-  trend_name: string;
-  category: string;
-  momentum: "rising" | "stable" | "declining";
-  search_volume_change?: number; // Percentage change
-  relevant_keywords: string[];
-  target_audience: string;
-  opportunity_description: string;
-  recommended_positioning: string;
-  confidence: number; // 0-100
-  detected_at: string;
-  created_at?: string;
-}
+const TWITTER_QUERIES = [
+  // Pain points
+  "need social media automation",
+  "struggling with content creation",
+  "looking for AI marketing tool",
+
+  // Decision makers
+  "CMO looking for",
+  "VP Marketing seeking",
+  "Head of Growth needs",
+
+  // Competitor mentions
+  "alternative to [competitor]",
+  "better than [competitor]",
+
+  // Premium/luxury signals
+  "premium marketing tool",
+  "executive social media",
+  "enterprise content automation",
+];
+
+const LINKEDIN_TARGET_TITLES = [
+  "CMO",
+  "Chief Marketing Officer",
+  "VP Marketing",
+  "Vice President Marketing",
+  "Head of Growth",
+  "Growth Lead",
+  "Director of Marketing",
+  "CEO",
+  "Founder",
+];
+
+const LINKEDIN_TARGET_INDUSTRIES = [
+  "SaaS",
+  "Technology",
+  "Media",
+  "E-commerce",
+  "Professional Services",
+];
+
+const REDDIT_SUBREDDITS = [
+  "marketing",
+  "socialmedia",
+  "entrepreneur",
+  "startups",
+  "SaaS",
+  "growthhacking",
+];
+
+const REDDIT_KEYWORDS = [
+  "social media automation",
+  "content scheduling",
+  "AI marketing",
+  "brand management",
+];
 
 // ============================================================
 // MARKET INTELLIGENCE ENGINE
@@ -133,54 +131,104 @@ export interface TrendInsight {
 
 export class MarketIntelligenceEngine {
   private app: App;
+  private config: Required<MarketIntelligenceConfig>;
   private isRunning: boolean = false;
-  private scanInterval: number = 3600000; // 1 hour (configurable)
+  private scanIntervalId?: NodeJS.Timeout;
 
-  constructor(app: App, options?: { scanInterval?: number }) {
+  // Scrapers
+  private readonly twitter: TwitterScraper;
+  private readonly linkedin: LinkedInScraper;
+  private readonly reddit: RedditScraper;
+  private readonly hackerNews: HackerNewsScraper;
+  private readonly productHunt: ProductHuntScraper;
+  private readonly github: GitHubScraper;
+
+  constructor(app: App, config: MarketIntelligenceConfig = {}) {
     this.app = app;
-    this.scanInterval = options?.scanInterval || 3600000;
+    this.config = { ...DEFAULT_CONFIG, ...config };
+
+    // Initialize scrapers
+    this.twitter = new TwitterScraper();
+    this.linkedin = new LinkedInScraper();
+    this.reddit = new RedditScraper();
+    this.hackerNews = new HackerNewsScraper();
+    this.productHunt = new ProductHuntScraper();
+    this.github = new GitHubScraper();
   }
 
   /**
    * Start continuous market monitoring
    */
   start(): void {
-    if (this.isRunning) return;
+    if (this.isRunning) {
+      logger.warn(`Market intelligence already running for ${this.app}`);
+      return;
+    }
+
     this.isRunning = true;
     logger.info(`Market intelligence engine started for ${this.app}`);
-    this.runScans();
+
+    // Run immediately
+    this.runFullScan();
+
+    // Schedule recurring scans
+    this.scanIntervalId = setInterval(() => {
+      this.runFullScan();
+    }, this.config.scanInterval);
   }
 
   /**
    * Stop monitoring
    */
   stop(): void {
+    if (this.scanIntervalId) {
+      clearInterval(this.scanIntervalId);
+      this.scanIntervalId = undefined;
+    }
+
     this.isRunning = false;
     logger.info(`Market intelligence engine stopped for ${this.app}`);
   }
 
   /**
-   * Run all intelligence scans
+   * Run full intelligence scan across all enabled sources
    */
-  private async runScans(): Promise<void> {
-    while (this.isRunning) {
-      try {
-        logger.info("Running market intelligence scan...");
+  private async runFullScan(): Promise<void> {
+    if (!this.isRunning) return;
 
-        await Promise.all([
-          this.scanTwitter(),
-          this.scanLinkedIn(),
-          this.scanReddit(),
-          this.scanHackerNews(),
-          this.scanProductHunt(),
-          this.scanGitHub(),
-        ]);
+    logger.info("Running full market intelligence scan...");
+    const startTime = Date.now();
 
-        await this.sleep(this.scanInterval);
-      } catch (error) {
-        logger.error("Market scan error:", error);
-        await this.sleep(this.scanInterval);
-      }
+    try {
+      const scanPromises: Promise<void>[] = [];
+
+      if (this.config.enableTwitter) scanPromises.push(this.scanTwitter());
+      if (this.config.enableLinkedIn) scanPromises.push(this.scanLinkedIn());
+      if (this.config.enableReddit) scanPromises.push(this.scanReddit());
+      if (this.config.enableHackerNews) scanPromises.push(this.scanHackerNews());
+      if (this.config.enableProductHunt) scanPromises.push(this.scanProductHunt());
+      if (this.config.enableGitHub) scanPromises.push(this.scanGitHub());
+
+      await Promise.allSettled(scanPromises);
+
+      const duration = Date.now() - startTime;
+      logger.info(`Market scan completed in ${duration}ms`);
+
+      await logIntelligence({
+        app: this.app,
+        operation: "market_scan",
+        success: true,
+        metadata: { duration, sources: scanPromises.length },
+      });
+    } catch (error) {
+      logger.error("Market scan failed", { error });
+
+      await logIntelligence({
+        app: this.app,
+        operation: "market_scan",
+        success: false,
+        metadata: { error: (error as Error).message },
+      });
     }
   }
 
@@ -190,42 +238,19 @@ export class MarketIntelligenceEngine {
   private async scanTwitter(): Promise<void> {
     logger.debug("Scanning Twitter/X...");
 
-    // Define search queries aligned with NØID brand
-    const queries = [
-      // Pain points
-      "need social media automation",
-      "struggling with content creation",
-      "looking for AI marketing tool",
-      
-      // Decision makers
-      "CMO looking for",
-      "VP Marketing seeking",
-      "Head of Growth needs",
-      
-      // Competitor mentions
-      "alternative to [competitor]",
-      "better than [competitor]",
-      
-      // Premium/luxury signals
-      "premium marketing tool",
-      "executive social media",
-      "enterprise content automation",
-    ];
-
-    for (const query of queries) {
+    for (const query of TWITTER_QUERIES) {
       try {
-        // In production, use Twitter API or web scraping
-        const tweets = await this.fetchTwitter(query);
-        
+        const tweets = await this.twitter.search(query, { limit: 10 });
+
         for (const tweet of tweets) {
-          const signal = await this.analyzeSignal(tweet, "twitter");
-          
-          if (signal.relevance_score >= 70) {
-            await this.processSignal(signal);
+          const signal = await SignalAnalyzer.analyzeSignal(tweet, "twitter", this.app);
+
+          if (signal.relevance_score >= this.config.minRelevanceScore) {
+            await this.storeSignal(signal);
           }
         }
       } catch (error) {
-        logger.error(`Twitter scan error for "${query}":`, error);
+        logger.error(`Twitter scan failed for query: ${query}`, { error });
       }
     }
   }
@@ -236,27 +261,22 @@ export class MarketIntelligenceEngine {
   private async scanLinkedIn(): Promise<void> {
     logger.debug("Scanning LinkedIn...");
 
-    // Focus on executive decision-makers (NØID brand alignment)
-    const targetTitles = [
-      "CMO", "Chief Marketing Officer",
-      "VP Marketing", "Vice President Marketing",
-      "Head of Growth", "Growth Lead",
-      "Director of Marketing",
-      "CEO", "Founder", // Small/medium companies
-    ];
+    for (const title of LINKEDIN_TARGET_TITLES) {
+      try {
+        const profiles = await this.linkedin.searchProfiles(
+          `${title} ${LINKEDIN_TARGET_INDUSTRIES.join(" OR ")}`,
+          { limit: 5 }
+        );
 
-    const targetIndustries = [
-      "SaaS", "Technology", "Media", "E-commerce", "Professional Services"
-    ];
+        for (const profile of profiles) {
+          const lead = await SignalAnalyzer.qualifyLead(profile, "linkedin", this.app);
 
-    // In production, use LinkedIn Sales Navigator or web scraping
-    const profiles = await this.fetchLinkedInProfiles(targetTitles, targetIndustries);
-
-    for (const profile of profiles) {
-      const lead = await this.qualifyLead(profile, "linkedin");
-      
-      if (lead.quality === "hot" || lead.quality === "warm") {
-        await this.saveLead(lead);
+          if (lead.quality === "hot" || lead.quality === "warm") {
+            await this.storeLead(lead);
+          }
+        }
+      } catch (error) {
+        logger.error(`LinkedIn scan failed for title: ${title}`, { error });
       }
     }
   }
@@ -267,33 +287,31 @@ export class MarketIntelligenceEngine {
   private async scanReddit(): Promise<void> {
     logger.debug("Scanning Reddit...");
 
-    // Target subreddits with our ICP (premium, executive focus)
-    const subreddits = [
-      "marketing",
-      "socialmedia",
-      "entrepreneur",
-      "startups",
-      "SaaS",
-      "growthhacking",
-    ];
+    for (const subreddit of REDDIT_SUBREDDITS) {
+      try {
+        const posts = await this.reddit.getTopPosts(subreddit, "week", { limit: 10 });
 
-    const keywords = [
-      "social media automation",
-      "content scheduling",
-      "AI marketing",
-      "brand management",
-    ];
+        // Filter for relevant keywords
+        const relevantPosts = posts.filter((post) =>
+          REDDIT_KEYWORDS.some(
+            (keyword) =>
+              post.title.toLowerCase().includes(keyword.toLowerCase()) ||
+              (post.content && post.content.toLowerCase().includes(keyword.toLowerCase()))
+          )
+        );
 
-    for (const subreddit of subreddits) {
-      const posts = await this.fetchRedditPosts(subreddit, keywords);
-      
-      for (const post of posts) {
-        const signal = await this.analyzeSignal(post, "reddit");
-        
-        // Focus on pain points and opportunities
-        if (signal.type === "pain_point" || signal.type === "opportunity") {
-          await this.processSignal(signal);
+        for (const post of relevantPosts) {
+          const signal = await SignalAnalyzer.analyzeSignal(post, "reddit", this.app);
+
+          if (
+            (signal.type === "pain_point" || signal.type === "opportunity") &&
+            signal.relevance_score >= this.config.minRelevanceScore
+          ) {
+            await this.storeSignal(signal);
+          }
         }
+      } catch (error) {
+        logger.error(`Reddit scan failed for subreddit: ${subreddit}`, { error });
       }
     }
   }
@@ -304,21 +322,27 @@ export class MarketIntelligenceEngine {
   private async scanHackerNews(): Promise<void> {
     logger.debug("Scanning Hacker News...");
 
-    const keywords = [
-      "AI marketing",
-      "social media automation",
-      "content generation",
-      "SaaS launch",
-    ];
+    try {
+      const stories = await this.hackerNews.getTopStories({ limit: 20 });
 
-    const posts = await this.fetchHackerNewsPosts(keywords);
+      const relevantStories = stories.filter((story) =>
+        ["AI", "marketing", "automation", "SaaS", "social media"].some((keyword) =>
+          story.title.toLowerCase().includes(keyword.toLowerCase())
+        )
+      );
 
-    for (const post of posts) {
-      const signal = await this.analyzeSignal(post, "hackernews");
-      
-      if (signal.type === "trend" || signal.type === "competitor") {
-        await this.processSignal(signal);
+      for (const story of relevantStories) {
+        const signal = await SignalAnalyzer.analyzeSignal(story, "hackernews", this.app);
+
+        if (
+          (signal.type === "trend" || signal.type === "competitor") &&
+          signal.relevance_score >= this.config.minRelevanceScore
+        ) {
+          await this.storeSignal(signal);
+        }
       }
+    } catch (error) {
+      logger.error("Hacker News scan failed", { error });
     }
   }
 
@@ -328,23 +352,18 @@ export class MarketIntelligenceEngine {
   private async scanProductHunt(): Promise<void> {
     logger.debug("Scanning Product Hunt...");
 
-    const categories = [
-      "Marketing",
-      "Social Media",
-      "AI",
-      "Automation",
-    ];
+    try {
+      const products = await this.productHunt.getTodayProducts();
 
-    for (const category of categories) {
-      const products = await this.fetchProductHuntLaunches(category);
-      
       for (const product of products) {
-        const activity = await this.analyzeCompetitorActivity(product);
-        
+        const activity = await SignalAnalyzer.analyzeCompetitorActivity(product, this.app);
+
         if (activity.impact_level === "high" || activity.impact_level === "medium") {
-          await this.saveCompetitorActivity(activity);
+          await this.storeCompetitorActivity(activity);
         }
       }
+    } catch (error) {
+      logger.error("Product Hunt scan failed", { error });
     }
   }
 
@@ -354,264 +373,58 @@ export class MarketIntelligenceEngine {
   private async scanGitHub(): Promise<void> {
     logger.debug("Scanning GitHub...");
 
-    // Monitor relevant technologies and frameworks
-    const topics = [
-      "social-media-automation",
-      "content-generation",
-      "marketing-automation",
-    ];
+    const topics = ["social-media-automation", "content-generation", "marketing-automation"];
 
     for (const topic of topics) {
-      const repos = await this.fetchGitHubRepos(topic);
-      
-      for (const repo of repos) {
-        const signal = await this.analyzeSignal(repo, "github");
-        
-        if (signal.type === "trend" || signal.type === "competitor") {
-          await this.processSignal(signal);
+      try {
+        const repos = await this.github.searchRepos(topic, { limit: 10 });
+
+        for (const repo of repos) {
+          const signal = await SignalAnalyzer.analyzeSignal(repo, "github", this.app);
+
+          if (
+            (signal.type === "trend" || signal.type === "competitor") &&
+            signal.relevance_score >= this.config.minRelevanceScore
+          ) {
+            await this.storeSignal(signal);
+          }
         }
+      } catch (error) {
+        logger.error(`GitHub scan failed for topic: ${topic}`, { error });
       }
     }
   }
 
   /**
-   * Analyze signal with AI to extract insights
+   * Store market signal in database
    */
-  private async analyzeSignal(
-    rawData: any,
-    source: SignalSource
-  ): Promise<MarketSignal> {
-    const prompt = `Analyze this ${source} content for market intelligence:
-
-Content: ${JSON.stringify(rawData, null, 2)}
-
-Extract:
-1. Main topic/theme
-2. Signal type (trend, pain_point, competitor, lead, opportunity, threat, insight)
-3. Relevance to premium social media automation/content management (0-100)
-4. Sentiment (positive, neutral, negative)
-5. Key entities (companies, people, products)
-6. Actionable insights
-7. Keywords
-
-Focus on: Executive/premium market, SaaS, content automation, social media management.
-
-Return JSON:
-{
-  "type": "...",
-  "title": "...",
-  "relevance_score": 0-100,
-  "sentiment": "...",
-  "keywords": [...],
-  "entities": [...],
-  "actionable": true/false,
-  "action_items": [...]
-}`;
-
-    try {
-      const result = await aiClient.generate({
-        prompt,
-        taskType: "structural",
-        mode: "polished",
-        maxTokens: 1000,
-      });
-
-      const analysis = JSON.parse(result.content);
-
-      return {
-        app: this.app,
-        source,
-        type: analysis.type,
-        title: analysis.title,
-        content: rawData.text || rawData.content || JSON.stringify(rawData),
-        url: rawData.url || "",
-        author: rawData.author,
-        author_profile: rawData.author_profile,
-        engagement_score: this.calculateEngagement(rawData),
-        relevance_score: analysis.relevance_score,
-        sentiment: analysis.sentiment,
-        keywords: analysis.keywords || [],
-        entities: analysis.entities || [],
-        actionable: analysis.actionable,
-        action_items: analysis.action_items,
-        detected_at: new Date().toISOString(),
-      };
-    } catch (error) {
-      logger.error("Signal analysis error:", error);
-      // Return basic signal without AI analysis
-      return {
-        app: this.app,
-        source,
-        type: "insight",
-        title: rawData.title || "Untitled",
-        content: rawData.text || rawData.content || "",
-        url: rawData.url || "",
-        engagement_score: 0,
-        relevance_score: 50,
-        sentiment: "neutral",
-        keywords: [],
-        entities: [],
-        actionable: false,
-        detected_at: new Date().toISOString(),
-      };
-    }
-  }
-
-  /**
-   * Qualify lead based on profile data
-   */
-  private async qualifyLead(profile: any, source: SignalSource): Promise<Lead> {
-    const prompt = `Qualify this lead for premium social media automation SaaS (Synqra/NØID):
-
-Profile: ${JSON.stringify(profile, null, 2)}
-
-Ideal Customer Profile (ICP):
-- Title: CMO, VP Marketing, Head of Growth, Director Marketing, CEO/Founder (small/medium)
-- Company: SaaS, Tech, Media, E-commerce, 10-500 employees
-- Pain points: Content creation, social media management, brand consistency
-- Budget: $500-5000/month range
-- Signals: Hiring for marketing, fundraising, product launches
-
-Return JSON:
-{
-  "quality": "hot" | "warm" | "cold",
-  "name": "...",
-  "company": "...",
-  "title": "...",
-  "pain_points": [...],
-  "intent_signals": [...],
-  "fit_score": 0-100,
-  "urgency_score": 0-100,
-  "budget_indicator": "Enterprise" | "SMB" | "Startup",
-  "next_action": "..."
-}`;
-
-    try {
-      const result = await aiClient.generate({
-        prompt,
-        taskType: "strategic",
-        mode: "polished",
-        maxTokens: 800,
-      });
-
-      const qualification = JSON.parse(result.content);
-
-      return {
-        app: this.app,
-        source,
-        ...qualification,
-        profile_url: profile.url,
-        status: "new",
-        created_at: new Date().toISOString(),
-      };
-    } catch (error) {
-      logger.error("Lead qualification error:", error);
-      return {
-        app: this.app,
-        source,
-        quality: "cold",
-        pain_points: [],
-        intent_signals: [],
-        fit_score: 0,
-        urgency_score: 0,
-        next_action: "Review manually",
-        status: "new",
-        created_at: new Date().toISOString(),
-      };
-    }
-  }
-
-  /**
-   * Analyze competitor activity
-   */
-  private async analyzeCompetitorActivity(data: any): Promise<CompetitorActivity> {
-    const prompt = `Analyze this competitor activity:
-
-Data: ${JSON.stringify(data, null, 2)}
-
-Our position: Premium social media automation (Synqra/NØID)
-Brand: Luxury street × quiet luxury, executive-focused
-
-Assess:
-1. Activity type (launch, funding, hiring, marketing, feature, pricing)
-2. Impact level (high, medium, low)
-3. Threat to our business
-4. Opportunity we can leverage
-5. Recommended response
-
-Return JSON:
-{
-  "competitor_name": "...",
-  "activity_type": "...",
-  "description": "...",
-  "impact_level": "...",
-  "threat_assessment": "...",
-  "opportunity_assessment": "...",
-  "recommended_response": "..."
-}`;
-
-    try {
-      const result = await aiClient.generate({
-        prompt,
-        taskType: "strategic",
-        mode: "polished",
-        maxTokens: 800,
-      });
-
-      const analysis = JSON.parse(result.content);
-
-      return {
-        app: this.app,
-        ...analysis,
-        detected_at: new Date().toISOString(),
-      };
-    } catch (error) {
-      logger.error("Competitor analysis error:", error);
-      return {
-        app: this.app,
-        competitor_name: data.name || "Unknown",
-        activity_type: "marketing",
-        description: data.description || "",
-        impact_level: "low",
-        threat_assessment: "Unknown",
-        detected_at: new Date().toISOString(),
-      };
-    }
-  }
-
-  /**
-   * Calculate engagement score from raw data
-   */
-  private calculateEngagement(data: any): number {
-    const likes = data.likes || data.upvotes || 0;
-    const comments = data.comments || data.replies || 0;
-    const shares = data.shares || data.retweets || 0;
-    const views = data.views || 0;
-
-    // Weighted scoring
-    const score = (likes * 1) + (comments * 2) + (shares * 3) + (views * 0.01);
-    
-    // Normalize to 0-100
-    return Math.min(100, Math.round(score / 10));
-  }
-
-  /**
-   * Process and store signal
-   */
-  private async processSignal(signal: MarketSignal): Promise<void> {
+  private async storeSignal(signal: MarketSignal): Promise<void> {
     try {
       const supabase = getSupabaseClient();
+
+      // Check for duplicates
+      const { data: existing } = await supabase
+        .from("market_signals")
+        .select("id")
+        .eq("title", signal.title)
+        .eq("source", signal.source)
+        .single();
+
+      if (existing) {
+        logger.debug("Duplicate signal ignored", { title: signal.title });
+        return;
+      }
+
       await supabase.from("market_signals").insert(signal);
 
-      logger.info(`Processed ${signal.type} signal from ${signal.source}`, {
+      logger.info(`Stored ${signal.type} signal from ${signal.source}`, {
         relevance: signal.relevance_score,
         actionable: signal.actionable,
       });
 
-      // Log intelligence
       await logIntelligence({
         app: this.app,
-        operation: "market_intelligence",
+        operation: "signal_stored",
         success: true,
         metadata: {
           source: signal.source,
@@ -620,81 +433,57 @@ Return JSON:
         },
       });
     } catch (error) {
-      logger.error("Failed to process signal:", error);
+      logger.error("Failed to store signal", { error, signal });
     }
   }
 
   /**
-   * Save qualified lead
+   * Store qualified lead in database
    */
-  private async saveLead(lead: Lead): Promise<void> {
+  private async storeLead(lead: Lead): Promise<void> {
     try {
       const supabase = getSupabaseClient();
+
+      // Check for duplicates
+      if (lead.profile_url) {
+        const { data: existing } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("profile_url", lead.profile_url)
+          .single();
+
+        if (existing) {
+          logger.debug("Duplicate lead ignored", { profile: lead.profile_url });
+          return;
+        }
+      }
+
       await supabase.from("leads").insert(lead);
 
-      logger.info(`Saved ${lead.quality} lead from ${lead.source}`, {
+      logger.info(`Stored ${lead.quality} lead from ${lead.source}`, {
         company: lead.company,
         fit: lead.fit_score,
       });
     } catch (error) {
-      logger.error("Failed to save lead:", error);
+      logger.error("Failed to store lead", { error, lead });
     }
   }
 
   /**
-   * Save competitor activity
+   * Store competitor activity in database
    */
-  private async saveCompetitorActivity(activity: CompetitorActivity): Promise<void> {
+  private async storeCompetitorActivity(activity: CompetitorActivity): Promise<void> {
     try {
       const supabase = getSupabaseClient();
       await supabase.from("competitor_activity").insert(activity);
 
-      logger.info(`Logged competitor activity: ${activity.competitor_name}`, {
+      logger.info(`Stored competitor activity: ${activity.competitor_name}`, {
         type: activity.activity_type,
         impact: activity.impact_level,
       });
     } catch (error) {
-      logger.error("Failed to save competitor activity:", error);
+      logger.error("Failed to store competitor activity", { error, activity });
     }
-  }
-
-  // ============================================================
-  // MOCK FETCH FUNCTIONS (Replace with real implementations)
-  // ============================================================
-
-  private async fetchTwitter(query: string): Promise<any[]> {
-    // TODO: Implement Twitter API or web scraping
-    // For now, return empty array
-    return [];
-  }
-
-  private async fetchLinkedInProfiles(titles: string[], industries: string[]): Promise<any[]> {
-    // TODO: Implement LinkedIn scraping (Sales Navigator or web scraping)
-    return [];
-  }
-
-  private async fetchRedditPosts(subreddit: string, keywords: string[]): Promise<any[]> {
-    // TODO: Implement Reddit API
-    return [];
-  }
-
-  private async fetchHackerNewsPosts(keywords: string[]): Promise<any[]> {
-    // TODO: Implement Hacker News API
-    return [];
-  }
-
-  private async fetchProductHuntLaunches(category: string): Promise<any[]> {
-    // TODO: Implement Product Hunt API
-    return [];
-  }
-
-  private async fetchGitHubRepos(topic: string): Promise<any[]> {
-    // TODO: Implement GitHub API
-    return [];
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -794,9 +583,12 @@ Format: Clean markdown, max 300 words.`;
 
 const engines = new Map<App, MarketIntelligenceEngine>();
 
-export function getMarketIntelligence(app: App): MarketIntelligenceEngine {
+export function getMarketIntelligence(
+  app: App,
+  config?: MarketIntelligenceConfig
+): MarketIntelligenceEngine {
   if (!engines.has(app)) {
-    engines.set(app, new MarketIntelligenceEngine(app));
+    engines.set(app, new MarketIntelligenceEngine(app, config));
   }
   return engines.get(app)!;
 }
@@ -804,8 +596,23 @@ export function getMarketIntelligence(app: App): MarketIntelligenceEngine {
 /**
  * Start market intelligence monitoring
  */
-export function startMarketIntelligence(app: App): void {
-  const engine = getMarketIntelligence(app);
+export function startMarketIntelligence(
+  app: App,
+  config?: MarketIntelligenceConfig
+): void {
+  const engine = getMarketIntelligence(app, config);
   engine.start();
   logger.info(`✅ Market intelligence enabled for ${app}`);
+}
+
+/**
+ * Stop market intelligence monitoring
+ */
+export function stopMarketIntelligence(app: App): void {
+  const engine = engines.get(app);
+  if (engine) {
+    engine.stop();
+    engines.delete(app);
+    logger.info(`🛑 Market intelligence disabled for ${app}`);
+  }
 }
