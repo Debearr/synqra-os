@@ -35,7 +35,7 @@ export function NewsletterForm() {
         <span className="text-xs uppercase tracking-[0.3em] text-noid-gray/80">Newsletter + Waitlist</span>
         <h2 className="text-3xl font-semibold text-noid-white">Claim early architect access.</h2>
         <p className="text-sm text-noid-gray/80">
-          Join executives shaping Synqra's future. Get early access, priority onboarding, and direct influence on roadmap priorities.
+          Join executives shaping Synqra{"'"}s future. Get early access, priority onboarding, and direct influence on roadmap priorities.
         </p>
       </div>
 
