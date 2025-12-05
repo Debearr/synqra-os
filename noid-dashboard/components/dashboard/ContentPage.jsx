@@ -11,6 +11,8 @@ import {
   Trash2,
   Copy
 } from 'lucide-react';
+import { Card } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
 
 const ContentPage = () => {
   const [selectedTab, setSelectedTab] = useState('all');
@@ -92,19 +94,19 @@ const ContentPage = () => {
 
       {/* AI Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all cursor-pointer">
+        <Card className="hover:border-noid-gold/30 transition-all cursor-pointer">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-gold rounded-lg">
-            <ImageIcon className="w-6 h-6 text-noid-black" />
+              <ImageIcon className="w-6 h-6 text-noid-black" />
             </div>
             <h3 className="text-lg font-medium text-noid-white">Image Post</h3>
           </div>
           <p className="text-sm text-noid-silver">
             Generate AI-powered image posts with captions optimized for engagement
           </p>
-        </div>
+        </Card>
 
-        <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all cursor-pointer">
+        <Card className="hover:border-noid-gold/30 transition-all cursor-pointer">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-gold rounded-lg">
               <FileText className="w-6 h-6 text-noid-black" />
@@ -114,9 +116,9 @@ const ContentPage = () => {
           <p className="text-sm text-noid-silver">
             Create long-form content with AI research and brand voice consistency
           </p>
-        </div>
+        </Card>
 
-        <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all cursor-pointer">
+        <Card className="hover:border-noid-gold/30 transition-all cursor-pointer">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-gold rounded-lg">
               <Plus className="w-6 h-6 text-noid-black" />
@@ -126,16 +128,25 @@ const ContentPage = () => {
           <p className="text-sm text-noid-silver">
             Generate multiple posts at once for the entire week
           </p>
-        </div>
+        </Card>
       </div>
 
       {/* Content List */}
-      <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
+      <Card className="p-0">
         <div className="p-6 border-b border-noid-charcoal-light">
           <h3 className="text-xl font-display text-noid-white">Content Library</h3>
         </div>
-        <div className="divide-y divide-noid-charcoal-light">
-          {contentItems.map((item) => (
+        {contentItems.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              icon={<FileText className="w-16 h-16" />}
+              title="No content yet"
+              description="Create your first post using AI generation or start from scratch."
+            />
+          </div>
+        ) : (
+          <div className="divide-y divide-noid-charcoal-light">
+            {contentItems.map((item) => (
             <div 
               key={item.id}
               className="p-6 hover:bg-noid-charcoal-light transition-colors"
@@ -186,9 +197,10 @@ const ContentPage = () => {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </DashboardLayout>
   );
 };

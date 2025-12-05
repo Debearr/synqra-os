@@ -8,6 +8,8 @@ import {
   Clock,
   Plus
 } from 'lucide-react';
+import { Card } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
 
 const CalendarPage = () => {
   const [currentView, setCurrentView] = useState('month');
@@ -76,11 +78,11 @@ const CalendarPage = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light overflow-hidden">
+      <Card className="p-0 overflow-hidden">
         {/* Days Header */}
         <div className="grid grid-cols-7 border-b border-noid-charcoal-light">
           {days.map((day) => (
-            <div 
+            <div
               key={day}
               className="p-4 text-center text-sm font-medium text-noid-gold"
             >
@@ -94,7 +96,7 @@ const CalendarPage = () => {
           {calendarDays.map((day, index) => {
             const posts = getPostsForDate(day.fullDate);
             const isCurrentMonth = day.month === 9; // October
-            
+
             return (
               <div
                 key={index}
@@ -103,23 +105,23 @@ const CalendarPage = () => {
                 } ${day.isToday ? 'bg-noid-gold/5' : ''} hover:bg-noid-charcoal-light transition-colors cursor-pointer`}
               >
                 <div className={`text-sm font-medium mb-2 ${
-                  day.isToday 
-                    ? 'text-noid-gold' 
-                    : isCurrentMonth 
-                    ? 'text-noid-white' 
+                  day.isToday
+                    ? 'text-noid-gold'
+                    : isCurrentMonth
+                    ? 'text-noid-white'
                     : 'text-noid-silver/30'
                 }`}>
                   {day.date}
                 </div>
-                
+
                 {/* Posts for this day */}
                 <div className="space-y-1">
                   {posts.map((post, idx) => (
-                    <div 
+                    <div
                       key={idx}
                       className={`p-2 rounded text-xs ${
-                        post.platform === 'Instagram' 
-                          ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' 
+                        post.platform === 'Instagram'
+                          ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
                           : post.platform === 'LinkedIn'
                           ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                           : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
@@ -137,13 +139,20 @@ const CalendarPage = () => {
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* Upcoming Posts Sidebar */}
-      <div className="mt-6 bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6">
+      <Card className="mt-6">
         <h3 className="text-lg font-display text-noid-white mb-4">Next 7 Days</h3>
-        <div className="space-y-3">
-          {scheduledPosts.slice(0, 5).map((post, index) => (
+        {scheduledPosts.length === 0 ? (
+          <EmptyState
+            icon={<Clock className="w-16 h-16" />}
+            title="No scheduled posts"
+            description="Schedule your first post to see it appear on the calendar."
+          />
+        ) : (
+          <div className="space-y-3">
+            {scheduledPosts.slice(0, 5).map((post, index) => (
             <div 
               key={index}
               className="flex items-center gap-4 p-3 bg-noid-black rounded-lg"
@@ -161,9 +170,10 @@ const CalendarPage = () => {
                 <p className="text-sm text-noid-white">{post.content}</p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </DashboardLayout>
   );
 };

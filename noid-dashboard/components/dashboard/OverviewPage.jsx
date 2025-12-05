@@ -10,6 +10,8 @@ import {
   Zap
 } from 'lucide-react';
 import { calculateCampaignLimitCheck } from '@/lib/subscription';
+import { Card } from '@/app/components/ui/Card';
+import { Progress } from '@/app/components/ui/Progress';
 
 const OverviewPage = ({ metrics, usage, tier }) => {
   const safeMetrics = metrics ?? {
@@ -145,7 +147,7 @@ const OverviewPage = ({ metrics, usage, tier }) => {
   return (
     <DashboardLayout activePage="overview">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all hover:shadow-gold-glow">
+        <Card className="hover:border-noid-gold/30 transition-all hover:shadow-gold-glow">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="text-xs uppercase tracking-[0.3em] text-noid-gray/80">Current Tier</span>
@@ -171,50 +173,45 @@ const OverviewPage = ({ metrics, usage, tier }) => {
               {safeUsage.campaignsUsed} used · {campaignsLimitLabel}
             </p>
             {safeUsage.campaignsLimit !== null && (
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-noid-charcoal-light">
-                <div
-                  className="h-full rounded-full bg-gradient-gold transition-all duration-500"
-                  style={{ width: `${usageProgress}%` }}
-                />
-              </div>
+              <Progress value={usageProgress} className="mt-4" />
             )}
             <div className="mt-3 flex items-center justify-between text-xs text-noid-silver/70">
               <span>Remaining: {campaignsRemainingLabel}</span>
               <span>Renews: {renewalLabel}</span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {metricCards.map((metric) => {
           const Icon = metric.icon;
 
           return (
-            <div 
+            <Card
               key={metric.title}
-              className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light hover:border-noid-gold/30 transition-all hover:shadow-gold-glow"
+              className="hover:border-noid-gold/30 transition-all hover:shadow-gold-glow"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 bg-gradient-gold rounded-lg`}>
+                <div className="p-3 bg-gradient-gold rounded-lg">
                   <Icon className="w-6 h-6 text-noid-black" />
                 </div>
               </div>
               <h3 className="text-sm text-noid-silver mb-1">{metric.title}</h3>
               <p className="text-3xl font-bold text-noid-white">{metric.value}</p>
               <p className="mt-2 text-xs text-noid-silver/70">{metric.description}</p>
-            </div>
+            </Card>
           );
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
+        <Card className="lg:col-span-2 p-0">
           <div className="p-6 border-b border-noid-charcoal-light">
             <h3 className="text-xl font-display text-noid-white">Recent Activity</h3>
           </div>
           <div className="p-6 space-y-4">
             {recentActivity.map((activity, index) => (
-              <div 
+              <div
                 key={index}
                 className="flex items-start gap-4 p-4 rounded-lg bg-noid-black hover:bg-noid-charcoal-light transition-colors"
               >
@@ -235,16 +232,16 @@ const OverviewPage = ({ metrics, usage, tier }) => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Upcoming Posts */}
-        <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
+        <Card className="p-0">
           <div className="p-6 border-b border-noid-charcoal-light">
             <h3 className="text-xl font-display text-noid-white">Upcoming Posts</h3>
           </div>
           <div className="p-6 space-y-4">
             {upcomingPosts.map((post, index) => (
-              <div 
+              <div
                 key={index}
                 className="p-4 rounded-lg bg-noid-black border border-noid-charcoal-light"
               >
@@ -260,7 +257,7 @@ const OverviewPage = ({ metrics, usage, tier }) => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* AI Insights */}

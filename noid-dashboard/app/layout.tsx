@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SiteHeader from "./components/layout/SiteHeader";
+import SiteFooter from "./components/layout/SiteFooter";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://synqra.app";
 
@@ -47,8 +49,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-noid-black text-noid-white antialiased selection:bg-noid-teal/40 selection:text-noid-black">
+      <body className="bg-noid-black text-noid-white antialiased selection:bg-noid-teal/40 selection:text-noid-black flex flex-col min-h-screen">
+        <SiteHeader />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

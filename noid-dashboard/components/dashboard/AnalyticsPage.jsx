@@ -1,18 +1,18 @@
 "use client";
 
-"use client";
-
 import React, { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  TrendingUp, 
-  Users, 
-  Heart, 
+import {
+  TrendingUp,
+  Users,
+  Heart,
   MessageCircle,
   Share2,
   Download,
   Filter
 } from 'lucide-react';
+import { Card } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
 
 const AnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState('7d');
@@ -113,12 +113,9 @@ const AnalyticsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {performanceMetrics.map((metric) => {
           const Icon = metric.icon;
-          
+
           return (
-            <div 
-              key={metric.title}
-              className="bg-noid-charcoal rounded-xl p-6 border border-noid-charcoal-light"
-            >
+            <Card key={metric.title}>
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-gradient-gold rounded-lg">
                   <Icon className="w-6 h-6 text-noid-black" />
@@ -127,80 +124,92 @@ const AnalyticsPage = () => {
               </div>
               <h3 className="text-sm text-noid-silver mb-1">{metric.title}</h3>
               <p className="text-3xl font-bold text-noid-white">{metric.value}</p>
-            </div>
+            </Card>
           );
         })}
       </div>
 
       {/* Chart Placeholder */}
-      <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6 mb-8">
+      <Card className="mb-8">
         <h3 className="text-xl font-display text-noid-white mb-6">Engagement Trend</h3>
-        <div className="h-64 flex items-center justify-center bg-noid-black rounded-lg">
-          <div className="text-center">
-            <TrendingUp className="w-16 h-16 text-noid-gold mx-auto mb-4" />
-            <p className="text-noid-silver">Chart visualization would render here</p>
-            <p className="text-sm text-noid-silver/60 mt-2">Use Recharts or Chart.js for implementation</p>
-          </div>
-        </div>
-      </div>
+        <EmptyState
+          icon={<TrendingUp className="w-16 h-16" />}
+          title="Chart visualization"
+          description="Chart data will render here. Use Recharts or Chart.js for implementation."
+        />
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Platform Performance */}
-        <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
+        <Card className="p-0">
           <div className="p-6 border-b border-noid-charcoal-light">
             <h3 className="text-xl font-display text-noid-white">Platform Performance</h3>
           </div>
           <div className="p-6 space-y-4">
-            {platformPerformance.map((platform) => (
-              <div key={platform.platform} className="p-4 bg-noid-black rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-lg font-medium text-noid-white">{platform.platform}</h4>
-                  <span className="text-sm text-noid-gold font-medium">{platform.engagement}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-noid-silver mb-1">Posts</p>
-                    <p className="text-lg font-bold text-noid-white">{platform.posts}</p>
+            {platformPerformance.length === 0 ? (
+              <EmptyState
+                title="No platform data"
+                description="Connect your social media accounts to see performance metrics."
+              />
+            ) : (
+              platformPerformance.map((platform) => (
+                <div key={platform.platform} className="p-4 bg-noid-black rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-lg font-medium text-noid-white">{platform.platform}</h4>
+                    <span className="text-sm text-noid-gold font-medium">{platform.engagement}</span>
                   </div>
-                  <div>
-                    <p className="text-xs text-noid-silver mb-1">Reach</p>
-                    <p className="text-lg font-bold text-noid-white">{platform.reach}</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-noid-silver mb-1">Posts</p>
+                      <p className="text-lg font-bold text-noid-white">{platform.posts}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-noid-silver mb-1">Reach</p>
+                      <p className="text-lg font-bold text-noid-white">{platform.reach}</p>
+                    </div>
                   </div>
+                  <div className={`h-2 bg-gradient-to-r ${platform.color} rounded-full mt-3`}></div>
                 </div>
-                <div className={`h-2 bg-gradient-to-r ${platform.color} rounded-full mt-3`}></div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        </div>
+        </Card>
 
         {/* Top Performing Posts */}
-        <div className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light">
+        <Card className="p-0">
           <div className="p-6 border-b border-noid-charcoal-light">
             <h3 className="text-xl font-display text-noid-white">Top Performing Posts</h3>
           </div>
           <div className="p-6 space-y-4">
-            {topPosts.map((post, index) => (
-              <div key={index} className="p-4 bg-noid-black rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-noid-gold">{post.platform}</span>
-                  <span className="text-xs text-noid-silver">•</span>
-                  <span className="text-xs text-noid-silver">{post.date}</span>
-                </div>
-                <p className="text-sm text-noid-white mb-3">{post.content}</p>
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-xs text-noid-silver">Impressions</p>
-                    <p className="text-sm font-bold text-noid-white">{post.impressions}</p>
+            {topPosts.length === 0 ? (
+              <EmptyState
+                title="No posts yet"
+                description="Start publishing content to see top performing posts."
+              />
+            ) : (
+              topPosts.map((post, index) => (
+                <div key={index} className="p-4 bg-noid-black rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium text-noid-gold">{post.platform}</span>
+                    <span className="text-xs text-noid-silver">•</span>
+                    <span className="text-xs text-noid-silver">{post.date}</span>
                   </div>
-                  <div>
-                    <p className="text-xs text-noid-silver">Engagement</p>
-                    <p className="text-sm font-bold text-green-400">{post.engagement}</p>
+                  <p className="text-sm text-noid-white mb-3">{post.content}</p>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-xs text-noid-silver">Impressions</p>
+                      <p className="text-sm font-bold text-noid-white">{post.impressions}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-noid-silver">Engagement</p>
+                      <p className="text-sm font-bold text-green-400">{post.engagement}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* AI Insights */}

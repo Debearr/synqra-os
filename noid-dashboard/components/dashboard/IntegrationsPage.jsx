@@ -2,13 +2,16 @@
 
 import React from 'react';
 import DashboardLayout from './DashboardLayout';
-import { 
-  Check, 
-  Plus, 
+import {
+  Check,
+  Plus,
   Settings,
   AlertCircle,
   Link2
 } from 'lucide-react';
+import { Card } from '@/app/components/ui/Card';
+import { Progress } from '@/app/components/ui/Progress';
+import { EmptyState } from '@/app/components/ui/EmptyState';
 
 const IntegrationsPage = () => {
   const connectedIntegrations = [
@@ -139,41 +142,51 @@ const IntegrationsPage = () => {
       {/* Connected Integrations */}
       <div className="mb-8">
         <h3 className="text-xl font-display text-noid-white mb-4">Active Integrations</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {connectedIntegrations.map((integration) => (
-            <div 
-              key={integration.name}
-              className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light hover:border-noid-gold/30 transition-all p-6"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{getCategoryIcon(integration.category)}</span>
-                  <div>
-                    <h4 className="text-lg font-medium text-noid-white">{integration.name}</h4>
-                    <span className="text-xs text-noid-silver">{integration.category}</span>
+        {connectedIntegrations.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<Link2 className="w-16 h-16" />}
+              title="No integrations connected"
+              description="Connect your social media accounts and AI services to get started."
+            />
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {connectedIntegrations.map((integration) => (
+              <Card
+                key={integration.name}
+                className="hover:border-noid-gold/30 transition-all"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{getCategoryIcon(integration.category)}</span>
+                    <div>
+                      <h4 className="text-lg font-medium text-noid-white">{integration.name}</h4>
+                      <span className="text-xs text-noid-silver">{integration.category}</span>
+                    </div>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(integration.status)}`}>
+                    <Check className="w-3 h-3 inline mr-1" />
+                    Connected
                   </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(integration.status)}`}>
-                  <Check className="w-3 h-3 inline mr-1" />
-                  Connected
+
+                <p className="text-sm text-noid-silver mb-4">{integration.description}</p>
+
+                <div className="flex items-center justify-between pt-4 border-t border-noid-charcoal-light">
+                  <div className="flex items-center gap-4 text-xs text-noid-silver">
+                    <span>{integration.accounts} account{integration.accounts > 1 ? 's' : ''}</span>
+                    <span>•</span>
+                    <span>Last sync: {integration.lastSync}</span>
+                  </div>
+                  <button className="p-2 hover:bg-noid-charcoal-light rounded-lg text-noid-silver hover:text-noid-white transition-colors">
+                    <Settings className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-              
-              <p className="text-sm text-noid-silver mb-4">{integration.description}</p>
-              
-              <div className="flex items-center justify-between pt-4 border-t border-noid-charcoal-light">
-                <div className="flex items-center gap-4 text-xs text-noid-silver">
-                  <span>{integration.accounts} account{integration.accounts > 1 ? 's' : ''}</span>
-                  <span>•</span>
-                  <span>Last sync: {integration.lastSync}</span>
-                </div>
-                <button className="p-2 hover:bg-noid-charcoal-light rounded-lg text-noid-silver hover:text-noid-white transition-colors">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Available Integrations */}
@@ -181,9 +194,9 @@ const IntegrationsPage = () => {
         <h3 className="text-xl font-display text-noid-white mb-4">Available Integrations</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {availableIntegrations.map((integration) => (
-            <div 
+            <Card
               key={integration.name}
-              className="bg-noid-charcoal rounded-xl border border-noid-charcoal-light hover:border-noid-gold/30 transition-all p-6"
+              className="hover:border-noid-gold/30 transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -194,20 +207,20 @@ const IntegrationsPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               <p className="text-sm text-noid-silver mb-4">{integration.description}</p>
-              
+
               <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-gold text-noid-black font-medium rounded-lg hover:shadow-gold-glow transition-all">
                 <Plus className="w-4 h-4" />
                 Connect
               </button>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
 
       {/* Integration Health */}
-      <div className="mt-8 bg-noid-charcoal rounded-xl border border-noid-charcoal-light p-6">
+      <Card className="mt-8">
         <h3 className="text-lg font-display text-noid-white mb-4">System Health</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-noid-black rounded-lg">
@@ -215,30 +228,24 @@ const IntegrationsPage = () => {
               <span className="text-sm text-noid-silver">API Uptime</span>
               <span className="text-lg font-bold text-green-400">100%</span>
             </div>
-            <div className="h-1 bg-noid-charcoal-light rounded-full overflow-hidden">
-              <div className="h-full w-full bg-green-400"></div>
-            </div>
+            <Progress value={100} />
           </div>
           <div className="p-4 bg-noid-black rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-noid-silver">Sync Success</span>
               <span className="text-lg font-bold text-green-400">98.7%</span>
             </div>
-            <div className="h-1 bg-noid-charcoal-light rounded-full overflow-hidden">
-              <div className="h-full w-[98.7%] bg-green-400"></div>
-            </div>
+            <Progress value={98.7} />
           </div>
           <div className="p-4 bg-noid-black rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-noid-silver">AI Response</span>
               <span className="text-lg font-bold text-green-400">1.2s</span>
             </div>
-            <div className="h-1 bg-noid-charcoal-light rounded-full overflow-hidden">
-              <div className="h-full w-[95%] bg-green-400"></div>
-            </div>
+            <Progress value={95} />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Warning Notice */}
       <div className="mt-6 bg-yellow-400/10 border border-yellow-400/20 rounded-xl p-6">
