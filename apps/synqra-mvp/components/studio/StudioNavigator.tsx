@@ -1,3 +1,1 @@
-export function StudioNavigator() {
-  return <div>Navigator</div>;
-}
+export const StudioNavigator = () => <div>Navigator</div>;

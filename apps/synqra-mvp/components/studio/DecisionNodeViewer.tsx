@@ -1,7 +1,7 @@
-type DecisionNodeViewerProps = {
+export type DecisionNodeViewerProps = {
   steps: any[];
 };
 
-export function DecisionNodeViewer({ steps }: DecisionNodeViewerProps) {
+export const DecisionNodeViewer = ({ steps }: DecisionNodeViewerProps) => {
   return <pre>{JSON.stringify(steps)}</pre>;
-}
+};

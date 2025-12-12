@@ -1,15 +1,15 @@
 import React from "react";
 
-type Props = {
+export type StudioSectionProps = {
   title: string;
   children: React.ReactNode;
 };
 
-export function StudioSection({ title, children }: Props) {
+export const StudioSection = ({ title, children }: StudioSectionProps) => {
   return (
     <section>
       <h2>{title}</h2>
       <div>{children}</div>
     </section>
   );
-}
+};

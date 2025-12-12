@@ -1,5 +1,5 @@
-type SummaryViewerProps = Record<string, unknown>;
+export type SummaryViewerProps = Record<string, unknown>;
 
-export function SummaryViewer(props: SummaryViewerProps) {
+export const SummaryViewer = (props: SummaryViewerProps) => {
   return <pre>{JSON.stringify(props)}</pre>;
-}
+};

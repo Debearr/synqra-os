@@ -1,9 +1,9 @@
 import React from "react";
 
-type Props = {
+export type StudioLayoutProps = {
   children: React.ReactNode;
 };
 
-export function StudioLayout({ children }: Props) {
+export const StudioLayout = ({ children }: StudioLayoutProps) => {
   return <div>{children}</div>;
-}
+};

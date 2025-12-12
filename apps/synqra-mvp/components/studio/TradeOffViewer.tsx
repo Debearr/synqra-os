@@ -1,7 +1,7 @@
-type TradeOffViewerProps = {
+export type TradeOffViewerProps = {
   tradeoffs: any[];
 };
 
-export function TradeOffViewer({ tradeoffs }: TradeOffViewerProps) {
+export const TradeOffViewer = ({ tradeoffs }: TradeOffViewerProps) => {
   return <pre>{JSON.stringify(tradeoffs)}</pre>;
-}
+};
