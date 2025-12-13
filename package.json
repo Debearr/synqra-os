@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "NØID Labs unified ecosystem: Synqra × NØID × AuraFX",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "workspaces": [
     "apps/*",
     "shared",
@@ -10,7 +11,13 @@
     "noid-digital-cards"
   ],
   "scripts": {
-  "build": "pnpm --filter synqra-mvp build",
-  "start": "pnpm --filter synqra-mvp start",
-  "build:all": "pnpm -r build"
-},
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.0.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
