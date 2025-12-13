@@ -157,7 +157,7 @@ export function enrichScaffoldWithManualData(
   const updatedFieldConfidences = { ...scaffold.fieldConfidences };
 
   for (const field of manualFields) {
-    updatedFieldConfidences[field] = 1.0; // Manual input = 100% confidence
+    
   }
 
   // Recalculate overall confidence
