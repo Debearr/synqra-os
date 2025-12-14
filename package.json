@@ -9,6 +9,7 @@
     "shared"
   ],
   "scripts": {
+<<<<<<< HEAD
     "build": "pnpm build:all",
     "start": "cd apps/synqra-os-intake && node dist/index.js",
     "noid:verify": "bash scripts/verify-codebase.sh",
@@ -41,5 +42,15 @@
     "node": ">=20.0.0",
     "npm": ">=9.0.0",
     "pnpm": ">=8.0.0"
+=======
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.0.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+>>>>>>> wip/local-edits
   }
 }
