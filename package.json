@@ -18,8 +18,8 @@
     "noid:status": "node -e \"import('./shared/dev/tools.ts').then(m => m.runDiagnostics('synqra'))\"",
     "noid:optimize": "node -e \"import('./shared/optimization/auto-optimizer.ts').then(m => m.autoOptimizer.optimize())\"",
     "agents:evolve": "node -e \"import('./shared/autonomous/evolving-agents.ts').then(m => m.agentFleet.evolveAllAgents())\"",
-    "dev:synqra": "cd apps/synqra-mvp && npm run dev",
-    "dev:noid": "cd apps/noid-dashboard && npm run dev",
+    "dev:synqra": "pnpm --filter synqra-mvp dev",
+    "dev:noid": "pnpm --filter noid-dashboard dev",
     "build:all": "pnpm --filter=synqra-os-intake build",
     "lint:all": "npm run lint --workspaces",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'dist' -type d -prune -exec rm -rf '{}' +"
