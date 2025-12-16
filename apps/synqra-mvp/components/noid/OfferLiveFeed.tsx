@@ -22,7 +22,7 @@ interface ScoredOffer {
 const kmToMiles = (km: number) => km / 1.60934;
 const kgToLbs = (kg: number) => kg * 2.20462;
 
-export function OfferLiveFeed({ offers, onScore }: OfferLiveFeedProps) {
+export default function OfferLiveFeed({ offers, onScore }: OfferLiveFeedProps) {
   const [scored, setScored] = useState<ScoredOffer[]>([]);
 
   useEffect(() => {
@@ -166,5 +166,3 @@ function Bucket({
     </div>
   );
 }
-
-export default OfferLiveFeed;

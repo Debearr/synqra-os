@@ -25,7 +25,7 @@ const formatDuration = (ms: number) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-export function SmartwatchDisplay({
+export default function SmartwatchDisplay({
   day,
   targetEarningsPerHour,
   snapshotProvider,
@@ -169,5 +169,3 @@ export function SmartwatchDisplay({
     </div>
   );
 }
-
-export default SmartwatchDisplay;
