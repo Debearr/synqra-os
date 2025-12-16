@@ -7,6 +7,16 @@ settings:
 importers:
 
   .:
+    dependencies:
+      autoprefixer:
+        specifier: 10.4.20
+        version: 10.4.20(postcss@8.4.47)
+      postcss:
+        specifier: 8.4.47
+        version: 8.4.47
+      tailwindcss:
+        specifier: 3.4.14
+        version: 3.4.14
     devDependencies:
       '@types/node':
         specifier: ^22.9.0
@@ -95,7 +105,7 @@ importers:
         version: 3.4.0
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7
+        version: 1.0.7(tailwindcss@3.4.14)
     devDependencies:
       turbo:
         specifier: ^2.3.0
@@ -2751,7 +2761,9 @@ snapshots:
 
   tailwind-merge@3.4.0: {}
 
-  tailwindcss-animate@1.0.7: {}
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.14):
+    dependencies:
+      tailwindcss: 3.4.14
 
   tailwindcss@3.4.14:
     dependencies:
