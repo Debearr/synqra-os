@@ -1,54 +1,8 @@
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2020"
-    ],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
-    "types": [
-      "node"
-    ],
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
-  },
-  "include": [
-    "app/**/*",
-    "components/**/*",
-    "lib/**/*",
-    "types/**/*",
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/pilot/**",
-    "**/scaffold/**"
-  ]
+﻿{
+  " compilerOptions\: {
+ \baseUrl\: \.\,
+ \paths\: {
+ \@/*\: [\./*\]
+ }
+ }
 }
