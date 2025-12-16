@@ -1,7 +1,4 @@
-export const synqraTokens = {
-  colors: {
-    gold: "#C9A961",
-    // ... other tokens
-  }
-};
+export async function fetchSummary() {
+  return null;
+}
 

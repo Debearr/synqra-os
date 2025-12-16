@@ -1,6 +1,3 @@
-import React from "react";
-
-export const PricingCard = () => {
-  return <div>{/* Placeholder */}</div>;
-};
-
+export default function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-xl font-bold">{children}</h2>;
+}
