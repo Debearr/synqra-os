@@ -19,12 +19,12 @@ importers:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.68.0
-        version: 0.68.0(zod@4.1.13)
+        version: 0.68.0(zod@3.25.76)
       '@react-pdf/renderer':
         specifier: ^4.3.1
         version: 4.3.1(react@18.3.1)
       '@supabase/supabase-js':
-        specifier: ^2.80.0
+        specifier: ^2.45.0
         version: 2.87.1
       framer-motion:
         specifier: ^11.2.7
@@ -39,11 +39,11 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: ^10.0.0
+        version: 10.0.0
       zod:
-        specifier: ^4.1.12
-        version: 4.1.13
+        specifier: ^3.23.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: 22.9.0
@@ -1473,8 +1473,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+  uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
 
   vite-compatible-readable-stream@3.6.1:
@@ -1518,18 +1518,18 @@ packages:
   yoga-layout@3.2.1:
     resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
-  zod@4.1.13:
-    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@anthropic-ai/sdk@0.68.0(zod@4.1.13)':
+  '@anthropic-ai/sdk@0.68.0(zod@3.25.76)':
     dependencies:
       json-schema-to-ts: 3.1.1
     optionalDependencies:
-      zod: 4.1.13
+      zod: 3.25.76
 
   '@babel/runtime@7.28.4': {}
 
@@ -2864,7 +2864,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  uuid@13.0.0: {}
+  uuid@10.0.0: {}
 
   vite-compatible-readable-stream@3.6.1:
     dependencies:
@@ -2888,4 +2888,4 @@ snapshots:
 
   yoga-layout@3.2.1: {}
 
-  zod@4.1.13: {}
+  zod@3.25.76: {}
