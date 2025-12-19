@@ -57,7 +57,7 @@ export function Footer() {
               <ul className="space-y-3.5">
                 {links.map((link) => (
                   <li key={link.href}>
-                    <Link
+                    <a
                       href={link.href}
                       className="
                         text-sm font-light 
@@ -67,7 +67,7 @@ export function Footer() {
                       "
                     >
                       {link.label}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -84,7 +84,7 @@ export function Footer() {
             © {new Date().getFullYear()} Synqra. All rights reserved.
           </p>
           <div className="flex items-center gap-8">
-            <Link
+            <a
               href="#"
               className="
                 text-xs font-light 
@@ -93,8 +93,8 @@ export function Footer() {
               "
             >
               Twitter
-            </Link>
-            <Link
+            </a>
+            <a
               href="#"
               className="
                 text-xs font-light 
@@ -103,7 +103,7 @@ export function Footer() {
               "
             >
               LinkedIn
-            </Link>
+            </a>
           </div>
         </div>
 

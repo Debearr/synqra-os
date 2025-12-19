@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { buildExecSummary } from "@/features/executive-summary/execSummary.generator";
+import { useState, useEffect } from "react";
 import { synqraExecSummaryData } from "@/features/executive-summary/execSummary.data.synqra";
 import { execSummaryTokens as t } from "@/features/executive-summary/execSummary.tokens";
 import type { ExecSummaryData } from "@/features/executive-summary/execSummary.types";

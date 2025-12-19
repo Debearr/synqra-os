@@ -5,6 +5,8 @@
  * Reusable templates for common AI tasks
  */
 
+import { buildDisciplinedPrompt } from "./discipline-config";
+
 export interface Template {
   id: string;
   name: string;
@@ -244,7 +246,7 @@ export function applyTemplate(templateId: string, input: string): {
   if (!template) return null;
 
   return {
-    systemPrompt: template.systemPrompt,
+    systemPrompt: buildDisciplinedPrompt(template.systemPrompt, templateId),
     input,
     complexity: template.complexity,
     isClientFacing: template.isClientFacing,

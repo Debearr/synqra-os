@@ -28,79 +28,31 @@ interface UseSystemSnapshotParams {
 export function useSystemSnapshot(params: UseSystemSnapshotParams) {
   const { day, targetEarningsPerHour, snapshotProvider } = params;
 
-  const { metrics, lastUpdated, refresh } = useDailyEarnings({
+  const { metrics } = useDailyEarnings({
     day,
     targetEarningsPerHour,
   });
-  const shift = useShiftTimer({
+
+  const { elapsedMs, onBreak } = useShiftTimer({
+    inactivityMinutes: 15,
+    healthPollSeconds: 60,
     snapshotProvider,
   });
-  const health = useDriverHealthStream({
+
+  const { health, status: healthStatus } = useDriverHealthStream({
+    pollSeconds: 60,
     snapshotProvider,
-    hoursDriven: shift.elapsedMs / (1000 * 60 * 60),
-    lastBreakMinutesAgo: shift.onBreak ? 0 : undefined,
   });
+
   const { offers, latest } = useOfferStream(10_000);
   const { scoreOffer } = useOfferScoring();
 
-  useEffect(() => {
-    systemSnapshotStore.setState((prev) => ({
-      ...prev,
-      controllers: {
-        ...prev.controllers,
-        startShift: shift.startShift,
-        stopShift: shift.stopShift,
-        refreshSnapshot: refresh,
-      },
-    }));
-  }, [shift.startShift, shift.stopShift, refresh]);
-
-  useEffect(() => {
-    systemSnapshotStore.setState((prev) => ({
-      ...prev,
-      shift: {
-        startedAt: shift.startedAt,
-        elapsedMs: shift.elapsedMs,
-        onBreak: shift.onBreak,
-      },
-    }));
-  }, [shift.startedAt, shift.elapsedMs, shift.onBreak]);
-
-  useEffect(() => {
-    systemSnapshotStore.setState((prev) => ({
-      ...prev,
-      earnings: {
-        gross: metrics.gross,
-        net: metrics.net,
-        perMile: metrics.perMile,
-        perHour: metrics.perHour,
-        projection: metrics.projection,
-        lastUpdated: lastUpdated ?? null,
-      },
-    }));
-  }, [metrics.gross, metrics.net, metrics.perMile, metrics.perHour, metrics.projection, lastUpdated]);
-
-  useEffect(() => {
-    systemSnapshotStore.setState((prev) => ({
-      ...prev,
-      health: {
-        score: health.score ?? null,
-        status: health.status ?? null,
-        recommendations: health.recommendations,
-        raw: health.health,
-      },
-    }));
-  }, [health.score, health.status, health.recommendations, health.health]);
-
-  useEffect(() => {
-    systemSnapshotStore.setState((prev) => ({
-      ...prev,
-      offers: offers.slice(-5),
-    }));
-  }, [offers]);
-
+  // ─────────────────────────────────────────────
+  // Score latest offer
+  // ─────────────────────────────────────────────
   useEffect(() => {
     if (!latest) return;
+
     const completed: CompletedOffer = {
       id: latest.id,
       serviceType: "delivery",
@@ -126,12 +78,20 @@ export function useSystemSnapshot(params: UseSystemSnapshotParams) {
     const run = async () => {
       try {
         const score = await scoreOffer(completed);
-        const grade: OfferGrade = score.normalized >= 75 ? "GOOD" : score.normalized >= 50 ? "MID" : "BAD";
+
+        const grade: OfferGrade =
+          score.totalScore >= 75
+            ? "GOOD"
+            : score.totalScore >= 50
+            ? "MID"
+            : "BAD";
+
         const summary: OfferScoreSummary = {
           offerId: completed.id,
-          score,
+          score: score.raw,
           grade,
         };
+
         systemSnapshotStore.setState((prev) => ({
           ...prev,
           lastOfferScore: summary,
@@ -144,14 +104,42 @@ export function useSystemSnapshot(params: UseSystemSnapshotParams) {
     run();
   }, [latest, scoreOffer]);
 
-  const state = useSyncExternalStore(
+  // ─────────────────────────────────────────────
+  // Main snapshot sync
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    systemSnapshotStore.setState({
+      shift: {
+        startedAt: null,
+        elapsedMs,
+        onBreak,
+      },
+      earnings: {
+        gross: metrics.gross,
+        net: metrics.net,
+        perMile: metrics.perMile,
+        perHour: metrics.perHour,
+        projection: metrics.projection,
+        lastUpdated: new Date().toISOString(),
+      },
+      health: {
+        score: health?.score ?? null,
+        status: healthStatus ?? null,
+        recommendations: health?.recommendations ?? [],
+        raw: health ?? null,
+      },
+      offers,
+    });
+  }, [elapsedMs, onBreak, metrics, health, healthStatus, offers]);
+
+  const snapshot = useSyncExternalStore(
     systemSnapshotStore.subscribe,
     systemSnapshotStore.getState,
     systemSnapshotStore.getState
   );
 
   return {
-    state,
+    snapshot,
     selectors,
     actions: systemActions,
   };

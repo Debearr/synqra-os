@@ -110,7 +110,7 @@ export default function OnboardPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       console.error("Confirm failed", err);
       setConfirmError("Network issue while confirming. Please retry.");

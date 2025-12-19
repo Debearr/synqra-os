@@ -1,423 +1,256 @@
 "use client";
 
-import React from "react";
-import { execSummaryTokens as t, execSummaryTokens } from "./execSummary.tokens";
-import { buildExecSummary } from "./execSummary.generator";
-import type { ExecSummaryData, RevenueTier } from "./execSummary.types";
+import { useEffect, useState, useMemo } from "react";
+import { ExecSummaryDoc } from "@/features/executive-summary/types/execSummary.types";
+import type { ExecSummaryData } from "@/features/executive-summary/execSummary.types";
+import { fetchExecSummary } from "@/features/executive-summary/execSummary.api";
+import SectionTitle from "@/features/executive-summary/SectionTitle";
 
-type Props = {
-  dataOverride?: ExecSummaryData;
-};
+function transformExecSummaryData(data: ExecSummaryData): ExecSummaryDoc {
+  return {
+    overview: data.overview,
+    marketProblem: data.marketProblem,
+    solutionArchitecture: data.solutionArchitecture.map(item => ({
+      title: item.label,
+      description: item.body,
+    })),
+    whySynqraWins: data.whySynqraWins.map(item => item.body),
+    whyNow: data.whyNow,
+    targetRaise: data.targetRaise,
+    targetRevenue: data.targetRevenue,
+    useOfFunds: data.useOfFunds,
+    roadmap: data.roadmap,
+    founder: data.founderBlurb,
+  };
+}
 
-export const ExecutiveSummaryPage: React.FC<Props> = ({ dataOverride }) => {
-  const doc = buildExecSummary(dataOverride);
-  const { data, meta, metrics } = doc;
+export function ExecutiveSummaryPage({ dataOverride }: { dataOverride?: ExecSummaryData }) {
+  const [fetchedData, setFetchedData] = useState<ExecSummaryDoc | null>(null);
+
+  useEffect(() => {
+    if (!dataOverride) {
+      const load = async () => {
+        const res = await fetchExecSummary();
+        setFetchedData(res);
+      };
+      load();
+    }
+  }, [dataOverride]);
+
+  const data = useMemo(() => {
+    if (dataOverride) {
+      return transformExecSummaryData(dataOverride);
+    }
+    return fetchedData;
+  }, [dataOverride, fetchedData]);
+
+  const handleDownloadPdf = async () => {
+    try {
+      const response = await fetch("/api/exec-summary/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataOverride: data }),
+      });
+
+      if (!response.ok) throw new Error("PDF generation failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "synqra-executive-summary.pdf";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate PDF");
+    }
+  };
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center h-screen text-neutral-400">
+        Loading executive summary…
+      </div>
+    );
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: t.colors.background,
-        color: t.colors.textPrimary,
-        display: "flex",
-        justifyContent: "center",
-        padding: "3rem 1.5rem"
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: t.layout.maxWidth,
-          display: "grid",
-          gridTemplateColumns: "3fr 1.3fr",
-          columnGap: "3rem"
-        }}
-      >
-        {/* LEFT COLUMN */}
-        <main>
-          {/* Brand + Tagline */}
-          <header style={{ marginBottom: "2.5rem" }}>
-            <h1
-              style={{
-                fontSize: "2rem",
-                letterSpacing: t.typography.headingTracking,
-                textTransform: "uppercase",
-                marginBottom: "0.25rem"
-              }}
-            >
-              {meta.brandName}
-            </h1>
-            <p
-              style={{
-                fontSize: "0.9rem",
-                textTransform: "uppercase",
-                letterSpacing: t.typography.headingTracking,
-                color: t.colors.textMuted
-              }}
-            >
-              {meta.tagline}
+    <main className="min-h-screen bg-black text-neutral-200 px-6 md:px-16 lg:px-28 py-20">
+      {/* HEADER */}
+      <header className="mb-20">
+        <h1 className="text-5xl font-medium tracking-tight text-white mb-2">
+          SYNQRA
+        </h1>
+        <p className="text-lg tracking-wide text-neutral-400">
+          INTELLIGENCE THAT COMPOUNDS. COSTS THAT DON'T.
+        </p>
+      </header>
+
+      {/* GRID LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        {/* LEFT CONTENT */}
+        <div className="lg:col-span-2 space-y-16">
+          {/* OVERVIEW */}
+          <section>
+            <SectionTitle>OVERVIEW</SectionTitle>
+            <p className="leading-relaxed text-neutral-300">
+              {data.overview}
             </p>
-          </header>
-
-          {/* Overview */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Overview" />
-            <BodyText>{data.overview}</BodyText>
           </section>
 
-          {/* Market Problem */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Market Problem" />
-            <BodyText>{data.marketProblem}</BodyText>
+          {/* MARKET PROBLEM */}
+          <section>
+            <SectionTitle>MARKET PROBLEM</SectionTitle>
+            <p className="leading-relaxed text-neutral-300">
+              {data.marketProblem}
+            </p>
           </section>
 
-          {/* Solution Architecture */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Solution Architecture" />
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: "1.5rem"
-              }}
-            >
-              {data.solutionArchitecture.map((item) => (
-                <Card key={item.label}>
-                  <h3
-                    style={{
-                      fontSize: "0.9rem",
-                      textTransform: "uppercase",
-                      letterSpacing: t.typography.headingTracking,
-                      marginBottom: "0.5rem"
-                    }}
-                  >
-                    {item.label}
+          {/* SOLUTION ARCHITECTURE */}
+          <section>
+            <SectionTitle>SOLUTION ARCHITECTURE</SectionTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {data.solutionArchitecture.map((item, i) => (
+                <div
+                  key={i}
+                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800"
+                >
+                  <h3 className="text-sm tracking-widest text-[var(--gold)] mb-2">
+                    {item.title.toUpperCase()}
                   </h3>
-                  <BodyText muted>{item.body}</BodyText>
-                </Card>
+                  <p className="text-neutral-400 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               ))}
             </div>
           </section>
 
-          {/* Revenue Model */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Revenue Model" />
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: "1.5rem"
-              }}
+          {/* WHY SYNQRA WINS */}
+          <section>
+            <SectionTitle>WHY SYNQRA WINS</SectionTitle>
+            <ul className="space-y-3">
+              {data.whySynqraWins.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="text-[var(--gold)] mt-1">■</span>
+                  <p className="text-neutral-300 leading-relaxed">{item}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* WHY NOW */}
+          <section>
+            <SectionTitle>WHY NOW</SectionTitle>
+            <p className="leading-relaxed text-neutral-300">
+              {data.whyNow}
+            </p>
+          </section>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <aside className="space-y-14">
+          {/* TARGET RAISE */}
+          <section>
+            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
+              TARGET RAISE
+            </h4>
+            <p className="text-3xl text-[var(--gold)] font-semibold">
+              {data.targetRaise}
+            </p>
+            <p className="text-neutral-500 text-sm mt-1">
+              Seed round for 12–18 months of runway
+            </p>
+          </section>
+
+          {/* TARGET REVENUE */}
+          <section>
+            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
+              12-MONTH TARGET
+            </h4>
+            <p className="text-3xl text-[var(--gold)] font-semibold">
+              {data.targetRevenue}
+            </p>
+            <p className="text-neutral-500 text-sm mt-1">
+              ARR with 500+ subscribers
+            </p>
+          </section>
+
+          {/* QUOTE */}
+          <section className="border-l border-neutral-700 pl-5">
+            <p className="italic text-neutral-400 text-sm leading-relaxed">
+              "The first platform where intelligence compounds while costs stay flat."
+            </p>
+          </section>
+
+          {/* USE OF FUNDS */}
+          <section>
+            <h4 className="text-neutral-400 text-xs tracking-widest mb-3">
+              USE OF FUNDS
+            </h4>
+            <ul className="space-y-2">
+              {data.useOfFunds.map((f, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between text-neutral-300 text-sm"
+                >
+                  <span>{f.label}</span>
+                  <span className="text-[var(--gold)]">{f.amount}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* ROADMAP */}
+          <section>
+            <h4 className="text-neutral-400 text-xs tracking-widest mb-3">
+              ROADMAP
+            </h4>
+            <ul className="space-y-2">
+              {data.roadmap.map((r, i) => (
+                <li key={i} className="text-neutral-300 text-sm">
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* FOUNDER */}
+          <section>
+            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
+              FOUNDER
+            </h4>
+            <p className="text-neutral-300 text-sm leading-relaxed">
+              {data.founder}
+            </p>
+          </section>
+
+           {/* DOWNLOAD PDF BUTTON */}
+           <section>
+            <button
+              onClick={handleDownloadPdf}
+              className="w-full py-3 px-4 bg-neutral-900 border border-[var(--gold)] rounded text-[var(--gold)] text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
             >
-              {data.revenueTiers.map((tier) => (
-                <PricingCard key={tier.name} tier={tier} />
-              ))}
-            </div>
-            <BodyText muted style={{ marginTop: "1rem" }}>
-              {data.additionalRevenueNotes}
-            </BodyText>
+              Download Executive Summary (PDF)
+            </button>
           </section>
-
-          {/* Why Synqra Wins */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Why Synqra Wins" />
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {data.whySynqraWins.map((item) => (
-                <li
-                  key={item.label}
-                  style={{
-                    display: "flex",
-                    columnGap: "0.75rem",
-                    marginBottom: "0.75rem"
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "0.5rem",
-                      height: "0.5rem",
-                      marginTop: "0.5rem",
-                      background: t.colors.accentSoft,
-                      borderRadius: "999px",
-                      flexShrink: 0
-                    }}
-                  />
-                  <div>
-                    <strong>{item.label}</strong>{" "}
-                    <span style={{ color: t.colors.textMuted }}>
-                      — {item.body}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Why Now */}
-          <section style={{ marginBottom: t.layout.sectionGap }}>
-            <SectionTitle label="Why Now" />
-            <BodyText>{data.whyNow}</BodyText>
-          </section>
-
-          {/* Footer line */}
-          <footer
-            style={{
-              borderTop: `1px solid ${t.colors.border}`,
-              paddingTop: "1.5rem",
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "0.8rem",
-              color: t.colors.textMuted
-            }}
-          >
-            <span>
-              Platform: {data.platformUrl} &nbsp;·&nbsp; Location:{" "}
-              {data.location} &nbsp;·&nbsp; Status: {data.status}
-            </span>
-            <span>{data.footerNote}</span>
-          </footer>
-        </main>
-
-        {/* RIGHT COLUMN – Metrics, use of funds, roadmap, founder */}
-        <aside
-          style={{
-            borderLeft: `1px solid ${t.colors.border}`,
-            paddingLeft: "2rem",
-            fontSize: "0.85rem"
-          }}
-        >
-          {/* Metrics */}
-          <div style={{ marginBottom: "2rem" }}>
-            <AsideLabel>Target Raise</AsideLabel>
-            <AsideMetric value={metrics.targetRaise} note={metrics.targetRaiseNote} />
-
-            <AsideLabel style={{ marginTop: "1.5rem" }}>
-              12-Month Target
-            </AsideLabel>
-            <AsideMetric
-              value={metrics.targetRevenue}
-              note={metrics.targetRevenueNote}
-            />
-          </div>
-
-          {/* Quote */}
-          <blockquote
-            style={{
-              borderLeft: `2px solid ${t.colors.accentSoft}`,
-              paddingLeft: "1rem",
-              fontStyle: "italic",
-              marginBottom: "2rem",
-              color: t.colors.textMuted
-            }}
-          >
-            “The first platform where intelligence compounds while costs stay
-            flat.”
-          </blockquote>
-
-          {/* Use of Funds */}
-          <div style={{ marginBottom: "2rem" }}>
-            <AsideLabel>Use of Funds</AsideLabel>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {data.useOfFunds.map((item) => (
-                <li
-                  key={item.label}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: "0.5rem"
-                  }}
-                >
-                  <span>{item.label}</span>
-                  <span style={{ color: t.colors.accentSoft }}>
-                    {item.amount}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Roadmap */}
-          <div style={{ marginBottom: "2rem" }}>
-            <AsideLabel>Roadmap</AsideLabel>
-            <ul style={{ paddingLeft: "1.25rem", margin: 0 }}>
-              {data.roadmap.map((item) => (
-                <li key={item} style={{ marginBottom: "0.4rem" }}>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Founder */}
-          <div style={{ marginBottom: "2rem" }}>
-            <AsideLabel>Founder</AsideLabel>
-            <BodyText muted>{data.founderBlurb}</BodyText>
-          </div>
-
-          {/* CTA */}
-          <button
-            style={{
-              marginTop: "1rem",
-              width: "100%",
-              padding: "0.85rem 1rem",
-              borderRadius: "999px",
-              border: "1px solid " + t.colors.accentSoft,
-              background:
-                "linear-gradient(135deg, rgba(201,169,97,0.18), rgba(255,255,255,0.04))",
-              color: t.colors.textPrimary,
-              fontSize: "0.85rem",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              cursor: "pointer"
-            }}
-          >
-            {data.footerCta}
-          </button>
         </aside>
       </div>
-    </div>
+
+      {/* FOOTER */}
+      <footer className="mt-24 text-neutral-500 text-sm border-t border-neutral-800 pt-6 flex justify-between items-center flex-wrap gap-4">
+        <span>© Synqra Intelligence Systems, 2024–2025</span>
+        <div className="flex gap-6 text-xs tracking-wide">
+             <span>Available At:</span>
+             <a href="https://synqra.co/exec-summary" className="hover:text-white transition-colors">synqra.co</a>
+             <a href="https://invest.synqra.co/exec-summary" className="hover:text-white transition-colors">invest.synqra.co</a>
+             <a href="https://summary.synqra.co" className="hover:text-white transition-colors">summary.synqra.co</a>
+             <a href="https://synqra.app/exec-summary" className="hover:text-white transition-colors">synqra.app</a>
+        </div>
+      </footer>
+    </main>
   );
-};
-
-// Small helpers
-
-type TextProps = {
-  children: React.ReactNode;
-  muted?: boolean;
-  style?: React.CSSProperties;
-};
-
-const SectionTitle: React.FC<{ label: string }> = ({ label }) => (
-  <h2
-    style={{
-      fontSize: "0.9rem",
-      textTransform: "uppercase",
-      letterSpacing: "0.18em",
-      color: t.colors.accentSoft,
-      marginBottom: "0.75rem"
-    }}
-  >
-    {label}
-  </h2>
-);
-
-const BodyText: React.FC<TextProps> = ({ children, muted, style }) => (
-  <p
-    style={{
-      fontSize: t.typography.bodySize,
-      lineHeight: t.typography.bodyLineHeight,
-      color: muted
-        ? t.colors.textMuted
-        : t.colors.textPrimary,
-      margin: 0,
-      ...style
-    }}
-  >
-    {children}
-  </p>
-);
-
-const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div
-    style={{
-      background: t.colors.surface,
-      borderRadius: "0.75rem",
-      border: `1px solid ${t.colors.border}`,
-      padding: "1.25rem",
-      minHeight: "140px"
-    }}
-  >
-    {children}
-  </div>
-);
-
-const PricingCard: React.FC<{ tier: RevenueTier }> = ({ tier }) => (
-  <Card>
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        marginBottom: "0.5rem"
-      }}
-    >
-      <span style={{ fontWeight: 600 }}>{tier.name}</span>
-      <span
-        style={{
-          color: t.colors.accentSoft,
-          fontWeight: 600
-        }}
-      >
-        {tier.price}
-      </span>
-    </div>
-    <BodyText muted style={{ marginBottom: "0.5rem" }}>
-      {tier.tagLine}
-    </BodyText>
-    <ul
-      style={{
-        paddingLeft: "1.1rem",
-        margin: 0,
-        fontSize: "0.8rem",
-        color: t.colors.textMuted
-      }}
-    >
-      {tier.bullets.map((bullet) => (
-        <li key={bullet} style={{ marginBottom: "0.25rem" }}>
-          {bullet}
-        </li>
-      ))}
-    </ul>
-    {tier.highlight && (
-      <div
-        style={{
-          marginTop: "0.75rem",
-          fontSize: "0.72rem",
-          textTransform: "uppercase",
-          letterSpacing: "0.16em",
-          color: t.colors.accentSoft
-        }}
-      >
-        Recommended
-      </div>
-    )}
-  </Card>
-);
-
-const AsideLabel: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({
-  children,
-  style
-}) => (
-  <div
-    style={{
-      fontSize: "0.75rem",
-      textTransform: "uppercase",
-      letterSpacing: "0.16em",
-      color: t.colors.textMuted,
-      marginBottom: "0.35rem",
-      ...style
-    }}
-  >
-    {children}
-  </div>
-);
-
-const AsideMetric: React.FC<{ value: string; note: string }> = ({
-  value,
-  note
-}) => (
-  <div style={{ marginBottom: "0.25rem" }}>
-    <div
-      style={{
-        fontSize: "1.3rem",
-        fontWeight: 600,
-        color: t.colors.accentSoft
-      }}
-    >
-      {value}
-    </div>
-    <BodyText muted style={{ fontSize: "0.8rem" }}>
-      {note}
-    </BodyText>
-  </div>
-);
-
+}

@@ -53,6 +53,7 @@ export interface RoutingDecision {
   requiresValidation?: boolean;
   pipeline?: string[];
   response?: any;
+  fallbackChain?: ModelProvider[];
   metadata?: {
     cacheHit?: boolean;
     originalModel?: ModelProvider;

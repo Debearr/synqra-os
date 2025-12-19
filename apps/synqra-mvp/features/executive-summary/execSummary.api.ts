@@ -1,4 +1,3 @@
-export async function fetchSummary() {
+export async function fetchExecSummary() {
   return null;
 }
-

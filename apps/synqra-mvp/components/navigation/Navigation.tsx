@@ -47,7 +47,7 @@ export function Navigation() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-12">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.href}
                 href={link.href}
                 className="
@@ -63,7 +63,7 @@ export function Navigation() {
                 "
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
           </div>
 
@@ -114,7 +114,7 @@ export function Navigation() {
         ">
           <div className="px-6 py-8 space-y-6">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -125,7 +125,7 @@ export function Navigation() {
                 "
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
             <div className="pt-6 border-t border-border/50 space-y-3">
               <Button variant="ghost" className="w-full font-light">

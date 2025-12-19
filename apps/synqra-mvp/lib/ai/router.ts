@@ -15,6 +15,7 @@ import { estimateCost } from './cost';
 import { compressInput, reduceContext } from './compression';
 import { getCachedResponse, setCachedResponse } from './cache';
 import { logModelUsage } from './logging';
+import { assessConfidence } from './confidence-handler';
 
 /**
  * TOKEN BUDGETS (HARD LIMITS)
@@ -69,6 +70,12 @@ function selectModel(
   return 'mistral';
 }
 
+function buildFallbackChain(primaryModel: ModelProvider): ModelProvider[] {
+  const hierarchy: ModelProvider[] = ['mistral', 'deepseek', 'claude', 'gpt-5'];
+  const start = hierarchy.indexOf(primaryModel);
+  return start >= 0 ? hierarchy.slice(start + 1) : [];
+}
+
 /**
  * MAIN ROUTING FUNCTION
  * Routes tasks through optimized pipeline
@@ -110,6 +117,7 @@ export async function route(task: AITask): Promise<RoutingDecision> {
     task.isClientFacing || false,
     task.isFinalDeliverable || false
   );
+  const fallbackChain = buildFallbackChain(selectedModel);
 
   // Step 5: Estimate cost BEFORE execution
   const tokenLimit = TOKEN_LIMITS[selectedModel as keyof typeof TOKEN_LIMITS] || 350;
@@ -136,6 +144,7 @@ export async function route(task: AITask): Promise<RoutingDecision> {
     reasoning: complexity.reasoning,
     tokenBudget: tokenLimit,
     requiresValidation: complexity.score >= 0.5,
+    fallbackChain,
     pipeline: buildPipeline(selectedModel, complexity.score),
   };
 
@@ -230,30 +239,63 @@ export async function executeTask(task: AITask): Promise<any> {
   let totalCost = 0;
   let inputTokens = 0;
   let outputTokens = 0;
-
   for (const step of decision.pipeline || []) {
     const [model, action] = step.split('-');
     
     switch (action) {
       case 'extract':
         // Mistral extracts key information
-        response = await callModel('mistral', task.input, task.systemPrompt, TOKEN_LIMITS.mistral);
+        response = await callModelWithFallback(
+          'mistral',
+          task.input,
+          task.systemPrompt,
+          TOKEN_LIMITS.mistral
+        );
         break;
       
       case 'compress':
         // DeepSeek compresses/validates
-        response = await callModel('deepseek', response || task.input, 'Compress and validate this content. Return only essential information.', TOKEN_LIMITS.deepseek);
+        response = await callModelWithFallback(
+          'deepseek',
+          response || task.input,
+          'Compress and validate this content. Return only essential information.',
+          TOKEN_LIMITS.deepseek
+        );
         break;
       
       case 'execute':
         // Main model execution
-        response = await callModel(model as ModelProvider, response || task.input, task.systemPrompt, TOKEN_LIMITS[model as keyof typeof TOKEN_LIMITS] || 350);
+        response = await callModelWithFallback(
+          model as ModelProvider,
+          response || task.input,
+          task.systemPrompt,
+          TOKEN_LIMITS[model as keyof typeof TOKEN_LIMITS] || 350
+        );
+        // Confidence assessment after primary execution
+        const confidence = assessConfidence(response, task.type);
+        if (!confidence.isConfident && decision.fallbackChain?.length) {
+          // Attempt one-tier escalation if available
+          const nextModel = decision.fallbackChain[0];
+          if (nextModel) {
+            response = await callModelWithFallback(
+              nextModel,
+              response || task.input,
+              task.systemPrompt,
+              TOKEN_LIMITS[nextModel as keyof typeof TOKEN_LIMITS] || 350
+            );
+          }
+        }
         break;
       
       case 'validate':
         // DeepSeek validates output
         const validationPrompt = `Validate this output for accuracy and completeness: ${response}`;
-        await callModel('deepseek', validationPrompt, 'You are a quality validator.', TOKEN_LIMITS.deepseek);
+        await callModelWithFallback(
+          'deepseek',
+          validationPrompt,
+          'You are a quality validator.',
+          TOKEN_LIMITS.deepseek
+        );
         break;
     }
   }
@@ -289,6 +331,27 @@ export async function executeTask(task: AITask): Promise<any> {
 /**
  * CALL MODEL (placeholder - implement actual API calls)
  */
+async function callModelWithFallback(
+  model: ModelProvider,
+  input: string,
+  systemPrompt: string | undefined,
+  maxTokens: number
+): Promise<string> {
+  const candidates = [model, ...buildFallbackChain(model)];
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      return await callModel(candidate, input, systemPrompt, maxTokens);
+    } catch (error) {
+      lastError = error;
+      console.warn(`Model ${candidate} failed, attempting fallback...`);
+    }
+  }
+
+  throw lastError ?? new Error("All models in fallback chain failed");
+}
+
 async function callModel(
   model: ModelProvider,
   input: string,

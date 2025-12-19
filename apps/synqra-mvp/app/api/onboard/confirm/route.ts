@@ -125,7 +125,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         profileId: profile.id,
-        redirectUrl: '/dashboard',
+        redirectUrl: '/',
         tempCredentials: {
           email,
           password,
