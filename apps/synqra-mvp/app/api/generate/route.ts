@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
     const demoJobId = "demo-" + Date.now();
     const shouldPersist = persistEnabled && !demoMode;
 
+    // Demo mode OR persistence disabled: do not write to database
+    // (Per production constraint: avoid day-to-day/junk Supabase writes by default)
     if (!shouldPersist) {
       logContentGeneration(demoJobId, brief, platforms);
       return NextResponse.json(
@@ -53,17 +55,18 @@ export async function POST(request: NextRequest) {
           brief,
           platforms,
           variants: allVariants,
-          demoMode: true,
-          persistence: "disabled",
-          message:
-            "Content generated in demo mode. Set GENERATE_PERSIST_ENABLED=true to enable Supabase persistence.",
+          demoMode: demoMode,
+          persisted: false,
+          message: demoMode
+            ? "Demo mode: Content generated but not saved to database"
+            : "Content generated. Persistence disabled (set GENERATE_PERSIST_ENABLED=true to enable saving).",
           timestamp: new Date().toISOString(),
         },
         { status: 200 }
       );
     }
 
-    // Create job in Supabase
+    // Persistence explicitly enabled (non-default)
     const supabase = requireSupabase();
     const { data: job, error: jobError } = await supabase
       .from("content_jobs")
@@ -125,6 +128,7 @@ export async function POST(request: NextRequest) {
         platforms,
         variants: allVariants,
         savedCount: savedVariants?.length || 0,
+        persisted: true,
         timestamp: new Date().toISOString(),
       },
       { status: 201 }

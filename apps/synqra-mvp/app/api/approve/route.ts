@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { enqueue } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
-import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 /**
  * Approve and Publish Content
