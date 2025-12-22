@@ -72,7 +72,7 @@ export const RAILWAY_SERVICES: Record<string, RailwayService> = {
   "noid-dashboard": {
     name: "noid-dashboard",
     displayName: "NØID Dashboard",
-    port: 3001,
+    port: 3003,
     healthCheckPath: "/api/health",
     
     dockerfile: "noid-dashboard/Dockerfile",

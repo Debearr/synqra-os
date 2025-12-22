@@ -9,10 +9,14 @@ type UsageProps = { used?: number; limit?: number };
 const UsageMeter: React.FC<UsageProps> = ({ used = 0, limit = 0 }) => {
   if (!limit) return null;
   const percentage = Math.min(100, Math.round((used / limit) * 100));
+  const isSoftWarning = percentage >= 83 && percentage < 90;
+  const isFreeze = percentage >= 90;
+  const exceedsHardCap = limit >= 250 && used > limit;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
-        <span>Usage</span>
+        <span>Usage (Hard cap)</span>
         <span>
           {used}/{limit}
         </span>
@@ -23,9 +27,17 @@ const UsageMeter: React.FC<UsageProps> = ({ used = 0, limit = 0 }) => {
           style={{ width: `${percentage}%` }}
         />
       </div>
-      {percentage >= 85 && (
-        <p className="text-xs text-pink-600">
-          You&apos;re nearing your allocation. Consider a top-up or upgrade to stay ahead.
+      {isSoftWarning && (
+        <p className="text-xs text-pink-600">You&apos;re approaching your monthly hard cap.</p>
+      )}
+      {isFreeze && (
+        <p className="text-xs font-medium text-pink-700">
+          You&apos;ve reached your monthly limit. Upgrade or contact support.
+        </p>
+      )}
+      {exceedsHardCap && (
+        <p className="text-xs font-semibold text-pink-700">
+          Contact us for custom enterprise volume pricing.
         </p>
       )}
     </div>
@@ -80,8 +92,8 @@ const TierMeta: React.FC<{ tier: PricingTier }> = ({ tier }) => {
   }
   if (typeof tier.seats === "number") {
     items.push({ label: "Seats", value: `${tier.seats}` });
-  } else if (tier.seats === "unlimited") {
-    items.push({ label: "Seats", value: "Unlimited" });
+  } else if (tier.seats === "hard_capped") {
+    items.push({ label: "Seats", value: "Hard capped for predictable usage and cost control." });
   }
   if (typeof tier.flows === "number" && tier.flows > 0) {
     items.push({ label: "Flows", value: `${tier.flows}` });

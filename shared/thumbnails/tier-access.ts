@@ -18,16 +18,16 @@ export type TierLimits = {
   displayName: string;
   
   // Generation Limits
-  generationsPerMonth: number | "unlimited";
-  generationsPerDay: number | "unlimited";
-  generationsPerHour: number | "unlimited";
+  generationsPerMonth: number | "no_cap";
+  generationsPerDay: number | "no_cap";
+  generationsPerHour: number | "no_cap";
   batchSize: number; // Max thumbnails in one request
   
   // Quality & Features
   maxResolution: "reduced" | "full" | "ultra";
   watermark: boolean;
   brandAlignment: "basic" | "full" | "advanced";
-  refinementPasses: number | "unlimited";
+  refinementPasses: number | "no_cap";
   priorityRouting: boolean;
   
   // Platform Features
@@ -93,7 +93,7 @@ export const TIER_LIMITS: Record<ThumbnailTier, TierLimits> = {
     
     // Value Messaging
     valueProposition: "Learn the system. See what premium thumbnails can do.",
-    upgradeMessage: "You've mastered the basics. Ready to operate at full capacity? Pro unlocks native resolution, unlimited refinements, and strategic insights.",
+    upgradeMessage: "You've mastered the basics. Ready to operate at full capacity? Pro unlocks native resolution, hard capped refinements, and strategic insights.",
   },
 
   pro: {
@@ -110,7 +110,7 @@ export const TIER_LIMITS: Record<ThumbnailTier, TierLimits> = {
     maxResolution: "full", // Native platform resolution
     watermark: false,
     brandAlignment: "full", // Colors, fonts, spacing, logos
-    refinementPasses: "unlimited",
+    refinementPasses: "no_cap",
     priorityRouting: true,
     
     // Platform Features
@@ -133,7 +133,7 @@ export const TIER_LIMITS: Record<ThumbnailTier, TierLimits> = {
     priceAnnual: 470, // ~$39/mo (20% discount)
     
     // Value Messaging
-    valueProposition: "Operate at full capacity. Native resolution, unlimited refinements, strategic insights.",
+    valueProposition: "Operate at full capacity. Native resolution, hard capped refinements, strategic insights.",
     upgradeMessage: "Scaling to multiple platforms? Elite adds batch production, advanced AI vision, and auto-sync with your brand kit.",
   },
 
@@ -142,8 +142,8 @@ export const TIER_LIMITS: Record<ThumbnailTier, TierLimits> = {
     displayName: "Elite",
     
     // Generation Limits
-    generationsPerMonth: "unlimited",
-    generationsPerDay: "unlimited",
+    generationsPerMonth: "no_cap",
+    generationsPerDay: "no_cap",
     generationsPerHour: 50, // Soft limit to prevent abuse
     batchSize: 20,
     
@@ -151,7 +151,7 @@ export const TIER_LIMITS: Record<ThumbnailTier, TierLimits> = {
     maxResolution: "ultra", // Native + optional upscale
     watermark: false,
     brandAlignment: "advanced", // Full kit + mood board + auto-recovery
-    refinementPasses: "unlimited",
+    refinementPasses: "no_cap",
     priorityRouting: true,
     
     // Platform Features
@@ -198,7 +198,7 @@ export function canGenerate(
 
   // Check monthly limit
   if (
-    limits.generationsPerMonth !== "unlimited" &&
+    limits.generationsPerMonth !== "no_cap" &&
     usage.generationsThisMonth >= limits.generationsPerMonth
   ) {
     return {
@@ -210,7 +210,7 @@ export function canGenerate(
 
   // Check daily limit
   if (
-    limits.generationsPerDay !== "unlimited" &&
+    limits.generationsPerDay !== "no_cap" &&
     usage.generationsToday >= limits.generationsPerDay
   ) {
     return {
@@ -222,7 +222,7 @@ export function canGenerate(
 
   // Check hourly limit
   if (
-    limits.generationsPerHour !== "unlimited" &&
+    limits.generationsPerHour !== "no_cap" &&
     usage.generationsThisHour >= limits.generationsPerHour
   ) {
     return {
@@ -295,7 +295,7 @@ export function getUpgradeGuidance(
     return {
       title: "You've mastered the basics",
       message:
-        "Pro unlocks native resolution, unlimited refinements, and strategic insights to help your thumbnails perform better.",
+        "Pro unlocks native resolution, hard capped refinements, and strategic insights to help your thumbnails perform better.",
       nextTier: "pro",
       ctaText: "Explore Pro features",
       educationalTip:
