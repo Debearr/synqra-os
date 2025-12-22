@@ -1,0 +1,42 @@
+// Prisma schema for Avatar Engine storage
+// Aligns with Supabase/Postgres tables
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AvatarJob {
+  id             String   @id @map("id")
+  userId         String   @map("user_id")
+  plan           String
+  provider       String
+  status         String
+  cost           Decimal? @db.Decimal(10, 2)
+  previewUrl     String?  @map("preview_url")
+  videoUrl       String?  @map("video_url")
+  perceptualHash String?  @map("perceptual_hash")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([perceptualHash])
+  @@map("avatar_jobs")
+}
+
+model AvatarUsage {
+  id              String   @id @default(uuid()) @map("id")
+  userId          String   @unique @map("user_id")
+  plan            String
+  videosGenerated Int      @default(0) @map("videos_generated")
+  costToDate      Decimal  @db.Decimal(10, 2) @default(0) @map("cost_to_date")
+  windowStart     DateTime @default(now()) @map("window_start")
+  windowEnd       DateTime @default(now()) @map("window_end")
+  perceptualHash  String?  @map("perceptual_hash")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("avatar_usage")
+}

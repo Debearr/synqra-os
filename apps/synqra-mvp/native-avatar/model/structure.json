@@ -1,0 +1,8 @@
+{
+  "buffers": {
+    "video": "mp4",
+    "audio": "wav"
+  },
+  "transport": "websocket",
+  "notes": "Phase 2 will stream BullMQ worker outputs into this structure for mobile runtime"
+}
