@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSupabase } from "@/lib/supabaseClient";
 import {
   generateMultiPlatform,
   logContentGeneration,
   type Platform,
 } from "@/lib/contentGenerator";
+import { requireSupabase } from "@/lib/supabaseClient";
 
 /**
  * ============================================================
@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     const body: GenerateRequest = await request.json();
     const { searchParams } = new URL(request.url);
     const demoMode = searchParams.get("demo") === "true";
+    const persistEnabled =
+      (process.env.GENERATE_PERSIST_ENABLED || "").toLowerCase() === "true";
 
     // Validate input
     if (!body.brief || !body.platforms || body.platforms.length === 0) {
@@ -40,18 +42,21 @@ export async function POST(request: NextRequest) {
 
     // Generate variants for all platforms
     const allVariants = generateMultiPlatform(brief, platforms);
+    const demoJobId = "demo-" + Date.now();
+    const shouldPersist = persistEnabled && !demoMode;
 
-    // Demo mode: skip database, return generated content directly
-    if (demoMode) {
-      logContentGeneration("demo-" + Date.now(), brief, platforms);
+    if (!shouldPersist) {
+      logContentGeneration(demoJobId, brief, platforms);
       return NextResponse.json(
         {
-          jobId: "demo-" + Date.now(),
+          jobId: demoJobId,
           brief,
           platforms,
           variants: allVariants,
           demoMode: true,
-          message: "Demo mode: Content generated but not saved to database",
+          persistence: "disabled",
+          message:
+            "Content generated in demo mode. Set GENERATE_PERSIST_ENABLED=true to enable Supabase persistence.",
           timestamp: new Date().toISOString(),
         },
         { status: 200 }

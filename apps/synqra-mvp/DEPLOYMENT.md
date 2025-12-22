@@ -53,6 +53,16 @@ SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
+### Canonical Supabase env vars on Railway
+
+Set these in Railway Variables (no public prefixes), then restart the service:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Only these canonical names are used in production. Legacy aliases (e.g., `SUPABASE_SERVICE_KEY`) are warnings only and should be replaced.
+
 ### Posting Pipeline Configuration
 
 ```bash
