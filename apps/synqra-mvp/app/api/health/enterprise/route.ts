@@ -7,6 +7,11 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  getSupabaseAnonKey,
+  getSupabaseServiceRoleKey,
+  getSupabaseUrl,
+} from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,32 +115,38 @@ export async function GET(request: NextRequest) {
 
 async function checkEnvironmentVariables(): Promise<HealthCheck> {
   const start = Date.now();
+  const legacyAliases = ["SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE"].filter(
+    (key) => !!process.env[key]
+  );
 
   try {
-    const requiredVars = [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    ];
+    const supabaseUrl = getSupabaseUrl();
+    const supabaseAnonKey = getSupabaseAnonKey();
+    const supabaseServiceRoleKey = getSupabaseServiceRoleKey();
 
-    const missing = requiredVars.filter((v) => !process.env[v]);
-
-    if (missing.length > 0) {
-      return {
-        name: "environment_variables",
-        status: "fail",
-        message: `Missing: ${missing.join(", ")}`,
-        duration: Date.now() - start,
-        timestamp: new Date(),
-        metadata: { missing },
-      };
-    }
+    const status: HealthCheck["status"] =
+      legacyAliases.length > 0 || !process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? "warn"
+        : "pass";
+    const message =
+      status === "warn"
+        ? `Canonical Supabase vars resolved with legacy aliases present: ${legacyAliases.join(
+            ", "
+          ) || "none"}`
+        : "Canonical Supabase env vars present";
 
     return {
       name: "environment_variables",
-      status: "pass",
-      message: "All required env vars present",
+      status,
+      message,
       duration: Date.now() - start,
       timestamp: new Date(),
+      metadata: {
+        supabaseUrl: Boolean(supabaseUrl),
+        supabaseAnonKey: Boolean(supabaseAnonKey),
+        supabaseServiceRoleKey: Boolean(supabaseServiceRoleKey),
+        legacyAliases,
+      },
     };
   } catch (error) {
     return {
@@ -152,20 +163,7 @@ async function checkDatabaseConnection(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return {
-        name: "database_connection",
-        status: "fail",
-        message: "Supabase credentials not configured",
-        duration: Date.now() - start,
-        timestamp: new Date(),
-      };
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+    const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
 
     const { error } = await supabase
       .from("profiles")

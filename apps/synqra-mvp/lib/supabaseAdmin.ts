@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from './supabase/env';
 
 /**
  * ============================================================
@@ -13,47 +14,36 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  * - SUPABASE_SERVICE_ROLE: Your Supabase service role key (secret!)
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-// Support multiple naming conventions for backwards compatibility
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
+let supabaseAdmin: SupabaseClient | null = null;
+let supabaseAdminInitError: Error | null = null;
 
-/**
- * Validate that a URL is a valid HTTP/HTTPS URL.
- * Prevents build-time errors when env vars are missing or invalid.
- */
-function isValidSupabaseUrl(url: string | undefined): url is string {
-  if (!url || typeof url !== 'string' || url.trim() === '') return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
+try {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseKey = getSupabaseServiceRoleKey();
+
+  supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: {
+      schema: 'public',
+    },
+  });
+} catch (error) {
+  supabaseAdminInitError = error instanceof Error ? error : new Error("Unknown Supabase admin init error");
+  supabaseAdmin = null;
 }
 
-// Only create client if we have valid credentials
-// This prevents build-time errors when env vars are not configured
-const hasValidCredentials = isValidSupabaseUrl(supabaseUrl) && !!supabaseKey;
-
-// Export a typed client or null if credentials not configured
-export const supabaseAdmin: SupabaseClient | null = hasValidCredentials
-  ? createClient(supabaseUrl, supabaseKey, {
-      auth: { 
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-      db: { 
-        schema: 'public' 
-      },
-    })
-  : null;
+export { supabaseAdmin };
 
 // Helper to ensure client is available
 export function requireSupabaseAdmin(): SupabaseClient {
   if (!supabaseAdmin) {
     throw new Error(
-      '❌ Supabase Admin client not available. ' +
-      'Ensure SUPABASE_URL (valid HTTPS URL) and SUPABASE_SERVICE_KEY are set in environment.'
+      "❌ Supabase Admin client not available. " +
+      "Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in Railway Variables and restart." +
+      (supabaseAdminInitError ? ` Details: ${supabaseAdminInitError.message}` : "")
     );
   }
   return supabaseAdmin;

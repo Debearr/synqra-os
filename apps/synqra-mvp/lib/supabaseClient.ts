@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAnonKey, getSupabaseUrl } from "./supabase/env";
 
 /**
  * ============================================================
@@ -11,31 +12,19 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
  * - SUPABASE_ANON_KEY: Your Supabase anonymous/public key
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let supabase: SupabaseClient | null = null;
+let supabaseInitError: Error | null = null;
 
-/**
- * Validate that a URL is a valid HTTP/HTTPS URL.
- * Prevents build-time errors when env vars are missing or invalid.
- */
-function isValidSupabaseUrl(url: string | undefined): url is string {
-  if (!url || typeof url !== 'string' || url.trim() === '') return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
+try {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnonKey = getSupabaseAnonKey();
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} catch (error) {
+  supabaseInitError = error instanceof Error ? error : new Error("Unknown Supabase init error");
+  supabase = null;
 }
 
-// Only create client if we have valid credentials
-// This prevents build-time errors when env vars are not configured
-const hasValidCredentials = isValidSupabaseUrl(supabaseUrl) && !!supabaseAnonKey;
-
-// Export a typed client or null if credentials not configured
-export const supabase: SupabaseClient | null = hasValidCredentials
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export { supabase };
 
 /**
  * Helper to get a valid Supabase client or throw
@@ -43,8 +32,9 @@ export const supabase: SupabaseClient | null = hasValidCredentials
 export function requireSupabase(): SupabaseClient {
   if (!supabase) {
     throw new Error(
-      '❌ Supabase client not available. ' +
-      'Ensure SUPABASE_URL (valid HTTPS URL) and SUPABASE_ANON_KEY are set in environment.'
+      "❌ Supabase client not available. " +
+      "Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Railway Variables and restart." +
+      (supabaseInitError ? ` Details: ${supabaseInitError.message}` : "")
     );
   }
   return supabase;
