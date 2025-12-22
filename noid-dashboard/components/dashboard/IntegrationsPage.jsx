@@ -247,7 +247,7 @@ const IntegrationsPage = () => {
           <div>
             <h4 className="text-lg font-medium text-yellow-400 mb-2">Rate Limit Notice</h4>
             <p className="text-noid-silver">
-              Some AI providers have rate limits. Your current plan includes unlimited access, 
+              Some AI providers have rate limits. Your current plan is hard capped for predictable usage and cost control,
               but individual API providers may have their own restrictions during peak hours.
             </p>
           </div>

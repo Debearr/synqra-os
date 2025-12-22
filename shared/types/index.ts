@@ -38,7 +38,7 @@ export interface Profile {
   stripe_customer_id?: string;
   tier: "free" | "pro" | "enterprise" | null;
   campaigns_used: number;
-  campaigns_limit: number | null; // null = unlimited
+  campaigns_limit: number | null; // null = no cap explicitly set
   renewal_date?: string;
   metadata?: Record<string, any>;
 }
