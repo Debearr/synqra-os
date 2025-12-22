@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { requireSupabase } from "@/lib/supabaseClient";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     };
 
+    const supabase = requireSupabase();
     let result;
     if (id) {
       // Update

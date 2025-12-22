@@ -129,4 +129,82 @@ export interface InvocationOptions {
   maxHistory?: number;
   responseTier?: ResponseTier; // New: Control response length for cost optimization
   metadata?: Record<string, any>;
+  
+  /**
+   * REQUIRED: Human confirmation gate.
+   * Agent cannot respond without explicit human approval.
+   */
+  confirmation: AgentConfirmationGate;
+}
+
+/**
+ * ============================================================
+ * AGENT CONFIRMATION GATE
+ * ============================================================
+ * Enforces human-in-command principle for agent responses.
+ * All agent actions require explicit human confirmation.
+ */
+export interface AgentConfirmationGate {
+  /**
+   * Whether human confirmation has been explicitly granted.
+   */
+  confirmed: boolean;
+  
+  /**
+   * Unique token proving confirmation was granted.
+   */
+  confirmationToken?: string;
+  
+  /**
+   * ISO timestamp when confirmation was granted.
+   */
+  confirmedAt?: string;
+}
+
+/**
+ * Error thrown when agent action attempts to execute without confirmation.
+ */
+export class AgentConfirmationRequiredError extends Error {
+  constructor(action: string) {
+    super(`Agent action requires human confirmation: ${action}`);
+    this.name = 'AgentConfirmationRequiredError';
+  }
+}
+
+/**
+ * Validate that an agent confirmation gate has been properly authorized.
+ */
+export function validateAgentConfirmation(
+  gate: AgentConfirmationGate | undefined,
+  action: string
+): void {
+  if (!gate) {
+    throw new AgentConfirmationRequiredError(action);
+  }
+  
+  if (!gate.confirmed) {
+    throw new AgentConfirmationRequiredError(action);
+  }
+  
+  if (!gate.confirmationToken) {
+    throw new AgentConfirmationRequiredError(`${action} (missing confirmation token)`);
+  }
+}
+
+/**
+ * Generate a confirmation token for human-approved agent actions.
+ */
+export function generateAgentConfirmationToken(): string {
+  return `agent_confirm_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Create a valid agent confirmation gate after human approval.
+ */
+export function createAgentConfirmationGate(): AgentConfirmationGate {
+  return {
+    confirmed: true,
+    confirmationToken: generateAgentConfirmationToken(),
+    confirmedAt: new Date().toISOString(),
+  };
 }

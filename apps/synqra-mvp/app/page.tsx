@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import GenerateButton from "../components/GenerateButton";
 import OutputPanel from "../components/OutputPanel";
@@ -22,12 +22,7 @@ export default function HomePage() {
   const [previousDraft, setPreviousDraft] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
-    const rotation = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % PROMPT_SUGGESTIONS.length);
-    }, 8000);
-    return () => clearInterval(rotation);
-  }, []);
+  // Placeholder rotation disabled per Design Constitution (no autoplay loops)
 
   const currentPlaceholder = PROMPT_SUGGESTIONS[placeholderIndex];
 
@@ -80,16 +75,6 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          {/* Social Proof */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="mt-8 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.3em] text-white/35"
-          >
-            <span>Used by executives at</span>
-            <span className="text-indigo">Stripe · Notion · Linear</span>
-          </motion.div>
         </div>
 
         {/* Perfect Draft Engine */}
@@ -191,22 +176,12 @@ export default function HomePage() {
             transition={{ delay: 0.5, duration: 0.6 }}
             className="mt-12 text-center"
           >
-            <p className="mb-6 text-sm text-white/50">
-              Ready for full access? Join 300+ executives.
-            </p>
             
             {/* Primary CTA - Pilot */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a
                 href="/pilot/apply"
-                className="inline-flex rounded-lg px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:opacity-90 hover:scale-105"
-                style={{
-                  backgroundColor: '#C5A572',
-                  color: '#0A0A0A',
-                  letterSpacing: '0.025em',
-                  minHeight: '48px',
-                  alignItems: 'center',
-                }}
+                className="inline-flex items-center rounded-lg bg-gold-cta px-8 py-4 min-h-12 text-sm font-bold uppercase tracking-wider text-noir-deep transition-all duration-200 hover:opacity-90 hover:scale-105"
               >
                 Apply for Founder Pilot
               </a>
@@ -214,15 +189,7 @@ export default function HomePage() {
               {/* Secondary CTA - Subscription (Disabled) */}
               <button
                 disabled
-                className="inline-flex rounded-lg px-8 py-4 text-sm font-bold uppercase tracking-wider cursor-not-allowed"
-                style={{
-                  backgroundColor: 'rgba(245, 243, 240, 0.05)',
-                  color: 'rgba(245, 243, 240, 0.3)',
-                  border: '1px solid rgba(245, 243, 240, 0.1)',
-                  letterSpacing: '0.025em',
-                  minHeight: '48px',
-                  alignItems: 'center',
-                }}
+                className="inline-flex items-center rounded-lg border border-ivory-warm/10 bg-ivory-warm/5 px-8 py-4 min-h-12 text-sm font-bold uppercase tracking-wider text-ivory-warm/30 cursor-not-allowed"
               >
                 Join Subscription Waitlist
               </button>

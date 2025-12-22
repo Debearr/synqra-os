@@ -6,14 +6,33 @@
  * bge_embeddings → vector_search → context_enrichment → routing_engine
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { runInference } from "../models/localModelLoader";
 import { processText } from "../models/processingPipeline";
 
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || "";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+/**
+ * Validate that a URL is a valid HTTP/HTTPS URL.
+ * Prevents build-time errors when env vars are missing or invalid.
+ */
+function isValidSupabaseUrl(url: string | undefined): url is string {
+  if (!url || typeof url !== 'string' || url.trim() === '') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+// Only create client if we have valid credentials
+const hasValidCredentials = isValidSupabaseUrl(supabaseUrl) && !!supabaseKey;
+
+const supabase: SupabaseClient | null = hasValidCredentials
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 /**
  * Vector pipeline stages
@@ -126,6 +145,12 @@ async function vectorSearch(
   topK: number,
   threshold: number
 ): Promise<any[]> {
+  // Return empty if no Supabase client available
+  if (!supabase) {
+    console.warn("Vector search skipped: Supabase client not available");
+    return [];
+  }
+
   try {
     // Query Supabase vector store
     // This assumes you have a `documents` table with a `embedding` column (vector)
@@ -228,6 +253,12 @@ function determineRouting(input: string, context: string): string {
  * Log pipeline execution
  */
 async function logPipelineExecution(data: any): Promise<void> {
+  // Skip if no Supabase client available
+  if (!supabase) {
+    console.warn("Pipeline logging skipped: Supabase client not available");
+    return;
+  }
+
   try {
     await supabase
       .from("pipeline_logs")
@@ -248,6 +279,12 @@ export async function storeEmbedding(
   embedding: number[],
   metadata: Record<string, any> = {}
 ): Promise<{ success: boolean; id?: string }> {
+  // Return failure if no Supabase client available
+  if (!supabase) {
+    console.warn("Embedding storage skipped: Supabase client not available");
+    return { success: false };
+  }
+
   try {
     const { data, error } = await supabase
       .from("embeddings")

@@ -41,7 +41,16 @@ type RootLayoutProps = {
 const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en" className="bg-noir">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        {/* Global ownership watermark — NØID Labs Inc. */}
+        <div
+          className="fixed bottom-4 right-4 text-xs text-white/50 tracking-widest pointer-events-none select-none"
+          aria-hidden="true"
+        >
+          NØID Labs Inc.
+        </div>
+      </body>
     </html>
   );
 };

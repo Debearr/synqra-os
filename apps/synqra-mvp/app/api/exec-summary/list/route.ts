@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { requireSupabase } from "@/lib/supabaseClient";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   
   // For this MVP, let's list all for now, or filter if userId is provided in query
   
+  const supabase = requireSupabase();
   const { data, error } = await supabase
     .from("exec_summaries")
     .select("id, label, product_name, created_at")

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { requireSupabase } from "@/lib/supabaseClient";
 import {
   generateMultiPlatform,
   logContentGeneration,
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create job in Supabase
+    const supabase = requireSupabase();
     const { data: job, error: jobError } = await supabase
       .from("content_jobs")
       .insert({

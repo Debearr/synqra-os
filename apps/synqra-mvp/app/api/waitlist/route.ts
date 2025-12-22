@@ -94,21 +94,13 @@ export async function POST(req: Request) {
 }
 
 /**
- * GET: Public waitlist count
- * Optional endpoint to show social proof ("Join 247 others")
+ * GET: Disabled
+ * Social proof count endpoint removed per Design Constitution.
+ * The POST endpoint for signups remains active.
  */
 export async function GET() {
-  try {
-    const supabaseAdmin = requireSupabaseAdmin();
-    const { count, error } = await supabaseAdmin
-      .from('waitlist')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) throw error;
-
-    return NextResponse.json({ count: count || 0 });
-  } catch (e) {
-    console.error('[Waitlist API] Count error:', e);
-    return NextResponse.json({ count: 0 });
-  }
+  return NextResponse.json(
+    { error: 'Endpoint disabled', message: 'Social proof counts are not exposed' },
+    { status: 410 }
+  );
 }

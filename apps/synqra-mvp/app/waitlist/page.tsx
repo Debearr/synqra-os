@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -21,15 +21,7 @@ export default function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
-
-  // Load waitlist count for social proof
-  useEffect(() => {
-    fetch('/api/waitlist')
-      .then(res => res.json())
-      .then(data => setWaitlistCount(data.count))
-      .catch(() => setWaitlistCount(null));
-  }, []);
+  // Social proof count removed per Design Constitution
 
   // Client-side email validation
   const validateEmail = (email: string): boolean => {
@@ -95,11 +87,6 @@ export default function WaitlistPage() {
           <p className="text-zinc-400 text-sm">
             Join the first 50. Founder Access perks + priority onboarding.
           </p>
-          {waitlistCount !== null && waitlistCount > 0 && (
-            <p className="text-emerald-400 text-xs mt-3 font-medium">
-              {waitlistCount} {waitlistCount === 1 ? 'founder has' : 'founders have'} joined
-            </p>
-          )}
         </div>
 
         {/* Form */}

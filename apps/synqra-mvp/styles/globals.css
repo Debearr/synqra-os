@@ -4,13 +4,24 @@
 
 :root {
   color-scheme: dark;
-  --brand-bg: #0B0B0B;
-  --brand-fg: #EDEDED;
-  --brand-gold: #D4AF37;
-  --brand-teal: #00FFC6;
-  --brand-gray: #A0A0A0;
-  --brand-ink: #141414;
-  --brand-mute: #F7F7F7;
+  /* Legacy brand variables - aligned with LuxGrid/Tailwind tokens */
+  --brand-bg: #0B0B0B;      /* = noir.DEFAULT */
+  --brand-fg: #EDEDED;      /* = brand.fg */
+  --brand-gold: #D4AF37;    /* = lux.gold */
+  --brand-teal: #00FFC6;    /* = brand.teal */
+  --brand-gray: #A0A0A0;    /* = brand.gray */
+  --brand-ink: #141414;     /* = brand.ink */
+  --brand-mute: #F7F7F7;    /* = brand.mute */
+  /* Canonical tokens */
+  --lux-black: #000000;
+  --lux-gold: #D4AF37;
+  --lux-emerald: #00D9A3;
+  --lux-white: #FFFFFF;
+  --gold-cta: #C5A572;
+  --ivory-warm: #F5F3F0;
+  --accent-teal: #2DD4BF;
+  --state-error: #EF4444;
+  --noir-deep: #0A0A0A;
 }
 
 html,

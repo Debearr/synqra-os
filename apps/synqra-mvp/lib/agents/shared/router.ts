@@ -1,17 +1,37 @@
-import { AgentRole, ResponseTier } from "../base/types";
+import { 
+  AgentRole, 
+  ResponseTier,
+  AgentConfirmationGate,
+  createAgentConfirmationGate,
+  validateAgentConfirmation,
+} from "../base/types";
 
 /**
  * ============================================================
  * AGENT ROUTER
  * ============================================================
- * Intelligent routing to determine which agent should handle a request
+ * Intelligent routing to determine which agent should handle a request.
+ * 
+ * HUMAN-IN-COMMAND: This router only determines intent and routing.
+ * Actual agent invocation requires explicit human confirmation via
+ * a valid AgentConfirmationGate passed to the agent's invoke method.
  */
+
+// Re-export confirmation utilities for consumers
+export { createAgentConfirmationGate, validateAgentConfirmation };
+export type { AgentConfirmationGate };
 
 interface RoutingResult {
   agent: AgentRole;
   confidence: number;
   reason: string;
   responseTier: ResponseTier; // Smart token budget allocation
+  
+  /**
+   * HUMAN-IN-COMMAND: Reminder that agent invocation requires confirmation.
+   * This is always true - no agent can execute without human approval.
+   */
+  requiresConfirmation: true;
 }
 
 /**
@@ -160,6 +180,8 @@ export function routeToAgent(message: string): RoutingResult {
     confidence,
     reason,
     responseTier,
+    // HUMAN-IN-COMMAND: Always require confirmation before agent execution
+    requiresConfirmation: true,
   };
 }
 

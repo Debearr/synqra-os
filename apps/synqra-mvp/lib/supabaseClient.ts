@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * ============================================================
@@ -7,20 +7,48 @@ import { createClient } from "@supabase/supabase-js";
  * Zero-cost backend for content flywheel storage
  *
  * Required environment variables:
- * - SUPABASE_URL: Your Supabase project URL
+ * - SUPABASE_URL: Your Supabase project URL (must be valid HTTPS URL)
  * - SUPABASE_ANON_KEY: Your Supabase anonymous/public key
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mock.supabase.co";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "mock-anon-key-for-testing-only";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl.includes("tjfeindwmpuyayjvftke") || !supabaseAnonKey.startsWith("eyJ")) {
-  console.warn(
-    "⚠️  Supabase credentials not configured correctly. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env.local"
-  );
+/**
+ * Validate that a URL is a valid HTTP/HTTPS URL.
+ * Prevents build-time errors when env vars are missing or invalid.
+ */
+function isValidSupabaseUrl(url: string | undefined): url is string {
+  if (!url || typeof url !== 'string' || url.trim() === '') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Only create client if we have valid credentials
+// This prevents build-time errors when env vars are not configured
+const hasValidCredentials = isValidSupabaseUrl(supabaseUrl) && !!supabaseAnonKey;
+
+// Export a typed client or null if credentials not configured
+export const supabase: SupabaseClient | null = hasValidCredentials
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+/**
+ * Helper to get a valid Supabase client or throw
+ */
+export function requireSupabase(): SupabaseClient {
+  if (!supabase) {
+    throw new Error(
+      '❌ Supabase client not available. ' +
+      'Ensure SUPABASE_URL (valid HTTPS URL) and SUPABASE_ANON_KEY are set in environment.'
+    );
+  }
+  return supabase;
+}
 
 /**
  * Database type definitions for type safety

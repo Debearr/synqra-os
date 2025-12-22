@@ -1,5 +1,7 @@
+import type { TradeOff } from '@/lib/core';
+
 export type TradeOffViewerProps = {
-  tradeoffs: any[];
+  tradeoffs: TradeOff[];
 };
 
 export const TradeOffViewer = ({ tradeoffs }: TradeOffViewerProps) => {

@@ -9,7 +9,7 @@
  * - GPT-5 (final signed deliverables only)
  */
 
-import { ModelProvider, RoutingDecision, TaskComplexity, AITask } from './types';
+import { ModelProvider, RoutingDecision, TaskComplexity, AITask, validateConfirmation } from './types';
 import { scoreComplexity } from './complexity';
 import { estimateCost } from './cost';
 import { compressInput, reduceContext } from './compression';
@@ -214,8 +214,15 @@ function simpleHash(str: string): string {
 
 /**
  * EXECUTE TASK (with pipeline)
+ * 
+ * HUMAN-IN-COMMAND: This function requires explicit human confirmation
+ * before any AI action executes. Without a valid confirmation gate,
+ * the function will throw ConfirmationRequiredError.
  */
 export async function executeTask(task: AITask): Promise<any> {
+  // CONFIRMATION GATE: Enforce human confirmation before any AI execution
+  validateConfirmation(task.confirmation, `AI task execution: ${task.type}`);
+  
   // Get routing decision
   const decision = await route(task);
 
@@ -381,8 +388,16 @@ function generateTaskId(): string {
 /**
  * BATCH PROCESSOR
  * Batches similar tasks for efficiency
+ * 
+ * HUMAN-IN-COMMAND: All tasks in the batch require individual confirmation.
+ * Each task's confirmation gate is validated before execution.
  */
 export async function batchProcess(tasks: AITask[]): Promise<any[]> {
+  // CONFIRMATION GATE: Validate all tasks have confirmation before processing
+  for (const task of tasks) {
+    validateConfirmation(task.confirmation, `Batch AI task: ${task.type}`);
+  }
+  
   // Group by model type
   const grouped = new Map<ModelProvider, AITask[]>();
   

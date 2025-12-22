@@ -2,11 +2,13 @@
  * ============================================================
  * CONTENT RECIPES SYSTEM
  * ============================================================
- * Loads and executes content recipe templates
+ * Loads and executes content recipe templates.
+ * 
+ * HUMAN-IN-COMMAND: All recipe executions require explicit confirmation.
  */
 
 import { executeTask } from './router';
-import { AITask, ModelProvider } from './types';
+import { AITask, ModelProvider, ConfirmationGate } from './types';
 import fs from 'fs';
 import path from 'path';
 
@@ -113,10 +115,13 @@ function parseRecipe(id: string, markdown: string): Recipe {
 
 /**
  * EXECUTE RECIPE
+ * 
+ * HUMAN-IN-COMMAND: Requires explicit confirmation gate.
  */
 export async function executeRecipe(
   recipeId: string,
   variables: Record<string, string>,
+  confirmation: ConfirmationGate,
   options?: {
     maxBudget?: number;
     model?: ModelProvider;
@@ -156,6 +161,7 @@ export async function executeRecipe(
     maxBudget: options?.maxBudget || recipe.estimatedCost * 1.5,
     model: options?.model || recipe.recommendedModel,
     cacheKey: options?.cacheKey || `recipe-${recipeId}-${hashVariables(variables)}`,
+    confirmation, // HUMAN-IN-COMMAND: Require confirmation
   };
   
   // Execute
@@ -266,14 +272,17 @@ export async function getRecipeStats(
 
 /**
  * TEST RECIPE
+ * 
+ * HUMAN-IN-COMMAND: Requires explicit confirmation gate.
  */
 export async function testRecipe(
   recipeId: string,
-  variables: Record<string, string>
+  variables: Record<string, string>,
+  confirmation: ConfirmationGate
 ): Promise<RecipeExecution> {
   console.log(`🧪 Testing recipe: ${recipeId}`);
   
-  const result = await executeRecipe(recipeId, variables);
+  const result = await executeRecipe(recipeId, variables, confirmation);
   
   console.log(`✅ Recipe test complete:`);
   console.log(`   Time: ${result.generationTime}ms`);

@@ -5,6 +5,7 @@ import {
   AgentRequestSchema,
   type AgentRequest,
 } from "@/lib/agents";
+import { createAgentConfirmationGate } from "@/lib/agents/shared/router";
 import { retrieveDocuments, formatDocumentsAsContext } from "@/lib/rag";
 import { applySafetyGuardrails } from "@/lib/safety";
 import { agentConfig } from "@/lib/agents/base/config";
@@ -30,6 +31,19 @@ export async function POST(request: NextRequest) {
           details: validationResult.error.issues,
         },
         { status: 400 }
+      );
+    }
+
+    // HUMAN-IN-COMMAND: Require explicit confirmation before AI action
+    // Client must include { confirmed: true } in request body
+    if (!body.confirmed) {
+      return NextResponse.json(
+        {
+          error: "Confirmation required",
+          message: "AI actions require explicit human confirmation. Include { confirmed: true } in request body.",
+          requiresConfirmation: true,
+        },
+        { status: 403 }
       );
     }
 
@@ -67,9 +81,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Create confirmation gate from validated human approval
+    const confirmationGate = createAgentConfirmationGate();
+
     // Invoke the agent with optimized response tier
     const response = await agent.invoke(enhancedRequest, {
       responseTier: routing.responseTier, // Smart token budgeting
+      confirmation: confirmationGate, // Human-in-command: confirmed at API boundary
     });
 
     // Apply safety guardrails

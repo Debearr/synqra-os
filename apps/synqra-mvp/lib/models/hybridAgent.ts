@@ -5,9 +5,11 @@
  * Integrates HuggingFace local models with existing agent system
  * Routes intelligently between local and API models
  * Validates quality and escalates when needed
+ * 
+ * HUMAN-IN-COMMAND: All hybrid requests require explicit confirmation.
  */
 
-import { AgentRequest, AgentResponse, InvocationOptions } from "../agents/base/types";
+import { AgentRequest, AgentResponse, InvocationOptions, validateAgentConfirmation } from "../agents/base/types";
 import { routeToModel, trackRouting, shouldEscalate } from "./intelligentRouter";
 import { runInference } from "./localModelLoader";
 import { validateQuality } from "./qualityValidator";
@@ -17,11 +19,18 @@ import { checkBudget, recordCost } from "../agents/budgetGuardrails";
 
 /**
  * Process request using hybrid local+API approach
+ * 
+ * HUMAN-IN-COMMAND: Requires explicit confirmation gate in options.
  */
 export async function processHybridRequest(
   request: AgentRequest,
-  options: InvocationOptions = {}
+  options: InvocationOptions
 ): Promise<AgentResponse> {
+  // CONFIRMATION GATE: Enforce human confirmation before any hybrid AI processing
+  validateAgentConfirmation(
+    options.confirmation,
+    `Hybrid AI request: ${request.message.substring(0, 50)}...`
+  );
   const startTime = Date.now();
   
   console.log(`🔄 Processing hybrid request: "${request.message.substring(0, 50)}..."`);
@@ -212,11 +221,19 @@ export async function processHybridRequest(
 
 /**
  * Batch process multiple requests (more efficient)
+ * 
+ * HUMAN-IN-COMMAND: Requires explicit confirmation gate in options.
  */
 export async function processBatchHybrid(
   requests: AgentRequest[],
-  options: InvocationOptions = {}
+  options: InvocationOptions
 ): Promise<AgentResponse[]> {
+  // CONFIRMATION GATE: Validate before batch processing
+  validateAgentConfirmation(
+    options.confirmation,
+    `Batch hybrid AI processing: ${requests.length} requests`
+  );
+  
   console.log(`📦 Batch processing ${requests.length} requests`);
   
   // Process all in parallel
