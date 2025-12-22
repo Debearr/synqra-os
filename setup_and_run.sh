@@ -153,27 +153,39 @@ cleanup() {
 # Set up trap to cleanup on script exit
 trap cleanup SIGINT SIGTERM EXIT
 
-# Start Health Checks Dashboard (port 3003)
-if [ -d "scripts/health-checks" ]; then
-    echo "🏥 Starting Health Checks Dashboard on port 3003..."
-    cd scripts/health-checks
-    npm run dev > /tmp/health-checks.log 2>&1 &
-    HEALTH_PID=$!
+# Start Synqra Frontend (port 3000)
+if [ -d "apps/synqra-mvp" ]; then
+    echo "🌐 Starting Synqra Frontend on port 3000..."
+    cd apps/synqra-mvp
+    npm run dev > /tmp/synqra-frontend.log 2>&1 &
+    SYNQRA_PID=$!
     cd ../..
-    echo "   └─ PID: $HEALTH_PID"
-    echo "   └─ URL: http://localhost:3003"
+    echo "   └─ PID: $SYNQRA_PID"
+    echo "   └─ URL: http://localhost:3000"
     echo ""
 fi
 
-# Start NOID Dashboard (port 3000)
+# Start NOID Dashboard (port 3003)
 if [ -d "noid-dashboard" ]; then
-    echo "🎨 Starting NOID Dashboard on port 3000..."
+    echo "🎨 Starting NOID Dashboard on port 3003..."
     cd noid-dashboard
     npm run dev > /tmp/noid-dashboard.log 2>&1 &
     NOID_PID=$!
     cd ..
     echo "   └─ PID: $NOID_PID"
-    echo "   └─ URL: http://localhost:3000"
+    echo "   └─ URL: http://localhost:3003"
+    echo ""
+fi
+
+# Start Health Checks Dashboard (port 3004)
+if [ -d "scripts/health-checks" ]; then
+    echo "🏥 Starting Health Checks Dashboard on port 3004..."
+    cd scripts/health-checks
+    npm run dev:synqra > /tmp/health-checks.log 2>&1 &
+    HEALTH_PID=$!
+    cd ../..
+    echo "   └─ PID: $HEALTH_PID"
+    echo "   └─ URL: http://localhost:3004"
     echo ""
 fi
 
@@ -186,18 +198,23 @@ echo "════════════════════════�
 echo ""
 echo "📊 AVAILABLE DASHBOARDS:"
 echo ""
+echo "   🌐 Synqra Frontend"
+echo "      http://localhost:3000"
+echo ""
 echo "   🎨 NOID Dashboard"
-echo "      http://localhost:3000/dashboard"
+echo "      http://localhost:3003/dashboard"
 echo ""
 echo "   🏥 Health Checks Dashboard"
-echo "      http://localhost:3003"
+echo "      http://localhost:3004"
 echo ""
 echo "📝 LOGS:"
+echo "   • Synqra Frontend: /tmp/synqra-frontend.log"
 echo "   • Health Checks: /tmp/health-checks.log"
 echo "   • NOID Dashboard: /tmp/noid-dashboard.log"
 echo ""
 echo "⏹️  Press Ctrl+C to stop all services"
 echo "════════════════════════════════════════════════════════"
+
 echo ""
 
 # Keep script running and wait for processes

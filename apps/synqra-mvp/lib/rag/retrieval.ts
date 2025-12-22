@@ -22,7 +22,7 @@ const MOCK_KNOWLEDGE_BASE: Array<{
   {
     id: "kb-001",
     content:
-      "Synqra offers three pricing tiers: Starter ($29/month for up to 5 users), Professional ($99/month for up to 25 users), and Enterprise (custom pricing for unlimited users). Annual billing provides a 20% discount.",
+      "Synqra offers three pricing tiers: Starter ($29/month for up to 5 users), Professional ($99/month for up to 25 users), and Enterprise (custom pricing with hard capped access for predictable usage and cost control). Annual billing provides a 20% discount.",
     source: "/pricing",
     category: "pricing",
     keywords: ["pricing", "cost", "plan", "tier", "starter", "professional", "enterprise"],

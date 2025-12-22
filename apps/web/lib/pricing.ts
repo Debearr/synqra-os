@@ -15,7 +15,7 @@ export type PricingTier = {
   billing: "free" | "weekly" | "monthly" | "custom";
   campaigns?: number; // monthly total (or per-week if weekly)
   campaignsPerWeek?: number;
-  seats?: number | "unlimited";
+  seats?: number | "hard_capped";
   flows?: number;
   resolution?: "720p" | "1080p" | "4k";
   watermark?: boolean;
@@ -118,14 +118,14 @@ export const PRICING: Record<TierKey, PricingTier> = {
     price: "$1,297 / month",
     billing: "monthly",
     campaigns: 100,
-    seats: "unlimited",
+    seats: "hard_capped",
     flows: 25,
     resolution: "4k",
     watermark: false,
     api: true,
     features: [
       "100 campaigns / month",
-      "Unlimited seats, 25 automation flows",
+      "Hard capped seats for predictable usage and cost control; 25 automation flows",
       "API access (bandwidth-limited)",
       "Dedicated onboarding",
     ],
