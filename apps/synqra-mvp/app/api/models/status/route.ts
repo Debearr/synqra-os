@@ -3,6 +3,12 @@ import { getLoaderStatus } from "@/lib/models/localModelLoader";
 import { getRoutingStats } from "@/lib/models/intelligentRouter";
 import { generateCostReport, analyzeRoutingEffectiveness } from "@/lib/models/selfLearning";
 import { getHybridSystemStatus } from "@/lib/models/hybridAgent";
+import {
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  normalizeError,
+} from "@/lib/safeguards";
 
 /**
  * ============================================================
@@ -13,7 +19,11 @@ import { getHybridSystemStatus } from "@/lib/models/hybridAgent";
  */
 
 export async function GET(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
+    enforceKillSwitch({ scope: "models/status", correlationId });
+
     // Gather all status information
     const [
       loaderStatus,
@@ -30,6 +40,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
+      correlationId,
       status: "operational",
       timestamp: new Date().toISOString(),
       
@@ -71,14 +82,18 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Model status error:", error);
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
 
     return NextResponse.json(
-      {
-        error: "Failed to retrieve model status",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
     );
   }
 }
