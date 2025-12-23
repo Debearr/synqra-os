@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSupabase } from "@/lib/supabaseClient";
+import {
+  enforceKillSwitch,
+  ensureCorrelationId,
+  logSafeguard,
+  normalizeError,
+  requireConfirmation,
+} from "@/lib/safeguards";
 
 /**
  * ============================================================
@@ -19,7 +26,23 @@ interface RetentionNoteRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
     const body: RetentionNoteRequest = await request.json();
+
+    logSafeguard({
+      level: "info",
+      message: "retention.note.start",
+      scope: "retention",
+      correlationId,
+      data: { platform: body?.platform, videoId: body?.videoId },
+    });
+
+    enforceKillSwitch({ scope: "retention", correlationId });
+    requireConfirmation({
+      confirmed: body?.confirmed,
+      context: "Store retention analytics note",
+      correlationId,
+    });
 
     // Validate input
     if (!body.platform || !body.videoId) {
@@ -27,6 +50,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Invalid request",
           message: "Both 'platform' and 'videoId' are required",
+          correlationId,
         },
         { status: 400 }
       );
@@ -54,6 +78,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Database error",
           message: error.message,
+          correlationId,
         },
         { status: 500 }
       );
@@ -63,6 +88,13 @@ export async function POST(request: NextRequest) {
     const timestamp = new Date().toISOString();
     const logLine = `[RETENTION] ${timestamp} | Platform: ${platform} | Video: ${videoId} | Duration: ${avgViewDuration || "N/A"}s | Completion: ${avgCompletion || "N/A"}%`;
     console.log(logLine);
+    logSafeguard({
+      level: "info",
+      message: "retention.note.success",
+      scope: "retention",
+      correlationId,
+      data: { platform, videoId },
+    });
 
     return NextResponse.json(
       {
@@ -73,18 +105,30 @@ export async function POST(request: NextRequest) {
         avgCompletion,
         notes,
         timestamp: data.created_at,
+        correlationId,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Retention note save error:", error);
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: "error",
+      message: "retention.note.error",
+      scope: "retention",
+      correlationId,
+      data: { error: normalized.code },
+    });
 
     return NextResponse.json(
       {
-        error: "Failed to save retention note",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: normalized.code,
+        message: normalized.safeMessage,
+        correlationId,
       },
-      { status: 500 }
+      { status: normalized.status }
     );
   }
 }
@@ -95,6 +139,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
     const { searchParams } = new URL(request.url);
     const platform = searchParams.get("platform");
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -118,6 +164,7 @@ export async function GET(request: NextRequest) {
         {
           error: "Database error",
           message: error.message,
+          correlationId,
         },
         { status: 500 }
       );
@@ -127,16 +174,28 @@ export async function GET(request: NextRequest) {
       notes: data || [],
       count: data?.length || 0,
       platform: platform || "all",
+      correlationId,
     });
   } catch (error) {
-    console.error("Retention notes fetch error:", error);
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: "error",
+      message: "retention.notes.list.error",
+      scope: "retention",
+      correlationId,
+      data: { error: normalized.code },
+    });
 
     return NextResponse.json(
       {
-        error: "Failed to fetch retention notes",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: normalized.code,
+        message: normalized.safeMessage,
+        correlationId,
       },
-      { status: 500 }
+      { status: normalized.status }
     );
   }
 }

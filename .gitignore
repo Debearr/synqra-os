@@ -104,6 +104,8 @@ reports/
 *.md
 !README.md
 !apps/synqra-mvp/README.md
+!apps/synqra-mvp/docs/
+!apps/synqra-mvp/docs/**
 
 # Archives and backups
 *.zip
@@ -126,6 +128,12 @@ packages/
 synqra-os/
 !nixpacks.toml
 !Procfile
+!apps/synqra-mvp/lib/
+# Allow MVP safeguards library
+!apps/synqra-mvp/lib/safeguards/
+!apps/synqra-mvp/lib/safeguards/**
+!apps/synqra-mvp/scripts/
+!apps/synqra-mvp/scripts/safeguards-smoke.ts
 
 # Temporary and diagnostic files
 nul
