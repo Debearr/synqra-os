@@ -10,11 +10,32 @@ import { buildAuraFxContext } from "@/lib/aura-fx/engine";
 import { buildSignalPayload } from "@/lib/aura-fx/signalFormatter";
 import { sendSignalToTelegram } from "@/lib/aura-fx/telegramClient";
 import { Candle, Timeframe } from "@/lib/aura-fx/types";
+import {
+  AppError,
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 export async function POST(req: NextRequest) {
+  const correlationId = ensureCorrelationId(req.headers.get("x-correlation-id"));
+
   try {
+    enforceKillSwitch({ scope: "aura-fx/signal", correlationId });
+
     const url = new URL(req.url);
     const broadcast = url.searchParams.get("broadcast") === "1";
+    const dryRun = url.searchParams.get("dryRun") === "1";
+
+    logSafeguard({
+      level: "info",
+      message: "aura-fx.signal.start",
+      scope: "aura-fx/signal",
+      correlationId,
+      data: { broadcast, dryRun },
+    });
 
     const body = await req.json();
     const { symbol, timeframe, candles, tzOffsetMinutes } = body as {
@@ -25,9 +46,22 @@ export async function POST(req: NextRequest) {
     };
 
     if (!symbol || !timeframe || !Array.isArray(candles) || candles.length < 3) {
+      const normalized = normalizeError(
+        new AppError({
+          message: "Invalid signal request",
+          code: "invalid_request",
+          status: 400,
+          safeMessage: "symbol, timeframe, and at least 3 candles are required",
+          details: { correlationId },
+        })
+      );
+
       return NextResponse.json(
-        { error: "symbol, timeframe, and at least 3 candles are required" },
-        { status: 400 }
+        buildAgentErrorEnvelope({
+          error: normalized,
+          correlationId,
+        }),
+        { status: normalized.status }
       );
     }
 
@@ -41,13 +75,37 @@ export async function POST(req: NextRequest) {
       timeframe,
     });
 
-    if (broadcast) {
+    if (broadcast && !dryRun) {
       await sendSignalToTelegram(signal);
     }
 
-    return NextResponse.json({ signal });
+    logSafeguard({
+      level: "info",
+      message: "aura-fx.signal.success",
+      scope: "aura-fx/signal",
+      correlationId,
+      data: { symbol, timeframe, broadcast, dryRun },
+    });
+
+    return NextResponse.json({ signal, correlationId, broadcast, dryRun });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+    logSafeguard({
+      level: "error",
+      message: "aura-fx.signal.error",
+      scope: "aura-fx/signal",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
+    return NextResponse.json(
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+      }),
+      { status: normalized.status }
+    );
   }
 }

@@ -5,6 +5,14 @@ import {
   type Platform,
 } from "@/lib/contentGenerator";
 import { requireSupabase } from "@/lib/supabaseClient";
+import {
+  AppError,
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 /**
  * ============================================================
@@ -20,7 +28,18 @@ interface GenerateRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
+    logSafeguard({
+      level: "info",
+      message: "generate.start",
+      scope: "generate",
+      correlationId,
+    });
+
+    enforceKillSwitch({ scope: "generate", correlationId });
+
     const body: GenerateRequest = await request.json();
     const { searchParams } = new URL(request.url);
     const demoMode = searchParams.get("demo") === "true";
@@ -29,12 +48,23 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     if (!body.brief || !body.platforms || body.platforms.length === 0) {
+      const normalized = normalizeError(
+        new AppError({
+          message: "Invalid generate request",
+          code: "invalid_request",
+          status: 400,
+          safeMessage: "Both 'brief' and 'platforms' are required.",
+          details: { correlationId },
+        })
+      );
+
       return NextResponse.json(
-        {
-          error: "Invalid request",
-          message: "Both 'brief' and 'platforms' are required",
-        },
-        { status: 400 }
+        buildAgentErrorEnvelope({
+          error: normalized,
+          correlationId,
+          extras: { message: normalized.safeMessage },
+        }),
+        { status: normalized.status }
       );
     }
 
@@ -51,6 +81,7 @@ export async function POST(request: NextRequest) {
       logContentGeneration(demoJobId, brief, platforms);
       return NextResponse.json(
         {
+          correlationId,
           jobId: demoJobId,
           brief,
           platforms,
@@ -81,10 +112,19 @@ export async function POST(request: NextRequest) {
     if (jobError) {
       console.error("Failed to create content job:", jobError);
       return NextResponse.json(
-        {
-          error: "Database error",
-          message: jobError.message,
-        },
+        buildAgentErrorEnvelope({
+          error: normalizeError(
+            new AppError({
+              message: "Database error",
+              code: "database_error",
+              status: 500,
+              safeMessage: jobError.message,
+              details: { correlationId },
+            })
+          ),
+          correlationId,
+          extras: { message: jobError.message },
+        }),
         { status: 500 }
       );
     }
@@ -110,10 +150,19 @@ export async function POST(request: NextRequest) {
     if (variantsError) {
       console.error("Failed to save content variants:", variantsError);
       return NextResponse.json(
-        {
-          error: "Database error",
-          message: variantsError.message,
-        },
+        buildAgentErrorEnvelope({
+          error: normalizeError(
+            new AppError({
+              message: "Database error",
+              code: "database_error",
+              status: 500,
+              safeMessage: variantsError.message,
+              details: { correlationId },
+            })
+          ),
+          correlationId,
+          extras: { message: variantsError.message },
+        }),
         { status: 500 }
       );
     }
@@ -123,6 +172,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        correlationId,
         jobId: job.id,
         brief,
         platforms,
@@ -134,14 +184,26 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Content generation error:", error);
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+
+    logSafeguard({
+      level: "error",
+      message: "generate.error",
+      scope: "generate",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
 
     return NextResponse.json(
-      {
-        error: "Content generation failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
     );
   }
 }
@@ -150,8 +212,13 @@ export async function POST(request: NextRequest) {
  * GET /api/generate
  * Health check and endpoint info
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
+  enforceKillSwitch({ scope: "generate", correlationId });
+
   return NextResponse.json({
+    correlationId,
     endpoint: "/api/generate",
     method: "POST",
     description: "Generate platform-native hooks and CTAs from a brief",

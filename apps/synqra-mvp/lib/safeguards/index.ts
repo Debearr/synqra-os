@@ -18,3 +18,4 @@ export {
   requireConfirmation,
   type ConfirmationResult,
 } from "./confirm";
+export { buildAgentErrorEnvelope } from "./envelope";

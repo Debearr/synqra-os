@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeModels } from "@/lib/models/localModelLoader";
+import {
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 /**
  * ============================================================
@@ -10,13 +17,23 @@ import { initializeModels } from "@/lib/models/localModelLoader";
  */
 
 export async function POST(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
-    console.log("🚀 Initializing local models...");
-    
+    logSafeguard({
+      level: "info",
+      message: "models.init.start",
+      scope: "models/init",
+      correlationId,
+    });
+
+    enforceKillSwitch({ scope: "models/init", correlationId });
+
     const result = await initializeModels();
     
     if (result.success) {
       return NextResponse.json({
+        correlationId,
         success: true,
         message: "Models initialized successfully",
         loaded: result.loaded,
@@ -26,6 +43,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         {
+          correlationId,
           success: false,
           message: "Some models failed to load",
           loaded: result.loaded,
@@ -36,14 +54,25 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Model initialization error:", error);
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+    logSafeguard({
+      level: "error",
+      message: "models.init.error",
+      scope: "models/init",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
 
     return NextResponse.json(
-      {
-        error: "Failed to initialize models",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
     );
   }
 }
@@ -53,14 +82,35 @@ export async function POST(request: NextRequest) {
  * Check if models are initialized
  */
 export async function GET(request: NextRequest) {
-  const { getLoaderStatus } = await import("@/lib/models/localModelLoader");
-  const status = getLoaderStatus();
-  
-  return NextResponse.json({
-    initialized: status.loaded.length > 0,
-    loaded: status.loaded,
-    loading: status.loading,
-    failed: status.failed,
-    timestamp: new Date().toISOString(),
-  });
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
+  try {
+    enforceKillSwitch({ scope: "models/init", correlationId });
+
+    const { getLoaderStatus } = await import("@/lib/models/localModelLoader");
+    const status = getLoaderStatus();
+    
+    return NextResponse.json({
+      correlationId,
+      initialized: status.loaded.length > 0,
+      loaded: status.loaded,
+      loading: status.loading,
+      failed: status.failed,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+
+    return NextResponse.json(
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
+    );
+  }
 }
