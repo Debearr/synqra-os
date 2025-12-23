@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { z } from 'zod';
+import {
+  enforceKillSwitch,
+  ensureCorrelationId,
+  normalizeError,
+  requireConfirmation,
+  logSafeguard,
+} from '@/lib/safeguards';
 
 const pilotAgentSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -22,7 +29,23 @@ type PilotAgentInput = z.infer<typeof pilotAgentSchema>;
 
 export async function POST(req: Request) {
   try {
+    const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
     const body = await req.json();
+
+    logSafeguard({
+      level: 'info',
+      message: 'onboard.confirm.start',
+      scope: 'onboard-confirm',
+      correlationId,
+      data: { name: body?.name },
+    });
+
+    enforceKillSwitch({ scope: 'onboard-confirm', correlationId });
+    requireConfirmation({
+      confirmed: body?.confirmed,
+      context: 'Create pilot agent account',
+      correlationId,
+    });
 
     const validationResult = pilotAgentSchema.safeParse(body);
 
@@ -33,6 +56,7 @@ export async function POST(req: Request) {
           error: 'validation_failed',
           message: 'Please complete required fields: name, title, company',
           details: validationResult.error.issues,
+          correlationId,
         },
         { status: 400 }
       );
@@ -57,12 +81,19 @@ export async function POST(req: Request) {
     });
 
     if (authError || !authData.user) {
-      console.error('[Onboard Confirm] Auth creation failed:', authError);
+      logSafeguard({
+        level: 'error',
+        message: 'onboard.confirm.auth.failed',
+        scope: 'onboard-confirm',
+        correlationId,
+        data: { error: authError?.message },
+      });
       return NextResponse.json(
         {
           ok: false,
           error: 'account_creation_failed',
           message: 'Failed to create user account',
+          correlationId,
         },
         { status: 500 }
       );
@@ -97,10 +128,22 @@ export async function POST(req: Request) {
       .single();
 
     if (profileError) {
-      console.error('[Onboard Confirm] Profile creation failed:', profileError);
+      logSafeguard({
+        level: 'error',
+        message: 'onboard.confirm.profile.failed',
+        scope: 'onboard-confirm',
+        correlationId,
+        data: { error: profileError?.message },
+      });
 
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(err => {
-        console.error('[Onboard Confirm] Cleanup failed:', err);
+        logSafeguard({
+          level: 'warn',
+          message: 'onboard.confirm.cleanup.failed',
+          scope: 'onboard-confirm',
+          correlationId,
+          data: { error: err?.message },
+        });
       });
 
       return NextResponse.json(
@@ -108,15 +151,18 @@ export async function POST(req: Request) {
           ok: false,
           error: 'profile_creation_failed',
           message: 'Failed to create pilot profile',
+          correlationId,
         },
         { status: 500 }
       );
     }
 
-    console.log('[Onboard Confirm] Success:', {
-      userId,
-      profileId: profile.id,
-      name: data.name,
+    logSafeguard({
+      level: 'info',
+      message: 'onboard.confirm.success',
+      scope: 'onboard-confirm',
+      correlationId,
+      data: { userId, profileId: profile.id, name: data.name },
     });
 
     return NextResponse.json({
@@ -131,17 +177,29 @@ export async function POST(req: Request) {
           password,
         },
       },
+      correlationId,
     });
 
   } catch (error: any) {
-    console.error('[Onboard Confirm] Unexpected error:', error);
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: 'error',
+      message: 'onboard.confirm.error',
+      scope: 'onboard-confirm',
+      correlationId,
+      data: { error: normalized.code },
+    });
     return NextResponse.json(
       {
         ok: false,
-        error: 'server_error',
-        message: 'An unexpected error occurred',
+        error: normalized.code,
+        message: normalized.safeMessage,
+        correlationId,
       },
-      { status: 500 }
+      { status: normalized.status }
     );
   }
 }

@@ -19,6 +19,11 @@ import {
   offerScoreJsonSchema,
 } from "@/engine/prompt-templates/driver-intel";
 import { routeDriverIntelModel } from "@/engine/router/model-router";
+import {
+  ensureCorrelationId,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 export async function GET() {
   return NextResponse.json({
@@ -29,13 +34,23 @@ export async function GET() {
       driverHealthJsonSchema,
     },
     prompt: driverIntelSystemPrompt,
+    correlationId: ensureCorrelationId(null),
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const correlationId = ensureCorrelationId(req.headers.get("x-correlation-id"));
     const body = await req.json();
     const action: string = body.action ?? "scoreOffer";
+
+    logSafeguard({
+      level: "info",
+      message: "driver-intel.start",
+      scope: "driver-intel",
+      correlationId,
+      data: { action },
+    });
 
     switch (action) {
       case "scoreOffer": {
@@ -71,6 +86,14 @@ export async function POST(req: NextRequest) {
           driverRatingScore: offer.rating ? (offer.rating / 5) * 100 : undefined,
         });
 
+        logSafeguard({
+          level: "info",
+          message: "driver-intel.score.success",
+          scope: "driver-intel",
+          correlationId,
+          data: { offerId: offer.id, model: routeDriverIntelModel({ task: "scoring", priority: body.priority, payloadTokens: 512 }) },
+        });
+
         return NextResponse.json({
           ok: true,
           data: {
@@ -85,6 +108,7 @@ export async function POST(req: NextRequest) {
             }),
             schema: offerScoreJsonSchema,
           },
+          correlationId,
         });
       }
 
@@ -96,9 +120,18 @@ export async function POST(req: NextRequest) {
           extraExpenses: body.extraExpenses,
         });
 
+        logSafeguard({
+          level: "info",
+          message: "driver-intel.daily.success",
+          scope: "driver-intel",
+          correlationId,
+          data: { items: shiftDay.completedOffers?.length || 0 },
+        });
+
         return NextResponse.json({
           ok: true,
           data: result,
+          correlationId,
         });
       }
 
@@ -114,7 +147,15 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        return NextResponse.json({ ok: true, data: result });
+        logSafeguard({
+          level: "info",
+          message: "driver-intel.project.success",
+          scope: "driver-intel",
+          correlationId,
+          data: { offers: offers.length },
+        });
+
+        return NextResponse.json({ ok: true, data: result, correlationId });
       }
 
       case "health": {
@@ -123,22 +164,41 @@ export async function POST(req: NextRequest) {
           hoursDriven: body.hoursDriven,
           lastBreakMinutesAgo: body.lastBreakMinutesAgo,
         });
+        logSafeguard({
+          level: "info",
+          message: "driver-intel.health.success",
+          scope: "driver-intel",
+          correlationId,
+        });
         return NextResponse.json({
           ok: true,
           data: result,
           schema: driverHealthJsonSchema,
+          correlationId,
         });
       }
 
       default:
         return NextResponse.json(
-          { ok: false, error: `Unknown action: ${action}` },
+          { ok: false, error: `Unknown action: ${action}`, correlationId },
           { status: 400 }
         );
     }
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: "error",
+      message: "driver-intel.error",
+      scope: "driver-intel",
+      correlationId,
+      data: { error: normalized.code },
+    });
+    return NextResponse.json(
+      { ok: false, error: normalized.safeMessage, correlationId },
+      { status: normalized.status }
+    );
   }
 }

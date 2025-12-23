@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { enqueue } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
+import {
+  enforceBudget,
+  enforceKillSwitch,
+  ensureCorrelationId,
+  normalizeError,
+  requireConfirmation,
+  logSafeguard,
+} from '@/lib/safeguards';
 
 /**
  * Approve and Publish Content
@@ -20,13 +28,29 @@ import { config } from '@/lib/posting/config';
 export async function POST(req: NextRequest) {
   const supabase = requireSupabaseAdmin();
   try {
-    const { jobId, variantIds, platforms, adminToken } = await req.json();
+    const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
+    const { jobId, variantIds, platforms, adminToken, confirmed } = await req.json();
+
+    logSafeguard({
+      level: 'info',
+      message: 'approve.request.start',
+      scope: 'approve',
+      correlationId,
+      data: { jobId, platforms },
+    });
+
+    enforceKillSwitch({ scope: 'approve', correlationId });
+    requireConfirmation({
+      confirmed,
+      context: 'Approve and publish content to external platforms',
+      correlationId,
+    });
 
     // Validate admin token
     const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
     if (!adminToken || adminToken !== expectedToken) {
       return NextResponse.json(
-        { ok: false, error: 'Unauthorized - invalid admin token' },
+        { ok: false, error: 'Unauthorized - invalid admin token', correlationId },
         { status: 401 }
       );
     }
@@ -34,15 +58,21 @@ export async function POST(req: NextRequest) {
     // Validate required fields
     if (!jobId || !platforms || !Array.isArray(platforms)) {
       return NextResponse.json(
-        { ok: false, error: 'Missing jobId or platforms' },
+        { ok: false, error: 'Missing jobId or platforms', correlationId },
         { status: 400 }
       );
     }
 
+    enforceBudget({
+      estimatedCost: Math.max(0.02 * platforms.length, 0.02),
+      scope: 'approve',
+      correlationId,
+    });
+
     // Check if posting is enabled
     if (!config.postingEnabled && !config.dryRun) {
       return NextResponse.json(
-        { ok: false, error: 'Posting disabled by system configuration' },
+        { ok: false, error: 'Posting disabled by system configuration', correlationId },
         { status: 403 }
       );
     }
@@ -56,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     if (jobError || !job) {
       return NextResponse.json(
-        { ok: false, error: 'Job not found' },
+        { ok: false, error: 'Job not found', correlationId },
         { status: 404 }
       );
     }
@@ -75,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     if (variantsError || !variants || variants.length === 0) {
       return NextResponse.json(
-        { ok: false, error: 'No variants found' },
+        { ok: false, error: 'No variants found', correlationId },
         { status: 404 }
       );
     }
@@ -127,6 +157,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    logSafeguard({
+      level: 'info',
+      message: 'approve.request.success',
+      scope: 'approve',
+      correlationId,
+      data: { jobId, enqueuedCount: enqueued.length, dryRun: config.dryRun },
+    });
+
     return NextResponse.json({
       ok: true,
       jobId,
@@ -136,13 +174,24 @@ export async function POST(req: NextRequest) {
       message: config.dryRun
         ? `Approved in DRY_RUN mode - ${enqueued.length} jobs queued (no actual posts)`
         : `Approved and queued ${enqueued.length} posts`,
+      correlationId,
     });
 
   } catch (error: any) {
-    console.error('Approve error:', error);
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: 'error',
+      message: 'approve.request.error',
+      scope: 'approve',
+      correlationId,
+      data: { error: normalized.code },
+    });
     return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 500 }
+      { ok: false, error: normalized.safeMessage, correlationId },
+      { status: normalized.status }
     );
   }
 }
@@ -155,13 +204,15 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const supabase = requireSupabaseAdmin();
   try {
+    const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
+
     const adminToken = req.nextUrl.searchParams.get('adminToken');
 
     // Validate admin token
     const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
     if (!adminToken || adminToken !== expectedToken) {
       return NextResponse.json(
-        { ok: false, error: 'Unauthorized' },
+        { ok: false, error: 'Unauthorized', correlationId },
         { status: 401 }
       );
     }
@@ -184,13 +235,24 @@ export async function GET(req: NextRequest) {
       ok: true,
       jobs: jobs || [],
       total: jobs?.length || 0,
+      correlationId,
     });
 
   } catch (error: any) {
-    console.error('Get approvals error:', error);
+    const normalized = normalizeError(error);
+    const correlationId = ensureCorrelationId(
+      (error as any)?.correlationId || undefined
+    );
+    logSafeguard({
+      level: 'error',
+      message: 'approve.list.error',
+      scope: 'approve',
+      correlationId,
+      data: { error: normalized.code },
+    });
     return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 500 }
+      { ok: false, error: normalized.safeMessage, correlationId },
+      { status: normalized.status }
     );
   }
 }
