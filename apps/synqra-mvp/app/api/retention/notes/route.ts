@@ -22,6 +22,7 @@ interface RetentionNoteRequest {
   avgViewDuration?: number;
   avgCompletion?: number;
   notes?: string;
+  confirmed?: boolean;
 }
 
 export async function POST(request: NextRequest) {

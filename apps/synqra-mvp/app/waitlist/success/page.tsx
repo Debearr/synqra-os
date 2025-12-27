@@ -42,25 +42,25 @@ export default function SuccessPage() {
         {/* CTAs */}
         <div className="space-y-3">
           <a 
-            href="https://www.linkedin.com/company/noidlabs"
+            href="https://synqra.co"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block w-full rounded-xl bg-emerald-400 text-black font-semibold py-3
                        hover:bg-emerald-300 transition-all duration-200
                        focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-black"
           >
-            Follow NØID on LinkedIn
+            Visit Synqra
           </a>
           
           <a 
-            href="https://instagram.com/duskopoppington"
+            href="https://synqra.app"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block w-full rounded-xl border border-zinc-800 text-white font-semibold py-3
                        hover:bg-zinc-900 transition-all duration-200
                        focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black"
           >
-            Follow on Instagram
+            Open Synqra App
           </a>
 
           <Link
@@ -76,7 +76,7 @@ export default function SuccessPage() {
         {/* Footer */}
         <div className="mt-10 pt-6 border-t border-zinc-900">
           <p className="text-xs text-zinc-500">
-            NØID Labs Inc. • Toronto, Canada
+            Synqra Intelligence Systems
           </p>
           <p className="text-xs text-zinc-600 mt-2">
             Building the future of creator automation

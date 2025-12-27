@@ -5,14 +5,14 @@ import "../styles/globals.css";
 // Google Fonts can fail during build when network is restricted
 
 export const metadata: Metadata = {
-  title: "Synqra — AI Content Orchestration for Executives | NØID Labs",
-  description: "Generate executive-grade content in seconds. Synqra learns your voice, maintains brand consistency, and produces publish-ready copy across LinkedIn, Twitter, and newsletters. Built by NØID Labs.",
-  keywords: "AI content generation, executive content, brand voice AI, content orchestration, LinkedIn automation, Twitter automation, CEO content tools, NØID Labs",
+  title: "Synqra — AI Content Orchestration for Executives",
+  description: "Generate executive-grade content in seconds. Synqra learns your voice, maintains brand consistency, and produces publish-ready copy across LinkedIn, Twitter, and newsletters.",
+  keywords: "AI content generation, executive content, brand voice AI, content orchestration, LinkedIn automation, Twitter automation, CEO content tools",
   openGraph: {
     title: "Synqra — AI Content Orchestration for Executives",
-    description: "Generate executive-grade content in seconds with AI that learns your voice. Built by NØID Labs.",
+    description: "Generate executive-grade content in seconds with AI that learns your voice.",
     url: "https://synqra.app",
-    siteName: "Synqra by NØID Labs",
+    siteName: "Synqra",
     type: "website",
     images: [{
       url: "/og-synqra.jpg",
@@ -25,7 +25,6 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Synqra — AI Content Orchestration for Executives",
     description: "Generate executive-grade content in seconds with AI that learns your voice.",
-    creator: "@noidlabs",
     images: ["/og-synqra.jpg"],
   },
   themeColor: "#0B0B0B",
@@ -43,13 +42,6 @@ const RootLayout = ({ children }: RootLayoutProps) => {
     <html lang="en" className="bg-noir">
       <body className="font-sans">
         {children}
-        {/* Global ownership watermark — NØID Labs Inc. */}
-        <div
-          className="fixed bottom-4 right-4 text-xs text-white/50 tracking-widest pointer-events-none select-none"
-          aria-hidden="true"
-        >
-          NØID Labs Inc.
-        </div>
       </body>
     </html>
   );

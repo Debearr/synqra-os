@@ -130,7 +130,7 @@ export default function WaitlistPage() {
                          text-white placeholder:text-zinc-600
                          focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent
                          transition-all duration-200 disabled:opacity-50"
-              placeholder="leroy@noidlabs.com"
+              placeholder="leroy@synqra.co"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -187,7 +187,7 @@ export default function WaitlistPage() {
 
         {/* Footer */}
         <div className="mt-6 text-center text-xs text-zinc-500">
-          <p className="font-medium">NØID × Synqra</p>
+          <p className="font-medium">Synqra</p>
           <p className="mt-1 italic">&ldquo;Drive Unseen. Earn Smart.&rdquo;</p>
         </div>
       </div>

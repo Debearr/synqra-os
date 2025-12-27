@@ -1,4 +1,4 @@
-import type { Option } from '@/lib/core';
+type Option = Record<string, unknown>;
 
 export type OptionSetViewerProps = {
   options: Option[];

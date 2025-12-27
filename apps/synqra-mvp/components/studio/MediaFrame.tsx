@@ -29,7 +29,7 @@
  * - No data source connections
  */
 
-import type { MediaFrameProps } from '@/lib/core/mediaFrame.types';
+type MediaFrameProps = Record<string, unknown>;
 
 /**
  * MediaFrame — Ambient Media Frame Placeholder
@@ -59,4 +59,3 @@ export function MediaFrame(_props: MediaFrameProps): null {
  * Default export for convenience.
  */
 export default MediaFrame;
-
