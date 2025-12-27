@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type OutputPanelProps = {
   draft: string | null;
@@ -20,29 +20,19 @@ const slideVariants = {
 
 const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousDraft, dimmed = false }: OutputPanelProps) => {
   const [copied, setCopied] = useState(false);
-  const [flash, setFlash] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 600);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  useEffect(() => {
-    if (!flash) return;
-    const timer = setTimeout(() => setFlash(false), 220);
-    return () => clearTimeout(timer);
-  }, [flash]);
+  const [flashKey, setFlashKey] = useState(0);
+  const [copyPulse, setCopyPulse] = useState(0);
 
   const handleCopy = async () => {
     if (!draft) return;
     try {
       await navigator.clipboard.writeText(draft);
       setCopied(true);
-      setFlash(true);
+      setFlashKey((prev) => prev + 1);
+      setCopyPulse((prev) => prev + 1);
     } catch {
       setCopied(false);
-      setFlash(false);
+      setFlashKey(0);
     }
   };
 
@@ -67,7 +57,17 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
               onClick={handleCopy}
               className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-white/80 transition-colors duration-200 hover:border-indigo hover:bg-indigo/30"
             >
-              {copyLabel}
+              <motion.span
+                key={copyPulse}
+                initial={{ opacity: 0.6, y: -2 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                onAnimationComplete={() => {
+                  if (copied) setCopied(false);
+                }}
+              >
+                {copyLabel}
+              </motion.span>
             </button>
           </div>
 
@@ -102,17 +102,26 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
           </div>
 
           <AnimatePresence>
-            {flash && (
+            {flashKey > 0 && (
               <motion.div
-                key="flash"
+                key={`flash-${flashKey}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.45 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
+                onAnimationComplete={() => setFlashKey(0)}
                 className="pointer-events-none absolute inset-0 bg-indigo/60 mix-blend-screen"
               />
             )}
           </AnimatePresence>
+          <a
+            href="https://synqra.co"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-4 right-4 text-[0.6rem] uppercase tracking-[0.3em] text-white/35 hover:text-white/60"
+          >
+            Synqra
+          </a>
         </motion.section>
       )}
     </AnimatePresence>

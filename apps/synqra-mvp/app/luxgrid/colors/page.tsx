@@ -1,9 +1,8 @@
 /**
- * LUXGRID COLOR SYSTEM SHOWCASE
+ * SYNQRA COLOR SYSTEM SHOWCASE
  * 
  * Internal design system page displaying the complete
- * LuxGrid color palette for NØID, SYNQRA, AuraFX, NY7 Coffee,
- * and all future theme packs.
+ * Synqra color palette reference for the core system.
  * 
  * Route: /luxgrid/colors
  * 
@@ -39,7 +38,7 @@ export default function LuxgridColorSystem() {
   return (
     <div className="min-h-screen bg-black px-20 py-20">
       <h1 className="text-4xl text-white font-bold tracking-[0.15em] mb-4">
-        LUXGRID COLOR SYSTEM
+        SYNQRA COLOR SYSTEM
       </h1>
 
       <div className="w-24 h-[3px] bg-[#00D9A3] mb-12" />
@@ -51,7 +50,7 @@ export default function LuxgridColorSystem() {
       </div>
 
       <footer className="mt-20 text-neutral-600 text-xs tracking-wider text-center">
-        LUXGRID SYSTEM · SYNQRA × NØID · 2025
+        SYNQRA SYSTEM · 2025
       </footer>
     </div>
   );

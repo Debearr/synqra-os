@@ -70,7 +70,7 @@ export default function HomePage() {
             transition={{ duration: 0.6 }}
           >
             <span className="text-xs uppercase tracking-[0.5em] text-white/40">
-              Synqra by NØID Labs
+              Synqra
             </span>
             <h1 className="mt-4 font-display text-5xl tracking-tight text-white md:text-6xl lg:text-7xl">
               Your executive voice.

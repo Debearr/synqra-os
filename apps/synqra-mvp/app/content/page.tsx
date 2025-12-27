@@ -173,7 +173,7 @@ export default function ContentPage() {
 
           {/* Generated Content Display */}
           {generatedContent && (
-            <div className="mt-6 space-y-4 rounded-lg bg-black/40 p-6">
+            <div className="relative mt-6 space-y-4 rounded-lg bg-black/40 p-6">
               <p className="text-xs text-white/50">
                 Job ID: {generatedContent.jobId}
               </p>
@@ -196,6 +196,14 @@ export default function ContentPage() {
                   </div>
                 )
               )}
+              <a
+                href="https://synqra.co"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-3 right-4 text-[0.6rem] uppercase tracking-[0.3em] text-white/35 hover:text-white/60"
+              >
+                Synqra
+              </a>
             </div>
           )}
         </section>

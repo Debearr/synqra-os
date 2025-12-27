@@ -1,4 +1,4 @@
-import type { DecisionStep } from '@/lib/core';
+type DecisionStep = Record<string, unknown>;
 
 export type DecisionNodeViewerProps = {
   steps: DecisionStep[];

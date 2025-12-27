@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
           message: "driver-intel.daily.success",
           scope: "driver-intel",
           correlationId,
-          data: { items: shiftDay.completedOffers?.length || 0 },
+          data: { items: shiftDay.offers.length },
         });
 
         return NextResponse.json({

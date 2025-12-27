@@ -111,9 +111,19 @@ export default function CreatePage() {
         <h2 className="mb-2 text-sm font-semibold text-neutral-200">Output</h2>
 
         {output ? (
-          <pre className="whitespace-pre-wrap break-words rounded-xl bg-neutral-950 p-3 text-sm text-neutral-100 border border-neutral-800">
-            {JSON.stringify(output, null, 2)}
-          </pre>
+          <div className="relative">
+            <pre className="whitespace-pre-wrap break-words rounded-xl bg-neutral-950 p-3 text-sm text-neutral-100 border border-neutral-800">
+              {JSON.stringify(output, null, 2)}
+            </pre>
+            <a
+              href="https://synqra.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-2 right-3 text-[0.6rem] uppercase tracking-[0.3em] text-white/35 hover:text-white/60"
+            >
+              Synqra
+            </a>
+          </div>
         ) : (
           <p className="text-sm text-neutral-500">Awaiting output…</p>
         )}
