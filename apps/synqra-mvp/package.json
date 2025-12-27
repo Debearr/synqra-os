@@ -7,7 +7,10 @@
     "dev:3004": "next dev -p 3004",
     "build": "next build",
     "start": "PORT=${PORT:-3000} next start",
-    "lint": "next lint || echo 'lint skipped'"
+    "lint": "next lint || echo 'lint skipped'",
+    "clean:next": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
+    "predev": "pnpm run clean:next",
+    "prebuild": "pnpm run clean:next"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
