@@ -125,14 +125,14 @@ export default function OnboardPage() {
   }, [isLoading, profile]);
 
   return (
-    <main className="min-h-screen bg-noir text-white">
+    <main className="min-h-screen bg-noid-black text-white">
       <div className="relative isolate overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(212,175,55,0.08),transparent_35%),radial-gradient(circle_at_90%_20%,rgba(0,255,198,0.12),transparent_32%)]" />
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/8 to-transparent" />
 
         <div className="relative mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-20 space-y-12">
           <header className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.24em] text-brand-gray">
+            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.24em] text-noid-silver">
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
                 Synqra onboarding
               </span>
@@ -147,7 +147,7 @@ export default function OnboardPage() {
               <h1 className="text-3xl font-light leading-tight md:text-4xl">
                 Capture your signals. Review the profile. Move into the composer with confidence.
               </h1>
-              <p className="max-w-3xl text-base text-brand-gray">
+              <p className="max-w-3xl text-base text-noid-silver">
                 Luxury spacing, gold accents, and a clear draft-first flow. Upload anything - LinkedIn,
                 PDFs, or screenshots. We extract, you edit, nothing goes live until you confirm.
               </p>
@@ -167,7 +167,7 @@ export default function OnboardPage() {
               errorNote={confirmError}
             />
           ) : (
-            <div className="rounded-3xl border border-dashed border-white/15 bg-white/5 px-6 py-8 text-sm text-brand-gray">
+            <div className="rounded-3xl border border-dashed border-noid-silver/40 bg-white/5 px-6 py-8 text-sm text-noid-silver">
               The extracted profile will land here after you upload. Nothing is public yet.
             </div>
           )}

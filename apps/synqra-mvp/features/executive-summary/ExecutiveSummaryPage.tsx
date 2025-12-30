@@ -1,48 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { ExecSummaryDoc } from "@/features/executive-summary/types/execSummary.types";
 import type { ExecSummaryData } from "@/features/executive-summary/execSummary.types";
-import { fetchExecSummary } from "@/features/executive-summary/execSummary.api";
+import { synqraExecSummaryData } from "@/features/executive-summary/execSummary.data.synqra";
 import SectionTitle from "@/features/executive-summary/SectionTitle";
 
-function transformExecSummaryData(data: ExecSummaryData): ExecSummaryDoc {
-  return {
-    overview: data.overview,
-    marketProblem: data.marketProblem,
-    solutionArchitecture: data.solutionArchitecture.map(item => ({
-      title: item.label,
-      description: item.body,
-    })),
-    whySynqraWins: data.whySynqraWins.map(item => item.body),
-    whyNow: data.whyNow,
-    targetRaise: data.targetRaise,
-    targetRevenue: data.targetRevenue,
-    useOfFunds: data.useOfFunds,
-    roadmap: data.roadmap,
-    founder: data.founderBlurb,
-  };
-}
-
 export function ExecutiveSummaryPage({ dataOverride }: { dataOverride?: ExecSummaryData }) {
-  const [fetchedData, setFetchedData] = useState<ExecSummaryDoc | null>(null);
-
-  useEffect(() => {
-    if (!dataOverride) {
-      const load = async () => {
-        const res = await fetchExecSummary();
-        setFetchedData(res);
-      };
-      load();
-    }
-  }, [dataOverride]);
-
-  const data = useMemo(() => {
-    if (dataOverride) {
-      return transformExecSummaryData(dataOverride);
-    }
-    return fetchedData;
-  }, [dataOverride, fetchedData]);
+  const data = dataOverride ?? synqraExecSummaryData;
 
   const handleDownloadPdf = async () => {
     try {
@@ -69,188 +32,168 @@ export function ExecutiveSummaryPage({ dataOverride }: { dataOverride?: ExecSumm
     }
   };
 
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center h-screen text-neutral-400">
-        Loading executive summary…
-      </div>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-black text-neutral-200 px-6 md:px-16 lg:px-28 py-20">
-      {/* HEADER */}
-      <header className="mb-20">
-        <h1 className="text-5xl font-medium tracking-tight text-white mb-2">
-          SYNQRA
-        </h1>
-        <p className="text-lg tracking-wide text-neutral-400">
-          INTELLIGENCE THAT COMPOUNDS. COSTS THAT DON'T.
-        </p>
-      </header>
-
-      {/* GRID LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-        {/* LEFT CONTENT */}
-        <div className="lg:col-span-2 space-y-16">
-          {/* OVERVIEW */}
-          <section>
-            <SectionTitle>OVERVIEW</SectionTitle>
-            <p className="leading-relaxed text-neutral-300">
-              {data.overview}
-            </p>
-          </section>
-
-          {/* MARKET PROBLEM */}
-          <section>
-            <SectionTitle>MARKET PROBLEM</SectionTitle>
-            <p className="leading-relaxed text-neutral-300">
-              {data.marketProblem}
-            </p>
-          </section>
-
-          {/* SOLUTION ARCHITECTURE */}
-          <section>
-            <SectionTitle>SOLUTION ARCHITECTURE</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {data.solutionArchitecture.map((item, i) => (
-                <div
-                  key={i}
-                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800"
-                >
-                  <h3 className="text-sm tracking-widest text-[var(--gold)] mb-2">
-                    {item.title.toUpperCase()}
-                  </h3>
-                  <p className="text-neutral-400 text-sm leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+    <main className="min-h-screen bg-noid-black text-white">
+      <div className="mx-auto max-w-6xl px-6 py-[160px]">
+        <header>
+          <div className="flex items-end justify-between gap-8">
+            <div>
+              <h1 className="font-display text-5xl uppercase tracking-[0.22em] text-white">
+                {data.brandName}
+              </h1>
+              <div className="mt-4 font-mono text-xs uppercase tracking-[0.22em] text-noid-silver/70">
+                {data.periodLabel} • {data.status}
+              </div>
             </div>
-          </section>
+            <div className="text-right">
+              <div className="font-mono text-xs uppercase tracking-[0.22em] text-noid-silver/70">
+                Platform
+              </div>
+              <div className="mt-2 text-sm tracking-[0.08em] text-white/80">{data.platformUrl}</div>
+            </div>
+          </div>
+          <div className="mt-10 max-w-3xl text-base leading-relaxed text-white/75">{data.tagline}</div>
+        </header>
 
-          {/* WHY SYNQRA WINS */}
-          <section>
-            <SectionTitle>WHY SYNQRA WINS</SectionTitle>
-            <ul className="space-y-3">
-              {data.whySynqraWins.map((item, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="text-[var(--gold)] mt-1">■</span>
-                  <p className="text-neutral-300 leading-relaxed">{item}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
+        <div className="h-[160px]" />
 
-          {/* WHY NOW */}
-          <section>
-            <SectionTitle>WHY NOW</SectionTitle>
-            <p className="leading-relaxed text-neutral-300">
-              {data.whyNow}
-            </p>
-          </section>
+        <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-[160px]">
+            <section>
+              <SectionTitle>Current State</SectionTitle>
+              <p className="mt-6 text-base leading-relaxed text-white/75">{data.overview}</p>
+            </section>
+
+            <section>
+              <SectionTitle>Product Surfaces (Implemented)</SectionTitle>
+              <div className="mt-6 rounded-3xl border border-noid-silver/20 bg-white/[0.03] p-8">
+                <pre className="whitespace-pre-wrap font-mono text-[0.85rem] leading-relaxed text-white/75">
+                  {data.marketProblem}
+                </pre>
+              </div>
+            </section>
+
+            <section>
+              <SectionTitle>Entrance • Barcode Identity</SectionTitle>
+              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                {data.solutionArchitecture.map((item, i) => (
+                  <div key={i} className="rounded-3xl border border-noid-silver/20 bg-white/[0.03] p-8">
+                    <div className="font-mono text-xs uppercase tracking-[0.22em] text-noid-gold">
+                      {item.label}
+                    </div>
+                    <div className="mt-4 text-sm leading-relaxed text-white/75">{item.body}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SectionTitle>Systems Present (Repo Reality)</SectionTitle>
+              <div className="mt-6 space-y-6">
+                {data.whySynqraWins.map((item, i) => (
+                  <div key={i} className="rounded-3xl border border-noid-silver/20 bg-white/[0.02] p-8">
+                    <div className="font-mono text-xs uppercase tracking-[0.22em] text-noid-silver/70">
+                      {item.label}
+                    </div>
+                    <div className="mt-3 text-sm leading-relaxed text-white/75">{item.body}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SectionTitle>Explicit Gaps (Not Implemented)</SectionTitle>
+              <p className="mt-6 text-base leading-relaxed text-white/75">{data.whyNow}</p>
+            </section>
+
+            <section>
+              <SectionTitle>Next Steps (Non-Speculative)</SectionTitle>
+              <ul className="mt-6 space-y-3">
+                {data.roadmap.map((r, i) => (
+                  <li key={i} className="text-sm leading-relaxed text-white/75">
+                    {r}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <aside className="space-y-10">
+            <section className="rounded-3xl border border-noid-silver/20 bg-white/[0.03] p-8">
+              <SectionTitle>Status</SectionTitle>
+              <div className="mt-6">
+                <div className="font-mono text-xs uppercase tracking-[0.22em] text-noid-silver/70">Build</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[0.08em] text-noid-gold">{data.targetRaise}</div>
+                <div className="mt-3 text-sm leading-relaxed text-white/70">{data.targetRaiseNote}</div>
+              </div>
+              <div className="mt-8">
+                <div className="font-mono text-xs uppercase tracking-[0.22em] text-noid-silver/70">Validation</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[0.08em] text-noid-gold">{data.targetRevenue}</div>
+                <div className="mt-3 text-sm leading-relaxed text-white/70">{data.targetRevenueNote}</div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-noid-silver/20 bg-white/[0.02] p-8">
+              <SectionTitle>Access Tiers (Present in Code)</SectionTitle>
+              <div className="mt-6 space-y-6">
+                {data.revenueTiers.map((tier) => (
+                  <div key={tier.name} className="rounded-2xl border border-white/10 bg-black/30 p-6">
+                    <div className="flex items-baseline justify-between gap-6">
+                      <div className="font-mono text-xs uppercase tracking-[0.22em] text-white/80">{tier.name}</div>
+                      <div className="font-mono text-[0.72rem] uppercase tracking-[0.18em] text-noid-silver/70">
+                        {tier.price}
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm leading-relaxed text-white/70">{tier.tagLine}</div>
+                    <ul className="mt-4 space-y-2">
+                      {tier.bullets.map((b) => (
+                        <li key={b} className="text-xs leading-relaxed text-white/65">
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 text-xs leading-relaxed text-white/60">{data.additionalRevenueNotes}</div>
+            </section>
+
+            <section className="rounded-3xl border border-noid-silver/20 bg-white/[0.02] p-8">
+              <SectionTitle>API Surface (Selected)</SectionTitle>
+              <div className="mt-6 space-y-3">
+                {data.useOfFunds.map((item) => (
+                  <div key={item.label} className="flex items-start justify-between gap-4">
+                    <div className="text-xs uppercase tracking-[0.18em] text-white/70">{item.label}</div>
+                    <div className="font-mono text-[0.78rem] tracking-[0.06em] text-noid-silver/70">{item.amount}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-noid-silver/20 bg-white/[0.02] p-8">
+              <SectionTitle>Notes</SectionTitle>
+              <p className="mt-6 text-sm leading-relaxed text-white/75">{data.founderBlurb}</p>
+              <div className="mt-6 text-xs uppercase tracking-[0.22em] text-noid-silver/70">{data.location}</div>
+            </section>
+
+            <section>
+              <button
+                onClick={handleDownloadPdf}
+                className="w-full rounded-full border border-noid-gold bg-transparent px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-noid-gold transition-colors hover:bg-white/[0.03]"
+              >
+                Download Executive Summary (PDF)
+              </button>
+            </section>
+          </aside>
         </div>
 
-        {/* RIGHT SIDEBAR */}
-        <aside className="space-y-14">
-          {/* TARGET RAISE */}
-          <section>
-            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
-              TARGET RAISE
-            </h4>
-            <p className="text-3xl text-[var(--gold)] font-semibold">
-              {data.targetRaise}
-            </p>
-            <p className="text-neutral-500 text-sm mt-1">
-              Seed round for 12–18 months of runway
-            </p>
-          </section>
+        <div className="h-[160px]" />
 
-          {/* TARGET REVENUE */}
-          <section>
-            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
-              12-MONTH TARGET
-            </h4>
-            <p className="text-3xl text-[var(--gold)] font-semibold">
-              {data.targetRevenue}
-            </p>
-            <p className="text-neutral-500 text-sm mt-1">
-              ARR with 500+ subscribers
-            </p>
-          </section>
-
-          {/* QUOTE */}
-          <section className="border-l border-neutral-700 pl-5">
-            <p className="italic text-neutral-400 text-sm leading-relaxed">
-              "The first platform where intelligence compounds while costs stay flat."
-            </p>
-          </section>
-
-          {/* USE OF FUNDS */}
-          <section>
-            <h4 className="text-neutral-400 text-xs tracking-widest mb-3">
-              USE OF FUNDS
-            </h4>
-            <ul className="space-y-2">
-              {data.useOfFunds.map((f, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between text-neutral-300 text-sm"
-                >
-                  <span>{f.label}</span>
-                  <span className="text-[var(--gold)]">{f.amount}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* ROADMAP */}
-          <section>
-            <h4 className="text-neutral-400 text-xs tracking-widest mb-3">
-              ROADMAP
-            </h4>
-            <ul className="space-y-2">
-              {data.roadmap.map((r, i) => (
-                <li key={i} className="text-neutral-300 text-sm">
-                  {r}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* FOUNDER */}
-          <section>
-            <h4 className="text-neutral-400 text-xs tracking-widest mb-2">
-              FOUNDER
-            </h4>
-            <p className="text-neutral-300 text-sm leading-relaxed">
-              {data.founder}
-            </p>
-          </section>
-
-           {/* DOWNLOAD PDF BUTTON */}
-           <section>
-            <button
-              onClick={handleDownloadPdf}
-              className="w-full py-3 px-4 bg-neutral-900 border border-[var(--gold)] rounded text-[var(--gold)] text-xs tracking-widest uppercase hover:bg-neutral-800 transition-colors"
-            >
-              Download Executive Summary (PDF)
-            </button>
-          </section>
-        </aside>
+        <footer className="flex flex-col gap-4 border-t border-noid-silver/15 pt-10 text-sm text-noid-silver/70 md:flex-row md:items-center md:justify-between">
+          <div>{data.footerNote}</div>
+          <div className="font-mono text-xs uppercase tracking-[0.22em] text-white/70">{data.footerCta}</div>
+        </footer>
       </div>
-
-      {/* FOOTER */}
-      <footer className="mt-24 text-neutral-500 text-sm border-t border-neutral-800 pt-6 flex justify-between items-center flex-wrap gap-4">
-        <span>© Synqra Intelligence Systems, 2024–2025</span>
-        <div className="flex gap-6 text-xs tracking-wide">
-             <span>Available At:</span>
-             <a href="https://synqra.co/exec-summary" className="hover:text-white transition-colors">synqra.co</a>
-             <a href="https://invest.synqra.co/exec-summary" className="hover:text-white transition-colors">invest.synqra.co</a>
-             <a href="https://summary.synqra.co" className="hover:text-white transition-colors">summary.synqra.co</a>
-             <a href="https://synqra.app/exec-summary" className="hover:text-white transition-colors">synqra.app</a>
-        </div>
-      </footer>
     </main>
   );
 }

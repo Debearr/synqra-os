@@ -20,20 +20,16 @@ const GenerateButton = ({ label, onClick, disabled = false, isProcessing = false
       transition={hoverTransition}
       onClick={onClick}
       disabled={disabled}
-      className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/15 bg-indigo/90 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-[0_12px_40px_rgba(75,82,255,0.35)] outline-none transition-colors duration-200 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10"
+      className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-noid-silver/60 bg-noid-gold px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-noid-black shadow-gold-glow outline-none transition-colors duration-200 disabled:cursor-not-allowed disabled:border-noid-silver/30 disabled:bg-white/10 disabled:text-white/70"
     >
       <motion.span
         animate={
           isProcessing
             ? {
                 scale: [1, 1.025, 1],
-                boxShadow: [
-                  "0 0 0 rgba(75,82,255,0)",
-                  "0 0 30px rgba(75,82,255,0.6)",
-                  "0 0 0 rgba(75,82,255,0)",
-                ],
+                boxShadow: "none",
               }
-            : { scale: 1, boxShadow: "0 0 0 rgba(75,82,255,0)" }
+            : { scale: 1, boxShadow: "none" }
         }
         transition={
           isProcessing
@@ -42,7 +38,7 @@ const GenerateButton = ({ label, onClick, disabled = false, isProcessing = false
         }
         className="relative flex items-center gap-2"
       >
-        <span className="text-[0.78rem] tracking-[0.28em] text-white/90">
+        <span className="text-[0.78rem] tracking-[0.28em] text-noid-black/90">
           {isProcessing ? "Crafting" : label}
         </span>
         {isProcessing && (

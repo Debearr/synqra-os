@@ -7,13 +7,17 @@
     "dev:3004": "next dev -p 3004",
     "build": "next build",
     "start": "PORT=${PORT:-3000} next start",
-    "lint": "next lint || echo 'lint skipped'"
+    "lint": "next lint || echo 'lint skipped'",
+    "test:red-team": "ts-node --project tests/tsconfig.json tests/red-team/audit-report.ts",
+    "verify:db": "ts-node --project tests/tsconfig.json scripts/verify-db.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@fingerprintjs/fingerprintjs": "^5.0.1",
     "@react-pdf/renderer": "^4.3.1",
     "@supabase/supabase-js": "^2.45.0",
     "clsx": "^2.1.1",
+    "disposable-email-domains": "^1.0.62",
     "framer-motion": "^11.2.7",
     "lucide-react": "^0.468.0",
     "next": "15.1.9",
@@ -30,6 +34,9 @@
     "eslint": "9.14.0",
     "postcss": "8.4.47",
     "tailwindcss": "3.4.14",
+    "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "5.6.3"
   },
   "engines": {

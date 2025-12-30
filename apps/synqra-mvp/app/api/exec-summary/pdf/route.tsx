@@ -154,19 +154,19 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
 
           {/* Overview */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.sectionTitle}>Current State</Text>
             <Text style={styles.bodyText}>{data.overview}</Text>
           </View>
 
-          {/* Market Problem */}
+          {/* Product Surfaces */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Market Problem</Text>
+            <Text style={styles.sectionTitle}>Product Surfaces (Implemented)</Text>
             <Text style={styles.bodyText}>{data.marketProblem}</Text>
           </View>
 
           {/* Solution Architecture */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Solution Architecture</Text>
+            <Text style={styles.sectionTitle}>Entrance • Barcode Identity</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               {data.solutionArchitecture.map((item, i) => (
                 <View key={i} style={{ ...styles.card, width: "32%" }}>
@@ -177,9 +177,9 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
             </View>
           </View>
 
-          {/* Revenue Model */}
+          {/* Access Tiers */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Revenue Model</Text>
+            <Text style={styles.sectionTitle}>Access Tiers (Present in Code)</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
               {data.revenueTiers.map((tier, i) => (
                 <View key={i} style={{ ...styles.card, width: "32%" }}>
@@ -197,9 +197,9 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
              <Text style={styles.mutedText}>{data.additionalRevenueNotes}</Text>
           </View>
 
-          {/* Why Synqra Wins */}
+          {/* Systems Present */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Why Synqra Wins</Text>
+            <Text style={styles.sectionTitle}>Systems Present (Repo Reality)</Text>
             {data.whySynqraWins.map((item, i) => (
               <View key={i} style={styles.bulletItem}>
                 <View style={styles.bulletPoint} />
@@ -209,6 +209,12 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
                 </Text>
               </View>
             ))}
+          </View>
+
+          {/* Explicit Gaps */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Explicit Gaps (Not Implemented)</Text>
+            <Text style={styles.bodyText}>{data.whyNow}</Text>
           </View>
 
            {/* Footer */}
@@ -224,27 +230,27 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
         <View style={styles.rightColumn}>
           {/* Metrics */}
           <View style={styles.metricBlock}>
-            <Text style={styles.asideLabel}>Target Raise</Text>
+            <Text style={styles.asideLabel}>Build</Text>
             <Text style={styles.asideValue}>{metrics.targetRaise}</Text>
             <Text style={styles.mutedText}>{metrics.targetRaiseNote}</Text>
           </View>
 
           <View style={styles.metricBlock}>
-            <Text style={styles.asideLabel}>12-Month Target</Text>
+            <Text style={styles.asideLabel}>Validation</Text>
             <Text style={styles.asideValue}>{metrics.targetRevenue}</Text>
             <Text style={styles.mutedText}>{metrics.targetRevenueNote}</Text>
           </View>
 
-          {/* Quote */}
+          {/* Statement */}
           <View style={styles.quote}>
             <Text style={styles.mutedText}>
-              “The first platform where intelligence compounds while costs stay flat.”
+              {data.tagline}
             </Text>
           </View>
 
-          {/* Use of Funds */}
+          {/* API Surface */}
           <View style={styles.section}>
-             <Text style={styles.asideLabel}>Use of Funds</Text>
+             <Text style={styles.asideLabel}>API Surface (Selected)</Text>
              {data.useOfFunds.map((item, i) => (
                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                      <Text style={{ fontSize: 8, color: t.colors.textPrimary }}>{item.label}</Text>
@@ -253,17 +259,17 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
              ))}
           </View>
 
-          {/* Roadmap */}
+          {/* Next Steps */}
           <View style={styles.section}>
-             <Text style={styles.asideLabel}>Roadmap</Text>
+             <Text style={styles.asideLabel}>Next Steps</Text>
              {data.roadmap.map((item, i) => (
                  <Text key={i} style={{ fontSize: 8, color: t.colors.textPrimary, marginBottom: 3 }}>• {item}</Text>
              ))}
           </View>
 
-          {/* Founder */}
+          {/* Notes */}
           <View style={styles.section}>
-             <Text style={styles.asideLabel}>Founder</Text>
+             <Text style={styles.asideLabel}>Notes</Text>
              <Text style={styles.mutedText}>{data.founderBlurb}</Text>
           </View>
 

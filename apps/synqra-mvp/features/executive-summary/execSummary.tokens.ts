@@ -5,8 +5,8 @@ export const execSummaryTokens = {
     border: "#2A2A2A",
     textPrimary: "#F5F5F5",
     textMuted: "#A1A1A1",
-    accent: "#C9A961", // champagne / bronze-gold
-    accentSoft: "rgba(201, 169, 97, 0.85)"
+    accent: "#D4AF37",
+    accentSoft: "rgba(212, 175, 55, 0.85)"
   },
   layout: {
     maxWidth: "1120px",

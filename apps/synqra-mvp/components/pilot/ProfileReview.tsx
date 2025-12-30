@@ -47,13 +47,13 @@ export function ProfileReview({
     <StudioLayout>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.22em] text-brand-gold">
+          <p className="text-xs uppercase tracking-[0.22em] text-noid-gold">
             Step 2
           </p>
           <h3 className="text-2xl font-light text-white md:text-3xl">
             Review your extracted profile
           </h3>
-          <p className="text-sm text-brand-gray md:text-base">
+          <p className="text-sm text-noid-silver md:text-base">
             Nothing is public yet. Edit anything. This is your draft.
           </p>
         </div>
@@ -118,7 +118,7 @@ export function ProfileReview({
               <textarea
                 value={data.summary}
                 onChange={(event) => setField("summary", event.target.value)}
-                className="min-h-[160px] w-full resize-none rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white focus:border-brand-gold/80 focus:outline-none"
+                className="min-h-[160px] w-full resize-none rounded-lg border border-noid-silver/40 bg-white/5 p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-noid-teal"
               />
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <Field
@@ -140,7 +140,7 @@ export function ProfileReview({
                 onChange={(value) => setField("proofPoints", value)}
                 placeholder="Add proof point"
               />
-              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-brand-gray">
+              <div className="mt-4 rounded-lg border border-noid-silver/30 bg-white/5 p-3 text-xs text-noid-silver">
                 Keep it tight: outcome + scale + credibility (numbers, logos, awards).
               </div>
             </StudioContainer>
@@ -178,8 +178,8 @@ export function ProfileReview({
                   onChange={(value) => setField("twitter", value)}
                 />
               </div>
-              <div className="mt-4 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-brand-gray">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-brand-gold">
+              <div className="mt-4 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-noid-silver">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-noid-gold">
                   {"->"}
                 </span>
                 <span>
@@ -192,7 +192,7 @@ export function ProfileReview({
       </div>
 
       <div className="flex flex-col gap-4 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
-        <div className="text-sm text-brand-gray">
+        <div className="text-sm text-noid-silver">
           Your workspace saves locally for now. Confirm to move into the composer.
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -208,7 +208,7 @@ export function ProfileReview({
           <Button
             type="button"
             size="lg"
-            className="bg-brand-gold text-black hover:bg-brand-gold/90"
+            className="bg-noid-gold text-noid-black hover:opacity-90 shadow-gold-glow"
             onClick={onConfirm}
             disabled={isConfirming}
           >
@@ -246,7 +246,7 @@ function StudioSection({
       <div className="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
         <div>
           <h4 className="text-lg font-light text-white md:text-xl">{title}</h4>
-          {hint ? <p className="text-sm text-brand-gray">{hint}</p> : null}
+          {hint ? <p className="text-sm text-noid-silver">{hint}</p> : null}
         </div>
         <span className="text-xs uppercase tracking-[0.22em] text-white/60">
           Draft mode
@@ -268,10 +268,10 @@ function StudioContainer({
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-brand-gold">Draft</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-noid-gold">Draft</p>
           <h5 className="text-base font-medium text-white">{title}</h5>
         </div>
-        <div className="h-px flex-1 bg-gradient-to-r from-brand-gold/60 via-white/20 to-transparent" />
+        <div className="h-px flex-1 bg-gradient-to-r from-noid-gold/60 via-white/20 to-transparent" />
       </div>
       {children}
     </div>
@@ -295,7 +295,7 @@ function Field({
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-brand-gold/80 focus:outline-none"
+        className="w-full rounded-lg border border-noid-silver/40 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-noid-teal"
       />
     </label>
   );
@@ -361,7 +361,7 @@ function InlineTagEditor({
           type="button"
           size="sm"
           variant="outline"
-          className="border-white/20 bg-transparent text-white hover:border-brand-gold/80 hover:bg-white/5"
+          className="border-noid-silver/50 bg-transparent text-white hover:border-noid-silver hover:bg-white/5"
           onClick={add}
         >
           Add
@@ -383,7 +383,7 @@ function Badge({
       className={cn(
         "rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em]",
         tone === "gold"
-          ? "border-brand-gold/60 bg-brand-gold/10 text-brand-gold"
+          ? "border-noid-silver/60 bg-noid-gold/10 text-noid-gold"
           : "border-white/20 bg-white/5 text-white/80"
       )}
     >

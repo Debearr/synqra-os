@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Avoid Windows permission issues on a locked .next/trace in this workspace.
+  distDir: ".next-build",
   output: 'standalone',
   experimental: {
     typedRoutes: true,

@@ -190,8 +190,7 @@ export default function PilotApplyPage() {
             letterSpacing: '0.05em',
           }}
         >
-          <p>NØID × Synqra</p>
-          <p className="mt-1 italic">"Drive Unseen. Earn Smart."</p>
+          <p>SYNQRA</p>
         </motion.div>
       </div>
     </main>

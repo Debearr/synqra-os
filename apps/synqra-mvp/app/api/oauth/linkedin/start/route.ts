@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server';
  * Usage: Navigate to /api/oauth/linkedin/start
  * This will redirect the user to LinkedIn to authorize the app
  */
+const STATE_COOKIE = "synqra_oauth_li_state";
+
 export async function GET() {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const redirectUri = process.env.LINKEDIN_REDIRECT_URI;
@@ -21,15 +23,23 @@ export async function GET() {
   }
 
   // LinkedIn OAuth 2.0 authorization endpoint
+  const state = crypto.randomUUID(); // CSRF protection (validated in callback)
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: 'w_member_social r_liteprofile', // Permissions needed to post
-    state: crypto.randomUUID(), // CSRF protection
+    state,
   });
 
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
-
-  return NextResponse.redirect(authUrl);
+  const res = NextResponse.redirect(authUrl);
+  res.cookies.set(STATE_COOKIE, state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 10 * 60, // 10 minutes
+  });
+  return res;
 }

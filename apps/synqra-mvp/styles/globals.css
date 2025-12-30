@@ -4,40 +4,84 @@
 
 :root {
   color-scheme: dark;
-  /* Legacy brand variables - aligned with LuxGrid/Tailwind tokens */
-  --brand-bg: #0B0B0B;      /* = noir.DEFAULT */
-  --brand-fg: #EDEDED;      /* = brand.fg */
-  --brand-gold: #D4AF37;    /* = lux.gold */
-  --brand-teal: #00FFC6;    /* = brand.teal */
-  --brand-gray: #A0A0A0;    /* = brand.gray */
-  --brand-ink: #141414;     /* = brand.ink */
-  --brand-mute: #F7F7F7;    /* = brand.mute */
-  /* Canonical tokens */
-  --lux-black: #000000;
-  --lux-gold: #D4AF37;
-  --lux-emerald: #00D9A3;
-  --lux-white: #FFFFFF;
-  --gold-cta: #C5A572;
-  --ivory-warm: #F5F3F0;
-  --accent-teal: #2DD4BF;
-  --state-error: #EF4444;
-  --noir-deep: #0A0A0A;
+  /* STRICT TOKENS */
+  --noid-black: #050505; /* void */
+  --noid-gold: #D4AF37;
+  --noid-silver: #C0C0C0;
+  --noid-teal: #00D2BE; /* border/shadow only */
+
+  /* ============================================================
+   * Perimeter / Atmosphere Engine (LOCKED TOKENS)
+   * ============================================================ */
+  --atmo-void: #050505;
+  --atmo-sub: #050505;
+
+  /* Default: Synqra */
+  --energy-primary: 212,175,55; /* Gold */
+  --energy-secondary: 0,210,190; /* Teal (border/shadow only at component level) */
+
+  --flow-speed: 90s;
+  --grain-opacity: 0.03;
+
+  /* Perimeter tuning (all variable-driven for ecosystem reuse) */
+  --atmo-core-a: 0.20;
+  --atmo-core-b: 0.18;
+  --atmo-vein-a: 0.06;
+  --atmo-vein-b: 0.06;
+  --atmo-vignette-mid: 0.35;
+  --atmo-vignette-edge: 0.62;
+  --atmo-edge-glow: 0.10;
+  --atmo-edge-pulse-min: 0.18;
+  --atmo-edge-pulse-max: 0.32;
+  --atmo-edge-layer-opacity: 0.22;
+}
+
+/* ============================================================
+ * Ecosystem presets (override variables only)
+ * - Set via :root overrides OR html[data-atmo="..."]
+ * ============================================================ */
+:root[data-atmo="synqra"] {
+  --energy-primary: 212,175,55;
+  --energy-secondary: 0,210,190;
+  --flow-speed: 90s;
+}
+
+:root[data-atmo="noid"] {
+  --energy-primary: 200,230,255;
+  --energy-secondary: 40,40,90;
+  --flow-speed: 120s;
+  --grain-opacity: 0.028;
+}
+
+:root[data-atmo="aurafx"] {
+  --energy-primary: 183,110,121;
+  --energy-secondary: 255,191,0;
+  --flow-speed: 60s;
+  --grain-opacity: 0.032;
 }
 
 html,
 body {
   height: 100%;
-  background: var(--brand-bg);
-  color: var(--brand-fg);
+  background: var(--atmo-void);
+  color: #ffffff;
   font-feature-settings: "ss01","ss02","ss03";
 }
 
 body {
-  @apply bg-noir text-white font-sans antialiased;
-  background-color: var(--brand-bg);
-  background-image: radial-gradient(circle at 20% 20%, rgba(75, 82, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 10%, rgba(75, 82, 255, 0.12), transparent 40%);
-  color: var(--brand-fg);
+  @apply bg-noid-black text-white font-sans antialiased;
+  background-color: var(--atmo-void);
+  color: #ffffff;
+}
+
+@keyframes atmo-edge-pulse {
+  0%,
+  100% {
+    opacity: var(--atmo-edge-pulse-min);
+  }
+  50% {
+    opacity: var(--atmo-edge-pulse-max);
+  }
 }
 
 .h-display {
@@ -71,7 +115,8 @@ body {
 }
 
 * {
-  @apply selection:bg-indigo/60 selection:text-white;
+  /* ENFORCEMENT: no teal fills */
+  @apply selection:bg-noid-gold/30 selection:text-noid-black;
 }
 
 ::-webkit-scrollbar {
@@ -83,6 +128,6 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(75, 82, 255, 0.45);
+  background: rgba(192, 192, 192, 0.35);
   border-radius: 9999px;
 }

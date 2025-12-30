@@ -55,11 +55,11 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
       <div className="relative flex flex-col gap-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-brand-gold">Step 1</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-noid-gold">Step 1</p>
             <h2 className="text-2xl font-light text-white md:text-3xl">
               Upload anything and we will extract your executive profile.
             </h2>
-            <p className="text-sm text-brand-gray md:text-base">
+            <p className="text-sm text-noid-silver md:text-base">
               Paste a link, drop a screenshot, or attach a doc. We only read the content and return a draft.
             </p>
           </div>
@@ -77,14 +77,14 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
           onDrop={handleDrop}
           className={cn(
             "relative overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] transition-all duration-300",
-            isDragOver && "border-brand-gold/80 bg-white/[0.05] shadow-glow"
+            isDragOver && "border-noid-silver bg-white/[0.05]"
           )}
         >
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_30%,rgba(212,175,55,0.08),transparent_55%)]" />
           <div className="relative grid gap-8 p-8 md:grid-cols-2 md:gap-10">
             <div className="space-y-4">
               <label className="text-sm font-medium text-white">Paste a link</label>
-              <div className="rounded-xl border border-white/10 bg-black/60 px-4 py-3 focus-within:border-brand-gold/50">
+              <div className="rounded-xl border border-noid-silver/40 bg-black/60 px-4 py-3 focus-within:ring-2 focus-within:ring-noid-teal">
                 <input
                   type="url"
                   value={link}
@@ -93,7 +93,7 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
                   className="w-full bg-transparent text-white placeholder:text-white/40 focus:outline-none"
                 />
               </div>
-              <p className="text-xs text-brand-gray">
+              <p className="text-xs text-noid-silver">
                 We preview the page, pull your headline, highlights, and proof points.
               </p>
             </div>
@@ -103,17 +103,17 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
               <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/60 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
-                    <span className="text-sm text-brand-gold">+</span>
+                    <span className="text-sm text-noid-gold">+</span>
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white">Drop a file</p>
-                    <p className="text-xs text-brand-gray">PNG, JPG, PDF, DOC, DOCX (max 25MB)</p>
+                    <p className="text-xs text-noid-silver">PNG, JPG, PDF, DOC, DOCX (max 25MB)</p>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="border-white/20 bg-transparent text-white hover:border-brand-gold/80 hover:bg-white/5"
+                    className="border-noid-silver/50 bg-transparent text-white hover:border-noid-silver hover:bg-white/5"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
                   >
@@ -132,7 +132,7 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
                     {file.name}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-white/10 bg-white/5 px-3 py-2 text-xs text-brand-gray">
+                  <div className="rounded-lg border border-dashed border-noid-silver/30 bg-white/5 px-3 py-2 text-xs text-noid-silver">
                     Or drag a file into this area
                   </div>
                 )}
@@ -142,8 +142,8 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3 text-sm text-brand-gray">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-brand-gold">
+          <div className="flex items-center gap-3 text-sm text-noid-silver">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-noid-gold">
               *
             </div>
             <span>Synqra reads the file or link, extracts your voice, and returns a draft profile.</span>
@@ -152,12 +152,12 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
             <Button
               type="submit"
               size="lg"
-              className="bg-white text-black hover:bg-brand-gold/90 transition-all duration-300"
+              className="bg-noid-gold text-noid-black hover:opacity-90 transition-all duration-300 shadow-gold-glow"
               disabled={isLoading}
             >
               {isLoading ? "Extracting..." : "Send to extractor"}
             </Button>
-            <div className="rounded-full border border-white/10 px-3 py-1 text-xs text-brand-gray">
+            <div className="rounded-full border border-white/10 px-3 py-1 text-xs text-noid-silver">
               Encrypted ingest / Nothing is public yet
             </div>
           </div>

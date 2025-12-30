@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" style="color:#FFFFFF">
+  <path
+    fill="currentColor"
+    fill-rule="evenodd"
+    d="
+      M 64 10
+      A 40 54 0 1 1 64 118
+      A 40 54 0 1 1 64 10
+      Z
+
+      M 64 18
+      A 20 45.5 0 1 0 64 110
+      A 20 45.5 0 1 0 64 18
+      Z
+
+      M 78.5 98.5
+      L 92.642 84.358
+      L 112.642 104.358
+      L 98.5 118.5
+      Z
+    "
+  />
+</svg>
+
+

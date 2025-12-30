@@ -3,115 +3,150 @@ import type { ExecSummaryData } from "./execSummary.types";
 export const synqraExecSummaryData: ExecSummaryData = {
   brandName: "SYNQRA",
   productName: "Synqra",
-  tagline: "Intelligence that compounds. Costs that don’t.",
-  periodLabel: "Q4 2024",
+  tagline:
+    "Executive view of current repo state. Entrance-first. Barcode identity is ceremonial and local-only.",
+  periodLabel: "Dec 2025",
 
-  targetRaise: "$750K",
-  targetRaiseNote: "Seed round for 12–18 months of runway",
-  targetRevenue: "$750K",
-  targetRevenueNote: "ARR with 500+ subscribers",
+  // Repurposed for boardroom-at-a-glance truth (not fundraising).
+  targetRaise: "Entrance: Implemented",
+  targetRaiseNote: "The root route (/) is now the canonical entrance on all domains. No investor-domain rewrite.",
+  targetRevenue: "Validation: Local-only",
+  targetRevenueNote: "Client validation only. Regex: ^[A-Z0-9]{6,12}$. No API calls. No redirects.",
 
   overview:
-    "Synqra is a content intelligence platform built for the post-generic era. Where others offer tools, we deliver infrastructure—Apple-grade simplicity wrapped around Tesla-grade architecture. The Synqra Intelligence Kernel learns from every interaction, routes tasks across optimal AI models, and scales intelligence without scaling costs.",
+    "This repository contains multiple MVP surfaces and API routes. The entrance has been rebuilt as a barcode-identity ritual: a barcode header, SYNQRA wordmark, and a Command Center that validates code format locally and returns an ACCEPTED / DENIED state. The prior content-generation homepage surface is no longer the root entry.",
 
-  marketProblem:
-    "Content creation is broken. Enterprises burn $10K–$50K per campaign on fragmented workflows. SMBs sacrifice brand consistency for speed. Luxury brands—who demand precision—have zero AI tools meeting their standards. The market is saturated with generic outputs, slow agencies, and one-size-fits-none solutions.",
+  // Multiline, formatted for monospace rendering in the executive view.
+  marketProblem: [
+    "Public / product-facing",
+    "- / (Entrance)",
+    "- /exec-summary (Executive artifact)",
+    "- /waitlist, /waitlist/success",
+    "- /pilot/apply, /pilot/apply/success",
+    "",
+    "Internal / operational (present in repo)",
+    "- /onboard (profile extraction + confirm flow)",
+    "- /create (composer surface)",
+    "- /agents (test interface for multi-agent system)",
+    "- /admin, /admin/integrations (approval queue tooling)",
+    "- /studio/exec-summary (exec summary editor + save/load + PDF export)",
+    "- /noid-intel (driver intel demo surface)",
+    "",
+    "Dev / design system surfaces (present in repo)",
+    "- /luxgrid/colors",
+  ].join("\n"),
 
   solutionArchitecture: [
     {
-      label: "Multi-Industry Intelligence",
-      body: "Purpose-built AI for real estate, luxury brands, creators, and enterprise—not retrofitted, native."
+      label: "Entrance",
+      body: "Root route renders only: barcode header image, wordmark, and Command Center. No marketing sections."
     },
     {
-      label: "Intelligence Kernel",
-      body: "Tiered routing across optimal models with intelligent caching. Costs stay flat; output quality compounds."
+      label: "Command Center",
+      body: "Local-only format validation for identity codes. ACCEPTED / DENIED state. No redirect. No backend verification."
     },
     {
-      label: "Zero-Friction UX",
-      body: "Voice workflows, file uploads, one-click publishing, embedded viral mechanics. Luxury experience, mass scale."
+      label: "Barcode System",
+      body: "Barcode is infrastructural: a stranger should recognize the barcode before reading the name. Header opacity is capped (≤ 35%)."
     }
   ],
 
+  // Repurposed as tiering that actually exists in code (gatekeeper types).
   revenueTiers: [
     {
-      name: "Solo",
-      price: "$497/mo",
-      tagLine: "For creators who refuse compromise.",
+      name: "Free",
+      price: "tier: free",
+      tagLine: "Rate-limited access enforced in server gatekeeper logic.",
       bullets: [
-        "Core intelligence engine",
-        "Multi-platform publishing",
-        "50+ assets per month"
+        "Used by: /api/draft gatekeeper",
+        "Caps and limits exist in code (min-interval + daily cap)",
+        "Identifies callers via fingerprint/IP/UA"
       ]
     },
     {
-      name: "Pro",
-      price: "$1,497/mo",
-      tagLine: "For teams scaling fast.",
+      name: "Premium",
+      price: "tier: premium",
+      tagLine: "Bypass behavior exists when tier/auth headers indicate premium.",
       bullets: [
-        "Premium models + advanced brand voice",
-        "Priority routing + 200+ assets",
-        "Collaboration and workflow tools"
+        "Used by: /api/draft gatekeeper",
+        "Premium tiers must not regress (explicit in code)",
+        "Auth header can elevate tier (per route logic)"
       ],
       highlight: true
     },
     {
-      name: "Agency",
-      price: "$3,497+/mo",
-      tagLine: "For those who own the market.",
+      name: "Enterprise",
+      price: "tier: enterprise",
+      tagLine: "Tier type exists; enterprise health endpoints exist in repo.",
       bullets: [
-        "Unlimited assets and workspaces",
-        "White-label + API access",
-        "Dedicated support and strategy"
+        "Type exists in gatekeeper tier union",
+        "Health endpoints under /api/health/* exist",
+        "No barcode-verification backend is implemented yet"
       ]
     }
   ],
 
   additionalRevenueNotes:
-    "Additional revenue from usage-based add-ons, team seats, and marketplace commissions (10–20%).",
+    "Note: tiering here reflects code paths and enforcement logic present in the repository, not pricing or go-to-market.",
 
   whySynqraWins: [
     {
-      label: "Static Costs, Compounding Intelligence",
-      body: "The more the system learns, the more you save. Intelligence scales without proportional cost increases."
+      label: "Entrance-first architecture",
+      body: "The root route is now a single entrance ritual. Content generation and other product surfaces remain in the repo but are not the entrance."
     },
     {
-      label: "Cross-Industry Learning",
-      body: "Luxury insights sharpen every vertical—real estate, creators, and enterprise benefit from shared intelligence."
+      label: "Onboarding extractor is present",
+      body: "An onboarding flow exists with /api/onboard/extract and /api/onboard/confirm used by /onboard."
     },
     {
-      label: "Embedded Viral Engine",
-      body: "Every output carries subtle branding; every share becomes a distribution channel."
+      label: "Approval and publishing tooling exists",
+      body: "Admin surfaces and /api/approve exist to approve and publish content when approval is required."
     },
     {
-      label: "First Mover in Luxury AI",
-      body: "No competitor serves high-end brands at scale with infrastructure purpose-built for their standards."
+      label: "Executive artifact tooling exists",
+      body: "Exec summary studio exists with save/load/list routes and PDF export under /api/exec-summary/*."
     }
   ],
 
   whyNow:
-    "AI costs are in freefall. Multimodal AI is production-ready. Content demand is exploding. Luxury brands are actively seeking AI partners—not vendors. The window is open. First movers win. Fast followers survive. Everyone else becomes irrelevant.",
+    [
+      "Not implemented in this repo (explicit):",
+      "- Barcode verification backend",
+      "- Camera scan / device scanning flow",
+      "- Redirect-on-success entrance behavior (locked out by decision)",
+      "- Authenticated identity binding for codes (account/session binding)",
+      "",
+      "Deprecated at root (explicit):",
+      "- The content-generation homepage is no longer served at /",
+    ].join("\n"),
 
+  // Repurposed as a “selected API surface” index (label -> route path).
   useOfFunds: [
-    { label: "Engineering (2 hires)", amount: "$240K" },
-    { label: "Infrastructure & AI", amount: "$120K" },
-    { label: "GTM Operations", amount: "$180K" },
-    { label: "Legal, Ops & Runway", amount: "$210K" }
+    { label: "Draft generation", amount: "POST /api/draft" },
+    { label: "Waitlist", amount: "POST /api/waitlist" },
+    { label: "Pilot apply", amount: "POST /api/pilot/apply" },
+    { label: "Onboard extract", amount: "POST /api/onboard/extract" },
+    { label: "Onboard confirm", amount: "POST /api/onboard/confirm" },
+    { label: "Exec summary PDF", amount: "POST /api/exec-summary/pdf" },
+    { label: "Exec summary save", amount: "POST /api/exec-summary/save" },
+    { label: "Exec summary list", amount: "GET /api/exec-summary/list" },
+    { label: "Exec summary load", amount: "GET /api/exec-summary/load?id=…" },
   ],
 
   roadmap: [
-    "Multi-model architecture validated",
-    "6mo: Solo/Pro launch + luxury pilots + API",
-    "12mo: 500+ users, $750K ARR"
+    "Maintain this executive artifact as a curated mirror of repo reality. Update it with each material build change.",
+    "If barcode verification is added later, document the exact endpoint, request/response, and the success/failure UX states here.",
+    "If scanning is introduced later, explicitly document device requirements, permissions, and fallback input behavior here.",
   ],
 
   founderBlurb:
-    "De Bear — Multi-model AI architect. Luxury brand strategist. System designer with extreme build velocity. Previously shipped production AI across three verticals. Toronto, Canada.",
+    "This page is intentionally non-marketing. It is a boardroom artifact: what exists, what was removed, and what is explicitly not implemented yet.",
 
-  platformUrl: "synqra.co",
+  platformUrl: "synqra.app",
   location: "Toronto, ON",
-  status: "In Development",
+  status: "Active build (entrance-first)",
 
-  footerCta: "Ready to build the inevitable? Let’s connect.",
-  footerNote: "© Synqra Intelligence Systems, 2024–2025"
+  footerCta: "Curated executive artifact — update alongside the codebase.",
+  footerNote: "© Synqra Intelligence Systems, 2024–2025",
 };
 

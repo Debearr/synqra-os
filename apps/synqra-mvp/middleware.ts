@@ -2,26 +2,40 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
 
-  // Define the specialized domains
-  const investorDomains = [
-    "invest.synqra.co",
-    "summary.synqra.co",
-    "synqra.app" // assuming synqra.app might want this behavior too, or handle differently
-  ];
-
-  // Check if current hostname is one of the investor domains
-  const isInvestorDomain = investorDomains.some(domain => hostname.includes(domain));
-
-  // If on an investor domain and at root, rewrite to /exec-summary
-  if (isInvestorDomain && pathname === "/") {
-    return NextResponse.rewrite(new URL("/exec-summary", request.url));
+  // Preview / internal routes must not be exposed in production.
+  if (
+    process.env.NODE_ENV === "production" &&
+    (pathname.startsWith("/q-preview") ||
+      pathname.startsWith("/statusq-preview") ||
+      pathname.startsWith("/luxgrid"))
+  ) {
+    return new Response("Not Found", { status: 404 });
   }
 
-  // Special case for synqra.co/exec-summary (default behavior works, no rewrite needed)
-  
+  // Route-level protection (server-side): require an auth token cookie for admin/studio.
+  // Detailed user checks are handled client-side in the studio page.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/studio")) {
+    const cookies = request.cookies.getAll();
+    const authTokenCookie =
+      cookies.find((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))?.value || null;
+
+    let hasAuth = false;
+    if (authTokenCookie) {
+      try {
+        const parsed = JSON.parse(authTokenCookie);
+        hasAuth = Boolean(parsed?.access_token);
+      } catch {
+        hasAuth = Boolean(authTokenCookie);
+      }
+    }
+
+    if (!hasAuth) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
