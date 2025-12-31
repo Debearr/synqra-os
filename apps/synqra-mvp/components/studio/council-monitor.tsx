@@ -4,43 +4,48 @@ import { motion } from "framer-motion";
 import type { CouncilVerdict } from "@/hooks/use-council-dispatch";
 
 interface CouncilMonitorProps {
-  verdict: CouncilVerdict;
+  verdict: CouncilVerdict | null;
 }
 
 export default function CouncilMonitor({ verdict }: CouncilMonitorProps) {
-  const tone = verdict.approved ? "text-noid-gold" : "text-red-500";
-  const badgeStyles = verdict.approved
-    ? "border-noid-gold/30 bg-noid-gold/10 text-noid-gold"
-    : "border-red-500/30 bg-red-500/10 text-red-400";
+  if (!verdict) return null;
 
+  // DISCIPLINE STATUS — NO TRADE / PRESERVE CAPITAL
+  if (verdict.data === null && verdict.message) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-900/30 to-black p-6 shadow-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-3 rounded-full bg-amber-400 animate-pulse" />
+          <h3 className="text-amber-300 font-semibold tracking-wide">
+            DISCIPLINE MODE ACTIVE
+          </h3>
+        </div>
+
+        <p className="mt-4 text-amber-200 text-lg">
+          {verdict.message}
+        </p>
+
+        <div className="mt-4 text-xs uppercase tracking-widest text-amber-500">
+          Capital preserved · No action required
+        </div>
+      </motion.div>
+    );
+  }
+
+  // FALLBACK — EXISTING RENDER PATH
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden rounded-2xl border border-white/5 bg-noid-black/70 backdrop-blur-xl"
+      className="rounded-2xl border border-white/10 bg-black/70 p-6"
     >
-      <div className="grid gap-4 p-5 md:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="font-mono text-[0.78rem] uppercase tracking-[0.16em] text-noid-silver/70">
-            Council Verdict
-          </div>
-          <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${badgeStyles}`}>
-            {verdict.approved ? "Approved" : "Rejected"}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-3">
-          <span className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-noid-silver/70">Risk</span>
-          <span className={`font-mono text-xs uppercase tracking-[0.2em] ${tone}`}>{verdict.risk}</span>
-        </div>
-
-        <div className="rounded-xl border border-white/5 bg-noid-black/70 p-4 shadow-inner shadow-noid-black/40">
-          <div className="mb-2 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-noid-silver/70">
-            Consensus
-          </div>
-          <p className="text-sm leading-relaxed text-white/85">{verdict.consensus || "Council silent"}</p>
-        </div>
-      </div>
+      <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+        {JSON.stringify(verdict, null, 2)}
+      </pre>
     </motion.div>
   );
 }

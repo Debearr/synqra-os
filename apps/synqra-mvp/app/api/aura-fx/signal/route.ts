@@ -10,6 +10,8 @@ import { buildAuraFxContext } from "@/lib/aura-fx/engine";
 import { buildSignalPayload } from "@/lib/aura-fx/signalFormatter";
 import { sendSignalToTelegram } from "@/lib/aura-fx/telegramClient";
 import { Candle, Timeframe } from "@/lib/aura-fx/types";
+import { enforceH4TrendGate, type Signal, type TrendState } from "@/lib/aurafx/trend-gate";
+import { LUXURY_ERROR_MESSAGE } from "@/lib/errors/luxury-handler";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +43,37 @@ export async function POST(req: NextRequest) {
       timeframe,
     });
 
+    const signalInput: Signal = { direction: signal.direction };
+    const marketTrend: TrendState = {
+      direction:
+        engineResult.trend.direction === "BULLISH"
+          ? "LONG"
+          : engineResult.trend.direction === "BEARISH"
+          ? "SHORT"
+          : "RANGING",
+    };
+
+    const trendGate = enforceH4TrendGate(signalInput, marketTrend);
+
+    if (trendGate.status === "SKIPPED") {
+      return NextResponse.json(
+        {
+          success: true,
+          data: null,
+          message: trendGate.message ?? LUXURY_ERROR_MESSAGE,
+          meta: { discipline: "active" },
+        },
+        { status: 200 }
+      );
+    }
+
+    if (trendGate.status === "BLOCKED") {
+      return NextResponse.json(
+        { error: trendGate.message ?? LUXURY_ERROR_MESSAGE },
+        { status: 422 }
+      );
+    }
+
     if (broadcast) {
       await sendSignalToTelegram(signal);
     }
@@ -48,6 +81,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ signal });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: LUXURY_ERROR_MESSAGE, detail: message }, { status: 500 });
   }
 }
