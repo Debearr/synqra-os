@@ -2,7 +2,7 @@ import { canAccess, UserTier, Capability } from "@/lib/governance/access-control
 import { generateMonthlyBrief } from "@/lib/reports/investor-kit";
 import type { TradeRecord, AccountState } from "@/lib/reports/investor-kit";
 
-interface GateCrasherResult {
+export interface GateCrasherResult {
   attack: string;
   blocked: boolean;
   error?: string;

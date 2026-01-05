@@ -12,17 +12,19 @@ type StudioCommandCenterProps = {
 export default function StudioCommandCenter({ onInitialized }: StudioCommandCenterProps) {
   const [code, setCode] = useState("");
   const [touched, setTouched] = useState(false);
-  const [showSystemUnreachable, setShowSystemUnreachable] = useState(false);
+  const [showError, setShowError] = useState(false);
   const { status, verdict, error, initializeProtocol, reset } = useCouncilDispatch();
 
   const isValid = code.trim().length > 0;
 
-  // Show toast for SYSTEM_UNREACHABLE
+  // Show error toast for any error (including RLS/auth errors)
   useEffect(() => {
-    if (status === "error" && error === "SYSTEM UNREACHABLE") {
-      setShowSystemUnreachable(true);
-      const timer = setTimeout(() => setShowSystemUnreachable(false), 5000);
+    if (status === "error" && error) {
+      setShowError(true);
+      const timer = setTimeout(() => setShowError(false), 5000);
       return () => clearTimeout(timer);
+    } else {
+      setShowError(false);
     }
   }, [error, status]);
 
@@ -35,12 +37,25 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
     setTouched(true);
     reset();
 
-    const result = await initializeProtocol(code.trim());
+    try {
+      const result = await initializeProtocol(code.trim());
 
-    if (result.requestId) {
-      localStorage.setItem("synqra_request_id", result.requestId);
-      localStorage.setItem("synqra_input", code.trim());
-      onInitialized?.(result.requestId, code.trim());
+      if (result.error) {
+        // Error is already handled and displayed by the hook's error state
+        console.error("Protocol initialization error:", result.error);
+        return;
+      }
+
+      if (result.requestId) {
+        localStorage.setItem("synqra_request_id", result.requestId);
+        localStorage.setItem("synqra_input", code.trim());
+        onInitialized?.(result.requestId, code.trim());
+      }
+    } catch (err) {
+      // Explicit error handling - no silent failures
+      console.error("Failed to initialize protocol:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      // Error state is managed by the hook, but we log it explicitly
     }
   };
 
@@ -53,7 +68,11 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
       case "done":
         return "VERDICT RECEIVED";
       case "error":
-        return error === "SYSTEM UNREACHABLE" ? "SYSTEM UNREACHABLE" : "RETRY";
+        return error?.includes("RLS") || error?.includes("Authentication") || error?.includes("Unauthorized")
+          ? "AUTH ERROR"
+          : error?.includes("Network") || error?.includes("SYSTEM UNREACHABLE")
+          ? "NETWORK ERROR"
+          : "RETRY";
       default:
         return "INITIALIZE";
     }
@@ -63,15 +82,21 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
 
   return (
     <div className="space-y-6">
-      {showSystemUnreachable && (
+      {showError && error && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           className="rounded-lg border border-red-500/50 bg-red-500/10 p-4"
         >
-          <div className="font-mono text-sm uppercase tracking-wider text-red-500">SYSTEM UNREACHABLE</div>
-          <div className="mt-1 text-xs text-red-400/80">{error || "Unable to reach council system"}</div>
+          <div className="font-mono text-sm uppercase tracking-wider text-red-500">
+            {error.includes("RLS") || error.includes("Authentication") || error.includes("Unauthorized")
+              ? "AUTHENTICATION ERROR"
+              : error.includes("Network") || error.includes("SYSTEM UNREACHABLE")
+              ? "NETWORK ERROR"
+              : "ERROR"}
+          </div>
+          <div className="mt-1 text-xs text-red-400/80">{error}</div>
         </motion.div>
       )}
 

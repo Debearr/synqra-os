@@ -1,0 +1,39 @@
+# Synqra MVP - Cursor Rules
+
+## Database Schema Enforcement
+
+**CRITICAL**: All database column names, table names, and types MUST be verified against the source of truth:
+- `apps/synqra-mvp/src/types/supabase.ts`
+
+### Rules:
+1. **NEVER guess column names** - Always reference `apps/synqra-mvp/src/types/supabase.ts` for exact column names, types, and table structures
+2. **Database queries must match schema exactly** - Any database operations (SELECT, INSERT, UPDATE, DELETE) must use column names that exist in the schema file
+3. **Type safety is mandatory** - Use TypeScript types from `apps/synqra-mvp/src/types/supabase.ts` for all database interactions
+
+## TypeScript Configuration
+
+- **Treat TypeScript warnings as errors** - All TypeScript warnings must be resolved before code is considered complete
+- Use strict type checking - No `any` types unless absolutely necessary and explicitly justified
+- Ensure all imports and exports are properly typed
+
+## Supabase Security
+
+- **Assume Supabase RLS (Row Level Security) is enabled** - All database operations must respect RLS policies
+- Never bypass RLS - All queries should work within the constraints of RLS policies
+- Use authenticated Supabase client instances - Ensure proper user context for RLS enforcement
+
+## Error Handling
+
+- **No silent failures** - All errors must be:
+  - Logged appropriately
+  - Handled explicitly (no empty catch blocks)
+  - Propagated or transformed meaningfully
+  - Include context about what operation failed and why
+
+## Code Quality
+
+- Prefer explicit error messages over generic ones
+- Include relevant context in error logs
+- Validate inputs before database operations
+- Use transactions for multi-step database operations where appropriate
+

@@ -95,15 +95,15 @@ export function useCouncilDispatch() {
         } = await supabase.auth.getSession();
 
         if (!session) {
-          const unreachable: CouncilDispatchState = {
+          const authError: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: "SYSTEM UNREACHABLE",
+            error: "Authentication required - RLS policy blocked access",
             requestId: null,
           };
           setStatus("error");
-          setError(unreachable.error);
-          return unreachable;
+          setError(authError.error);
+          return authError;
         }
 
         const authHeader = `Bearer ${session.access_token}`;
@@ -118,6 +118,14 @@ export function useCouncilDispatch() {
           body: JSON.stringify(buildGovernancePayload(normalizedInput)),
         }).catch((fetchError) => {
           console.error("Governance request failed:", fetchError);
+          const networkError: CouncilDispatchState = {
+            status: "error",
+            verdict: null,
+            error: `Network error: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+            requestId: null,
+          };
+          setStatus("error");
+          setError(networkError.error);
           return null;
         });
 
@@ -133,10 +141,18 @@ export function useCouncilDispatch() {
           return unreachable;
         }
 
-        const governanceBody = await governanceResponse.json().catch(() => null);
+        const governanceBody = await governanceResponse.json().catch((parseError) => {
+          console.error("Failed to parse governance response:", parseError);
+          return null;
+        });
         const governanceRisk = deriveRiskLabel(governanceBody?.verdict?.riskLevel);
 
-        if (!governanceResponse.ok || !governanceBody?.verdict?.allowed) {
+        if (!governanceResponse.ok) {
+          // Handle RLS/auth errors explicitly
+          const errorMessage = governanceResponse.status === 401 || governanceResponse.status === 403
+            ? `RLS policy blocked access: ${governanceBody?.error || "Unauthorized"}`
+            : governanceBody?.error || `Governance check failed (${governanceResponse.status})`;
+          
           const rejected: CouncilDispatchState = {
             status: "error",
             verdict: {
@@ -144,7 +160,24 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: governanceBody?.verdict?.reason || "Action blocked by governance",
             },
-            error: governanceBody?.error || "SYSTEM UNREACHABLE",
+            error: errorMessage,
+            requestId: null,
+          };
+          setVerdict(rejected.verdict);
+          setStatus("error");
+          setError(rejected.error);
+          return rejected;
+        }
+
+        if (!governanceBody?.verdict?.allowed) {
+          const rejected: CouncilDispatchState = {
+            status: "error",
+            verdict: {
+              approved: false,
+              risk: governanceRisk,
+              consensus: governanceBody?.verdict?.reason || "Action blocked by governance",
+            },
+            error: governanceBody?.error || "Governance check rejected the action",
             requestId: null,
           };
           setVerdict(rejected.verdict);
@@ -167,10 +200,24 @@ export function useCouncilDispatch() {
           body: JSON.stringify({ prompt: normalizedInput }),
         }).catch((fetchError) => {
           console.error("Council request failed:", fetchError);
+          const networkError: CouncilDispatchState = {
+            status: "error",
+            verdict: {
+              approved: false,
+              risk: governanceRisk,
+              consensus: "Network error prevented council analysis",
+            },
+            error: `Network error: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+            requestId: null,
+          };
+          setVerdict(networkError.verdict);
+          setStatus("error");
+          setError(networkError.error);
           return null;
         });
 
         if (!councilResponse) {
+          // Error already handled in catch block above
           const unreachable: CouncilDispatchState = {
             status: "error",
             verdict: {
@@ -178,7 +225,7 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: "Council unavailable",
             },
-            error: "SYSTEM UNREACHABLE",
+            error: "Network error prevented council access",
             requestId: null,
           };
           setVerdict(unreachable.verdict);
@@ -206,7 +253,10 @@ export function useCouncilDispatch() {
         }
 
         if (!consensusText) {
-          const councilBody = responseClone !== null ? await responseClone.json().catch(() => null) : null;
+          const councilBody = responseClone !== null ? await responseClone.json().catch((parseError) => {
+            console.error("Failed to parse council response:", parseError);
+            return null;
+          }) : null;
           consensusText =
             councilBody?.consensus ||
             councilBody?.responses?.[0]?.response ||
@@ -216,6 +266,15 @@ export function useCouncilDispatch() {
         }
 
         if (!councilResponse.ok) {
+          // Handle RLS/auth errors explicitly
+          let errorMessage: string;
+          if (councilResponse.status === 401 || councilResponse.status === 403) {
+            const errorBody = await councilResponse.json().catch(() => ({ error: "Unauthorized" }));
+            errorMessage = `RLS policy blocked access: ${errorBody?.error || "Unauthorized"}`;
+          } else {
+            errorMessage = `Council analysis failed (${councilResponse.status})`;
+          }
+          
           const failed: CouncilDispatchState = {
             status: "error",
             verdict: {
@@ -223,7 +282,7 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: consensusText || "Council analysis failed",
             },
-            error: "SYSTEM UNREACHABLE",
+            error: errorMessage,
             requestId,
           };
           setVerdict(failed.verdict);
@@ -249,10 +308,13 @@ export function useCouncilDispatch() {
         return finalVerdict;
       } catch (err) {
         console.error("Protocol initialization failed:", err);
+        const errorMessage = err instanceof Error 
+          ? `Initialization error: ${err.message}`
+          : "Unknown error during protocol initialization";
         const unreachable: CouncilDispatchState = {
           status: "error",
           verdict,
-          error: "SYSTEM UNREACHABLE",
+          error: errorMessage,
           requestId: null,
         };
         setStatus("error");

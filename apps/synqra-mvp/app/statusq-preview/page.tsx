@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import StatusQ from "@/components/StatusQ";
 
@@ -14,7 +14,7 @@ function coerceStatus(value: string | null): Status {
   return "idle";
 }
 
-export default function StatusQPreviewPage() {
+function StatusQPreviewContent() {
   const sp = useSearchParams();
   const status = useMemo(() => coerceStatus(sp.get("status")), [sp]);
   const label = sp.get("label") || "STATUSQ_PREVIEW";
@@ -23,6 +23,14 @@ export default function StatusQPreviewPage() {
     <main className="min-h-screen bg-noid-black text-white">
       <StatusQ status={status} label={label} />
     </main>
+  );
+}
+
+export default function StatusQPreviewPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-noid-black text-white" />}>
+      <StatusQPreviewContent />
+    </Suspense>
   );
 }
 
