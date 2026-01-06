@@ -46,10 +46,12 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
         return;
       }
 
-      if (result.requestId) {
-        localStorage.setItem("synqra_request_id", result.requestId);
+      if (result.status === "done") {
+        if (result.requestId) {
+          localStorage.setItem("synqra_request_id", result.requestId);
+        }
         localStorage.setItem("synqra_input", code.trim());
-        onInitialized?.(result.requestId, code.trim());
+        onInitialized?.(result.requestId || "", code.trim());
       }
     } catch (err) {
       // Explicit error handling - no silent failures
