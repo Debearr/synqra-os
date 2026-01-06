@@ -1,0 +1,11 @@
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm --filter synqra-mvp run build"]
+
+[start]
+cmd = "pnpm --filter synqra-mvp run start"
+
+[build.env]
+NODE_VERSION = "20"
