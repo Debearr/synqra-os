@@ -31,57 +31,58 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/`
     | `/_archive/content`
+    | `/agents`
     | `/admin`
     | `/admin/integrations`
-    | `/agents`
     | `/api/approve`
-    | `/api/aura-fx/broadcast`
     | `/api/aura-fx/analyze`
+    | `/api/aura-fx/broadcast`
     | `/api/aura-fx/signal`
     | `/api/aura-fx/signal/update`
-    | `/api/draft`
-    | `/api/council/governance`
-    | `/api/council/outcome`
     | `/api/driver-intel`
+    | `/api/feedback`
+    | `/api/council`
+    | `/api/council/outcome`
+    | `/api/council/governance`
+    | `/api/generate`
+    | `/api/draft`
     | `/api/exec-summary/list`
-    | `/api/exec-summary/load`
     | `/api/exec-summary/pdf`
     | `/api/exec-summary/save`
+    | `/api/exec-summary/load`
+    | `/api/models/init`
+    | `/api/models/benchmark`
+    | `/api/models/status`
+    | `/api/pilot/apply`
     | `/api/health/models`
     | `/api/health/enterprise`
-    | `/api/generate`
-    | `/api/feedback`
-    | `/api/models/benchmark`
-    | `/api/models/init`
-    | `/api/models/status`
     | `/api/oauth/linkedin/callback`
     | `/api/oauth/linkedin/start`
+    | `/api/publish`
     | `/api/onboard/confirm`
     | `/api/onboard/extract`
-    | `/api/publish`
-    | `/api/pilot/apply`
     | `/api/railway-webhook`
     | `/api/ready`
     | `/api/reports/investor`
-    | `/api/risk/calculate-position`
     | `/api/retention/notes`
-    | `/api/status`
     | `/api/upload`
+    | `/api/risk/calculate-position`
+    | `/api/status`
     | `/api/waitlist`
-    | `/auth/callback`
     | `/create`
+    | `/auth/callback`
     | `/exec-summary`
-    | `/luxgrid/colors`
     | `/noid-intel`
+    | `/luxgrid/colors`
     | `/onboard`
     | `/pilot/apply`
     | `/pilot/apply/success`
     | `/q-preview`
     | `/statusq-preview`
-    | `/studio`
-    | `/studio/exec-summary`
     | `/waitlist`
     | `/waitlist/success`
+    | `/studio`
+    | `/studio/exec-summary`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 
