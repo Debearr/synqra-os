@@ -68,6 +68,21 @@ export function useCouncilDispatch() {
         return invalidState;
       }
 
+      // Admin Identity Code gate
+      const adminIdentityCode = process.env.NEXT_PUBLIC_ADMIN_IDENTITY_CODE;
+      if (adminIdentityCode && normalizedInput !== adminIdentityCode) {
+        const deniedState: CouncilDispatchState = {
+          status: "error",
+          verdict: null,
+          error: "INVALID IDENTITY CODE - Access denied",
+          requestId: null,
+        };
+        setStatus("error");
+        setError(deniedState.error);
+        setVerdict(null);
+        return deniedState;
+      }
+
       setStatus("governance");
       setVerdict(null);
       setError(null);

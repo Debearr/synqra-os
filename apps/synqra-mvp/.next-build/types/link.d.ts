@@ -31,46 +31,46 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/`
     | `/_archive/content`
-    | `/agents`
     | `/admin`
     | `/admin/integrations`
+    | `/agents`
+    | `/api/approve`
     | `/api/aura-fx/broadcast`
     | `/api/aura-fx/analyze`
     | `/api/aura-fx/signal`
     | `/api/aura-fx/signal/update`
-    | `/api/approve`
-    | `/api/driver-intel`
-    | `/api/exec-summary/load`
-    | `/api/exec-summary/list`
-    | `/api/exec-summary/pdf`
-    | `/api/exec-summary/save`
+    | `/api/draft`
     | `/api/council/governance`
     | `/api/council/outcome`
-    | `/api/feedback`
-    | `/api/draft`
+    | `/api/driver-intel`
+    | `/api/exec-summary/list`
+    | `/api/exec-summary/load`
+    | `/api/exec-summary/pdf`
+    | `/api/exec-summary/save`
+    | `/api/health/models`
+    | `/api/health/enterprise`
     | `/api/generate`
+    | `/api/feedback`
     | `/api/models/benchmark`
     | `/api/models/init`
     | `/api/models/status`
-    | `/api/onboard/confirm`
-    | `/api/onboard/extract`
-    | `/api/health/enterprise`
-    | `/api/health/models`
-    | `/api/pilot/apply`
-    | `/api/publish`
     | `/api/oauth/linkedin/callback`
     | `/api/oauth/linkedin/start`
+    | `/api/onboard/confirm`
+    | `/api/onboard/extract`
+    | `/api/publish`
+    | `/api/pilot/apply`
+    | `/api/railway-webhook`
     | `/api/ready`
     | `/api/reports/investor`
-    | `/api/railway-webhook`
     | `/api/risk/calculate-position`
-    | `/api/waitlist`
     | `/api/retention/notes`
     | `/api/status`
     | `/api/upload`
+    | `/api/waitlist`
     | `/auth/callback`
-    | `/exec-summary`
     | `/create`
+    | `/exec-summary`
     | `/luxgrid/colors`
     | `/noid-intel`
     | `/onboard`
