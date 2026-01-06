@@ -11,7 +11,7 @@ export default function CouncilMonitor({ verdict }: CouncilMonitorProps) {
   if (!verdict) return null;
 
   // DISCIPLINE STATUS — NO TRADE / PRESERVE CAPITAL
-  if (verdict.data === null && verdict.message) {
+if ("message" in verdict && !("data" in verdict)) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -26,7 +26,7 @@ export default function CouncilMonitor({ verdict }: CouncilMonitorProps) {
         </div>
 
         <p className="mt-4 text-amber-200 text-lg">
-          {verdict.message}
+          {String(verdict.message)}
         </p>
 
         <div className="mt-4 text-xs uppercase tracking-widest text-amber-500">

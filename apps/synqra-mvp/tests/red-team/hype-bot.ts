@@ -1,4 +1,4 @@
-import { scanTone } from "@/lib/aurafx/signal-guard";
+import { scanTone } from "@/lib/aurafx/tone-guard";
 
 interface HypeBotResult {
   phrase: string;

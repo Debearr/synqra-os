@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { buildAuraFxContext } from "@/lib/aura-fx/engine";
 import { Candle, Timeframe } from "@/lib/aura-fx/types";
+import { LUXURY_ERROR_MESSAGE } from "@/lib/errors/luxury-handler";
 
 const candleSchema = z.object({
   time: z.number(),
@@ -43,6 +44,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ symbol, timeframe, result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: LUXURY_ERROR_MESSAGE, detail: message }, { status: 500 });
   }
 }
