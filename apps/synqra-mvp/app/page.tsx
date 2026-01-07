@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
+import { initializationStore } from "@/lib/workspace/initialization-store";
 import BarcodeHorizon from "@/components/portal/barcode-horizon";
 import TelemetryDeck from "@/components/portal/telemetry-deck";
 import StatusQ from "@/components/StatusQ";
@@ -74,43 +75,25 @@ function EntranceInner() {
     setTouched(true);
 
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      if (supabase && supabaseUrl && supabaseKey) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          headers.Authorization = `Bearer ${session.access_token}`;
-        }
-      }
-
-      const response = await fetch("/api/council", {
+      const res = await fetch("/api/identity/init", {
         method: "POST",
-        headers,
-        body: JSON.stringify({
-          prompt: code.trim(),
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identityCode: code.trim() }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Request failed");
-      }
-
-      const data = await response.json();
-      const requestId = data.metadata?.requestId || data.request_id;
-
-      if (requestId) {
+      if (res.ok) {
+        // Initialize store and localStorage for workspace compatibility
+        const identityCode = code.trim();
+        const requestId = `identity-${Date.now()}`;
+        initializationStore.initialize(requestId, identityCode);
         localStorage.setItem("synqra_request_id", requestId);
-        localStorage.setItem("synqra_input", code.trim());
+        localStorage.setItem("synqra_input", identityCode);
+        
         window.location.href = "/studio";
+        return;
       } else {
-        throw new Error("No request ID received");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Request failed");
       }
     } catch (error) {
       setStatus("denied");
