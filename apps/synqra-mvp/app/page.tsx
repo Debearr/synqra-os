@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { initializationStore } from "@/lib/workspace/initialization-store";
@@ -13,6 +14,7 @@ import StatusQ from "@/components/StatusQ";
 const CODE_REGEX = /^[A-Z0-9]{6,12}$/;
 
 function EntranceInner() {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [touched, setTouched] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "accepted" | "denied">("idle");
@@ -75,27 +77,28 @@ function EntranceInner() {
     setTouched(true);
 
     try {
-      const res = await fetch("/api/identity/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identityCode: code.trim() }),
-      });
+      const identityCode = code.trim();
+      const requestId = `identity-${Date.now()}`;
+      
+      // 1. Initialize Store
+      initializationStore.initialize(requestId, identityCode);
+      
+      // 2. Set Local Storage
+      localStorage.setItem("synqra_request_id", requestId);
+      localStorage.setItem("synqra_input", identityCode);
+      
+      // 3. SET SAFETY COOKIE (Satisfy Middleware)
+      document.cookie = `synqra_auth=${identityCode}; path=/; max-age=86400`;
 
-      if (res.ok) {
-        // Initialize store and localStorage for workspace compatibility
-        const identityCode = code.trim();
-        const requestId = `identity-${Date.now()}`;
-        initializationStore.initialize(requestId, identityCode);
-        localStorage.setItem("synqra_request_id", requestId);
-        localStorage.setItem("synqra_input", identityCode);
-        
-        window.location.href = "/studio";
-        return;
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Request failed");
-      }
-    } catch (error) {
+      // 4. UPDATE UI
+      setStatus("accepted");
+      console.log("✅ NUCLEAR OPTION: Forcing hard navigation to /studio");
+
+      // 5. HARD NAVIGATION (The Fix)
+      window.location.href = "/studio"; 
+
+    } catch (e) {
+      console.error("Initialization failed", e);
       setStatus("denied");
       setIsTransitioning(false);
     }

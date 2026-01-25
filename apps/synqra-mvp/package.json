@@ -33,6 +33,7 @@
     "autoprefixer": "10.4.20",
     "eslint": "9.14.0",
     "postcss": "8.4.47",
+    "supabase": "^2.72.8",
     "tailwindcss": "3.4.14",
     "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",

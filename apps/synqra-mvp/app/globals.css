@@ -164,3 +164,13 @@
     font-weight: 300;
   }
 }
+
+/* Slow pulse animation for discipline state (breathing effect) */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

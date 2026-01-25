@@ -1,36 +1,68 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ShieldCheck } from "lucide-react";
 import type { CouncilVerdict } from "@/hooks/use-council-dispatch";
 
 interface CouncilMonitorProps {
   verdict: CouncilVerdict | null;
+  // Support for raw API response structure
+  response?: {
+    success?: boolean;
+    data?: any;
+    message?: string;
+    meta?: {
+      discipline?: string;
+    };
+  } | null;
 }
 
-export default function CouncilMonitor({ verdict }: CouncilMonitorProps) {
-  if (!verdict) return null;
-
-  // DISCIPLINE STATUS — NO TRADE / PRESERVE CAPITAL
-if ("message" in verdict && !("data" in verdict)) {
+export default function CouncilMonitor({ verdict, response }: CouncilMonitorProps) {
+  // Check for discipline state in raw response first
+  if (response?.success === true && response?.data === null && response?.meta?.discipline === "active") {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-900/30 to-black p-6 shadow-xl"
+        className="rounded-2xl border border-amber-500/30 bg-amber-900/10 p-6"
+        style={{ animation: "pulse-slow 3s ease-in-out infinite" }}
       >
-        <div className="flex items-center gap-3">
-          <div className="h-3 w-3 rounded-full bg-amber-400 animate-pulse" />
-          <h3 className="text-amber-300 font-semibold tracking-wide">
-            DISCIPLINE MODE ACTIVE
-          </h3>
+        <div className="flex items-start gap-4">
+          <ShieldCheck className="w-8 h-8 text-amber-400 flex-shrink-0 mt-1" />
+          <div className="flex-1">
+            <h3 className="text-amber-100 font-mono tracking-widest text-sm mb-2">
+              PROTOCOL ACTIVE
+            </h3>
+            <p className="text-amber-400/80 mt-2 text-lg">
+              {response.message || "MARKET SCAN COMPLETE. PRESERVING CAPITAL."}
+            </p>
+          </div>
         </div>
+      </motion.div>
+    );
+  }
 
-        <p className="mt-4 text-amber-200 text-lg">
-          {String(verdict.message)}
-        </p>
+  if (!verdict) return null;
 
-        <div className="mt-4 text-xs uppercase tracking-widest text-amber-500">
-          Capital preserved · No action required
+  // DISCIPLINE STATUS — NO TRADE / PRESERVE CAPITAL (legacy check)
+  if ("message" in verdict && !("data" in verdict)) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-amber-500/30 bg-amber-900/10 p-6"
+        style={{ animation: "pulse-slow 3s ease-in-out infinite" }}
+      >
+        <div className="flex items-start gap-4">
+          <ShieldCheck className="w-8 h-8 text-amber-400 flex-shrink-0 mt-1" />
+          <div className="flex-1">
+            <h3 className="text-amber-100 font-mono tracking-widest text-sm mb-2">
+              PROTOCOL ACTIVE
+            </h3>
+            <p className="text-amber-400/80 mt-2 text-lg">
+              {String(verdict.message)}
+            </p>
+          </div>
         </div>
       </motion.div>
     );
