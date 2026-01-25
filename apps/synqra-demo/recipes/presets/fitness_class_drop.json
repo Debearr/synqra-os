@@ -1,0 +1,19 @@
+{
+  "name": "Fitness — New Class Drop Reaction",
+  "slug": "fitness_class_drop",
+  "recipe": "try_on_react_campaign",
+  "industry": "fitness",
+  "description": "First-class experience reactions for new fitness program launches",
+  "variables": {
+    "BRAND_NAME": "[Fitness Studio Name]",
+    "COLLAB_OR_PRODUCT": "[New Class] — First Class Experience",
+    "TALENT_TYPE": "Regular members + coaches + first-timers",
+    "PRIMARY_PLATFORM": "Instagram Reels + TikTok",
+    "VIBE": "High intensity. Results-driven. Motivational energy. Transformation catalyst. Think: sweat, discipline, community power.",
+    "GOAL": "Class bookings + membership signups"
+  },
+  "archetype": "The Discipline Coach",
+  "color_palette": ["#0A0A0A", "#DC143C", "#808080", "#FFFFFF"],
+  "lighting": "gym_high_contrast",
+  "version": "1.0"
+}

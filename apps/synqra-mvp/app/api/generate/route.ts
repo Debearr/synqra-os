@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
 import {
   generateMultiPlatform,
   logContentGeneration,
   type Platform,
 } from "@/lib/contentGenerator";
+import { requireSupabase } from "@/lib/supabaseClient";
 
 /**
  * ============================================================
@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     const body: GenerateRequest = await request.json();
     const { searchParams } = new URL(request.url);
     const demoMode = searchParams.get("demo") === "true";
+    const persistEnabled =
+      (process.env.GENERATE_PERSIST_ENABLED || "").toLowerCase() === "true";
 
     // Validate input
     if (!body.brief || !body.platforms || body.platforms.length === 0) {
@@ -40,25 +42,32 @@ export async function POST(request: NextRequest) {
 
     // Generate variants for all platforms
     const allVariants = generateMultiPlatform(brief, platforms);
+    const demoJobId = "demo-" + Date.now();
+    const shouldPersist = persistEnabled && !demoMode;
 
-    // Demo mode: skip database, return generated content directly
-    if (demoMode) {
-      logContentGeneration("demo-" + Date.now(), brief, platforms);
+    // Demo mode OR persistence disabled: do not write to database
+    // (Per production constraint: avoid day-to-day/junk Supabase writes by default)
+    if (!shouldPersist) {
+      logContentGeneration(demoJobId, brief, platforms);
       return NextResponse.json(
         {
-          jobId: "demo-" + Date.now(),
+          jobId: demoJobId,
           brief,
           platforms,
           variants: allVariants,
-          demoMode: true,
-          message: "Demo mode: Content generated but not saved to database",
+          demoMode: demoMode,
+          persisted: false,
+          message: demoMode
+            ? "Demo mode: Content generated but not saved to database"
+            : "Content generated. Persistence disabled (set GENERATE_PERSIST_ENABLED=true to enable saving).",
           timestamp: new Date().toISOString(),
         },
         { status: 200 }
       );
     }
 
-    // Create job in Supabase
+    // Persistence explicitly enabled (non-default)
+    const supabase = requireSupabase();
     const { data: job, error: jobError } = await supabase
       .from("content_jobs")
       .insert({
@@ -119,6 +128,7 @@ export async function POST(request: NextRequest) {
         platforms,
         variants: allVariants,
         savedCount: savedVariants?.length || 0,
+        persisted: true,
         timestamp: new Date().toISOString(),
       },
       { status: 201 }

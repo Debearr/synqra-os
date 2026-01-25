@@ -77,14 +77,14 @@ export default function AgentDashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+    <main className="min-h-screen bg-noid-black p-8">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <header className="mb-8 text-center">
           <h1 className="mb-2 text-4xl font-bold text-white">
-            🤖 Synqra Agent System
+            Synqra Agent System
           </h1>
-          <p className="text-slate-400">
+          <p className="text-noid-silver">
             Multi-agent voice system for Sales, Support, and Service
           </p>
         </header>
@@ -96,21 +96,20 @@ export default function AgentDashboard() {
           </label>
           <div className="grid grid-cols-4 gap-3">
             {[
-              { value: "auto", label: "Auto-Route", emoji: "🔀" },
-              { value: "sales", label: "Sales", emoji: "💼" },
-              { value: "support", label: "Support", emoji: "🔧" },
-              { value: "service", label: "Service", emoji: "🎯" },
+              { value: "auto", label: "Auto-Route" },
+              { value: "sales", label: "Sales" },
+              { value: "support", label: "Support" },
+              { value: "service", label: "Service" },
             ].map((agent) => (
               <button
                 key={agent.value}
                 onClick={() => setSelectedAgent(agent.value as AgentRole)}
                 className={`rounded-xl border-2 p-4 text-center transition-all ${
                   selectedAgent === agent.value
-                    ? "border-indigo-500 bg-indigo-500/20 text-white"
-                    : "border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/10"
+                    ? "border-noid-silver bg-white/10 text-white"
+                    : "border-white/10 bg-white/5 text-white/60 hover:border-noid-silver/60 hover:bg-white/10"
                 }`}
               >
-                <div className="text-2xl">{agent.emoji}</div>
                 <div className="mt-1 text-sm font-medium">{agent.label}</div>
               </button>
             ))}
@@ -127,7 +126,7 @@ export default function AgentDashboard() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your question or request..."
-              className="w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full rounded-xl border border-noid-silver/40 bg-black/40 p-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-noid-teal"
               rows={4}
               disabled={isLoading}
             />
@@ -155,7 +154,7 @@ export default function AgentDashboard() {
             <button
               type="submit"
               disabled={!message.trim() || isLoading}
-              className="mt-4 w-full rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 w-full rounded-xl bg-noid-gold px-6 py-3 font-semibold text-noid-black shadow-gold-glow transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? "Processing..." : "Send Message"}
             </button>
@@ -176,7 +175,7 @@ export default function AgentDashboard() {
               <div>
                 <h3 className="text-lg font-semibold text-white">Response</h3>
                 <p className="text-sm text-white/60">
-                  Agent: <span className="font-medium text-indigo-400">{response.agent}</span>
+                  Agent: <span className="font-medium text-noid-gold">{response.agent}</span>
                   {" | "}
                   Confidence:{" "}
                   <span className="font-medium text-green-400">
@@ -228,7 +227,7 @@ export default function AgentDashboard() {
           <p>
             This is a test interface for the Synqra multi-agent system. All agents are running in{" "}
             <strong>MOCK MODE</strong> by default (no API calls). Set AGENT_MODE=live in .env to
-            enable real Claude API integration.
+            enable live mode.
           </p>
         </div>
       </div>

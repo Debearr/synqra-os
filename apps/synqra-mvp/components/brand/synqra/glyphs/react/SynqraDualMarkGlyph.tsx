@@ -1,0 +1,50 @@
+import React from "react";
+import { cn } from "@/lib/utils";
+
+interface GlyphProps extends React.SVGProps<SVGSVGElement> {
+    className?: string;
+    width?: number | string;
+    height?: number | string;
+}
+
+export const SynqraDualMarkGlyph = ({ className, width, height, ...props }: GlyphProps) => {
+    return (
+        <svg
+            viewBox="0 0 200 64"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Synqra x NOID Dual Mark"
+            className={cn("select-none", className)}
+            width={width}
+            height={height}
+            {...props}
+        >
+            <defs>
+                <linearGradient id="grad-dual" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="100%" stopColor="#14B8A6" />
+                </linearGradient>
+            </defs>
+
+            {/* Synqra (Left) - Barcode Mark */}
+            <g transform="translate(10, 10)">
+                <rect x="0" y="0" width="4" height="44" fill="#D4AF37" />
+                <rect x="8" y="0" width="12" height="44" fill="#14B8A6" />
+                <rect x="24" y="0" width="4" height="44" fill="#F5F5F0" />
+            </g>
+
+            {/* Separator */}
+            <rect x="50" y="20" width="2" height="24" fill="#333" />
+
+            {/* NOID (Right) - Hexagon Mark */}
+            <g transform="translate(70, 10)">
+                {/* Simple Hexagon Outline */}
+                <path d="M22 0 L44 11 L44 33 L22 44 L0 33 L0 11 Z" fill="none" stroke="#F5F5F0" strokeWidth="2" />
+                <circle cx="22" cy="22" r="6" fill="#D4AF37" />
+            </g>
+
+            {/* Text Label */}
+            <text x="130" y="38" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="16" fill="#F5F5F0" letterSpacing="1">SYNQRA</text>
+        </svg>
+    );
+};

@@ -69,6 +69,51 @@ export class ConversationMemory {
   }
 
   /**
+   * Add message with lightweight deduplication
+   */
+  addMessageSmart(
+    conversationId: string,
+    role: "user" | "assistant" | "system",
+    content: string,
+    metadata?: Record<string, any>
+  ): void {
+    const context = this.getOrCreateContext(conversationId);
+    const recentMessages = context.history.slice(-5);
+
+    const isDuplicate = recentMessages.some(
+      (msg) => msg.role === role && this.similarityScore(msg.content, content) > 0.9
+    );
+
+    if (!isDuplicate) {
+      this.addMessage(conversationId, role, content, metadata);
+    }
+  }
+
+  /**
+   * Get compressed context: system + last 3 exchanges
+   */
+  getCompressedContext(conversationId: string): string {
+    const history = this.getHistory(conversationId);
+    if (history.length === 0) return "";
+
+    const first = history[0];
+    const tail = history.slice(-6);
+    const condensed = [first, ...tail].filter(Boolean);
+
+    return condensed
+      .map((m) => `${m.role}: ${m.content}`)
+      .join("\n");
+  }
+
+  private similarityScore(a: string, b: string): number {
+    const aWords = new Set(a.toLowerCase().split(/\s+/));
+    const bWords = new Set(b.toLowerCase().split(/\s+/));
+    const intersection = [...aWords].filter((w) => bWords.has(w)).length;
+    const union = new Set([...aWords, ...bWords]).size || 1;
+    return intersection / union;
+  }
+
+  /**
    * Get conversation history
    */
   getHistory(
@@ -206,3 +251,4 @@ export class ConversationMemory {
 
 // Global conversation memory instance
 export const conversationMemory = new ConversationMemory();
+

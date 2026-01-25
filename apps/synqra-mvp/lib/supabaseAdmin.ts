@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from './supabase/env';
 
 /**
  * ============================================================
@@ -9,33 +10,40 @@ import { createClient } from '@supabase/supabase-js';
  * ⚠️  SECURITY: Never expose this in client-side code
  * 
  * Required environment variables:
- * - SUPABASE_URL: Your Supabase project URL
+ * - SUPABASE_URL: Your Supabase project URL (must be valid HTTPS URL)
  * - SUPABASE_SERVICE_ROLE: Your Supabase service role key (secret!)
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-// Support multiple naming conventions for backwards compatibility
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
+let supabaseAdmin: SupabaseClient | null = null;
+let supabaseAdminInitError: Error | null = null;
 
-// Export a typed client or null if credentials not configured
-export const supabaseAdmin = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey, {
-      auth: { 
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-      db: { 
-        schema: 'public' 
-      },
-    })
-  : null;
+try {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseKey = getSupabaseServiceRoleKey();
+
+  supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: {
+      schema: 'public',
+    },
+  });
+} catch (error) {
+  supabaseAdminInitError = error instanceof Error ? error : new Error("Unknown Supabase admin init error");
+  supabaseAdmin = null;
+}
+
+export { supabaseAdmin };
 
 // Helper to ensure client is available
-export function requireSupabaseAdmin() {
+export function requireSupabaseAdmin(): SupabaseClient {
   if (!supabaseAdmin) {
     throw new Error(
-      '❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment. ' +
-      'Set these in .env.local for development or Railway for production.'
+      "❌ Supabase Admin client not available. " +
+      "Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in Railway Variables and restart." +
+      (supabaseAdminInitError ? ` Details: ${supabaseAdminInitError.message}` : "")
     );
   }
   return supabaseAdmin;

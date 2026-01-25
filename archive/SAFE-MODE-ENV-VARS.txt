@@ -1,0 +1,60 @@
+# SYNQRA OS - SAFE MODE ENVIRONMENT VARIABLES
+# Copy these to Railway Dashboard → Variables → RAW Editor
+
+# ============================================================
+# AGENT CONFIGURATION (SAFE MODE)
+# ============================================================
+AGENT_MODE=mock
+AGENT_MAX_TOKENS=4096
+AGENT_TEMPERATURE=0.7
+
+# ============================================================
+# RAG CONFIGURATION
+# ============================================================
+RAG_ENABLED=true
+RAG_MAX_DOCUMENTS=5
+RAG_MIN_SIMILARITY=0.7
+
+# ============================================================
+# SAFETY & GUARDRAILS
+# ============================================================
+HALLUCINATION_CHECK=true
+DUAL_PASS_VALIDATION=true
+MIN_CONFIDENCE_THRESHOLD=0.6
+CONVERSATION_HISTORY_LIMIT=20
+
+# ============================================================
+# POSTING PIPELINE (SAFE MODE - DISABLED)
+# ============================================================
+POSTING_ENABLED=false
+DRY_RUN=true
+APPROVAL_REQUIRED=true
+
+# ============================================================
+# SUPABASE (Mock for Build - Not Functional)
+# ============================================================
+SUPABASE_URL=https://placeholder.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjAwMDAwMDAsImV4cCI6MTkzNTYwMDAwMH0.mock_key_for_build_testing_only
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYyMDAwMDAwMCwiZXhwIjoxOTM1NjAwMDAwfQ.mock_service_key_for_build_testing_only
+
+# ============================================================
+# PRODUCTION SETTINGS
+# ============================================================
+NODE_ENV=production
+DEBUG_AGENTS=false
+MOCK_DELAY_MS=1500
+
+# ============================================================
+# NOTES
+# ============================================================
+# This configuration runs in SAFE MODE:
+# - No API costs (mock mode)
+# - No external API calls
+# - Posting pipeline disabled
+# - Safe for testing and demonstration
+#
+# To switch to LIVE MODE later:
+# 1. Add: ANTHROPIC_API_KEY=sk-ant-api03-YOUR_KEY
+# 2. Change: AGENT_MODE=live
+# 3. Add real Supabase credentials if needed
+# 4. Test thoroughly before enabling posting

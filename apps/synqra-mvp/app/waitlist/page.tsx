@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -21,15 +21,7 @@ export default function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
-
-  // Load waitlist count for social proof
-  useEffect(() => {
-    fetch('/api/waitlist')
-      .then(res => res.json())
-      .then(data => setWaitlistCount(data.count))
-      .catch(() => setWaitlistCount(null));
-  }, []);
+  // Social proof count removed per Design Constitution
 
   // Client-side email validation
   const validateEmail = (email: string): boolean => {
@@ -67,14 +59,18 @@ export default function WaitlistPage() {
           setError('You\'re already on the list! Check your email for updates.');
           return;
         }
-        throw new Error(data.error || 'Something went wrong');
+        // Prefer server-provided message when available (keeps UX human-friendly)
+        throw new Error(data.message || data.error || 'Something went wrong');
       }
 
       // Success - redirect to success page
       router.push('/waitlist/success');
 
     } catch (err: any) {
-      console.error('[Waitlist] Submit error:', err);
+      // Avoid Next.js dev overlay noise for expected user-facing errors
+      if (process.env.NODE_ENV !== "production") {
+        console.warn('[Waitlist] Submit error:', err);
+      }
       setError(err.message || 'Unable to join waitlist. Please try again.');
     } finally {
       setLoading(false);
@@ -82,46 +78,32 @@ export default function WaitlistPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+    <main className="min-h-screen bg-noid-black text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 text-center">
-          <div className="inline-block px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-400 text-xs font-medium mb-4">
-            EARLY ACCESS
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight mb-3">
-            Synqra Pilot Program
-          </h1>
-          <p className="text-zinc-400 text-sm">
-            Join the first 50. Founder Access perks + priority onboarding.
-          </p>
-          {waitlistCount !== null && waitlistCount > 0 && (
-            <p className="text-emerald-400 text-xs mt-3 font-medium">
-              {waitlistCount} {waitlistCount === 1 ? 'founder has' : 'founders have'} joined
-            </p>
-          )}
+          <div className="font-display text-3xl uppercase tracking-[0.38em] text-white">SYNQRA</div>
         </div>
 
         {/* Form */}
         <form 
           onSubmit={handleSubmit} 
-          className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-4"
+          className="rounded-3xl border border-noid-silver/30 bg-white/[0.03] p-6 shadow-[0_24px_60px_rgba(10,10,10,0.65)] space-y-4"
         >
           <div>
             <label 
               htmlFor="name" 
-              className="block text-sm font-medium text-zinc-400 mb-2"
+              className="block text-xs font-semibold uppercase tracking-[0.22em] text-white/55 mb-2"
             >
               Full Name
             </label>
             <input
               id="name"
               type="text"
-              className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 
-                         text-white placeholder:text-zinc-600
-                         focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent
+              className="w-full rounded-2xl bg-noid-black/50 border border-white/10 px-4 py-3 
+                         text-white placeholder:text-white/25
+                         focus:outline-none focus:ring-2 focus:ring-noid-teal focus:border-transparent
                          transition-all duration-200 disabled:opacity-50"
-              placeholder="Leroy De Beer"
+              placeholder="Full name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               disabled={loading}
@@ -132,18 +114,18 @@ export default function WaitlistPage() {
           <div>
             <label 
               htmlFor="email" 
-              className="block text-sm font-medium text-zinc-400 mb-2"
+              className="block text-xs font-semibold uppercase tracking-[0.22em] text-white/55 mb-2"
             >
-              Email Address <span className="text-red-400">*</span>
+              Email Address <span className="text-white/35">*</span>
             </label>
             <input
               id="email"
               type="email"
-              className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 
-                         text-white placeholder:text-zinc-600
-                         focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent
+              className="w-full rounded-2xl bg-noid-black/50 border border-white/10 px-4 py-3 
+                         text-white placeholder:text-white/25
+                         focus:outline-none focus:ring-2 focus:ring-noid-teal focus:border-transparent
                          transition-all duration-200 disabled:opacity-50"
-              placeholder="leroy@noidlabs.com"
+              placeholder="email@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -155,7 +137,7 @@ export default function WaitlistPage() {
           {/* Error Display */}
           {error && (
             <div 
-              className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400"
+              className="rounded-2xl bg-white/[0.03] border border-noid-silver/30 px-4 py-3 text-sm text-white/75"
               role="alert"
             >
               {error}
@@ -166,11 +148,11 @@ export default function WaitlistPage() {
           <button
             type="submit"
             disabled={loading || !email}
-            className="w-full rounded-xl bg-emerald-400 text-black font-semibold py-3.5
-                       hover:bg-emerald-300 active:bg-emerald-500
+            className="w-full rounded-full bg-noid-gold text-noid-black font-semibold py-3.5 uppercase tracking-[0.22em]
+                       hover:opacity-95 active:opacity-90
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
-                       focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-black"
+                       focus:outline-none focus:ring-2 focus:ring-noid-teal focus:ring-offset-2 focus:ring-offset-noid-black shadow-gold-glow"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -190,19 +172,13 @@ export default function WaitlistPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" 
                   />
                 </svg>
-                Joining...
+                Processing…
               </span>
             ) : (
-              'Join Waitlist'
+              'Request Access'
             )}
           </button>
         </form>
-
-        {/* Footer */}
-        <div className="mt-6 text-center text-xs text-zinc-500">
-          <p className="font-medium">NØID × Synqra</p>
-          <p className="mt-1 italic">&ldquo;Drive Unseen. Earn Smart.&rdquo;</p>
-        </div>
       </div>
     </main>
   );

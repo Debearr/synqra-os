@@ -1,0 +1,35 @@
+{
+  "id": "7806e49c-a6c1-4097-8737-b52f5904bbca",
+  "timestamp": "2025-12-03T01:28:19.228Z",
+  "source": "fusion",
+  "raw": {
+    "id": "7806e49c-a6c1-4097-8737-b52f5904bbca",
+    "timestamp": "2025-12-03T01:28:19.228Z",
+    "source": "Manual-Test-Script",
+    "category": "log",
+    "content": {
+      "event": "Manual_Test_Event",
+      "user": "test_user_anon",
+      "value": 123.45,
+      "location": "Virtual_Lab"
+    },
+    "metadata": {
+      "collectedBy": "Synqra-Raw-Collector",
+      "version": "1.0.0"
+    }
+  },
+  "insights": {
+    "rawId": "7806e49c-a6c1-4097-8737-b52f5904bbca",
+    "insight": "Detected log event from Manual-Test-Script. Content analysis suggests normal operation.",
+    "recommendedAction": "Monitor",
+    "severity": "low",
+    "tags": [
+      "log",
+      "auto-generated",
+      "Manual-Test-Script"
+    ],
+    "patternDetected": "Standard Operational Pattern"
+  },
+  "severity": "low",
+  "actionRecommendation": "Monitor"
+}

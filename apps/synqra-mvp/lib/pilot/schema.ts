@@ -107,7 +107,7 @@ export const profileScaffoldSchema = z.object({
   profile: baseProfileSchema,
 
   // Industry-specific data
-  industryExtension: z.record(z.any()).optional(),
+  industryExtension: z.record(z.string(), z.any()).optional(),
 
   // Metadata
   overallConfidence: z.number().min(0).max(1),
@@ -116,7 +116,7 @@ export const profileScaffoldSchema = z.object({
   createdAt: z.date().default(() => new Date()),
 
   // Field-level tracking
-  fieldConfidences: z.record(z.number()).optional(),
+  fieldConfidences: z.record(z.string(), z.number()).optional(),
 });
 
 // ============================================================

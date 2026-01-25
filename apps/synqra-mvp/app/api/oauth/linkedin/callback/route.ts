@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase configuration');
-  }
-  
-  return createClient(supabaseUrl, supabaseKey);
-}
+const STATE_COOKIE = "synqra_oauth_li_state";
 
 /**
  * LinkedIn OAuth Flow - Step 2: Handle Callback
@@ -19,16 +10,23 @@ function getSupabaseClient() {
  * Exchanges authorization code for access token and stores in database
  */
 export async function GET(req: NextRequest) {
-  const supabase = getSupabaseClient();
+  const supabase = requireSupabaseAdmin();
   const searchParams = req.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get("state");
+  const expectedState = req.cookies.get(STATE_COOKIE)?.value || null;
 
   // Handle OAuth errors
   if (error) {
     const errorDescription = searchParams.get('error_description') || 'Unknown error';
     console.error('LinkedIn OAuth error:', error, errorDescription);
     return NextResponse.redirect('/admin/integrations?error=linkedin_denied');
+  }
+
+  // Server-side CSRF protection: validate state
+  if (!state || !expectedState || state !== expectedState) {
+    return NextResponse.redirect('/admin/integrations?error=linkedin_state_mismatch');
   }
 
   if (!code) {
@@ -110,13 +108,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect('/admin/integrations?error=database_failed');
     }
 
-    console.log('✅ LinkedIn OAuth successful for account:', accountId);
-
-    // Redirect to admin with success message
-    return NextResponse.redirect('/admin/integrations?success=linkedin');
+    // Redirect to admin with success message (clear state cookie)
+    const res = NextResponse.redirect('/admin/integrations?success=linkedin');
+    res.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
+    return res;
 
   } catch (error: any) {
     console.error('LinkedIn OAuth callback error:', error);
-    return NextResponse.redirect('/admin/integrations?error=unexpected');
+    const res = NextResponse.redirect('/admin/integrations?error=unexpected');
+    res.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
+    return res;
   }
 }

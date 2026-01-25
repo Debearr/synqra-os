@@ -6,6 +6,7 @@ import {
   Message,
   InvocationOptions,
   ConversationContext,
+  validateAgentConfirmation,
 } from "./types";
 import { agentConfig } from "./config";
 import { checkBudget, recordCost, estimateRequestCost } from "../budgetGuardrails";
@@ -35,11 +36,21 @@ export abstract class BaseAgent {
 
   /**
    * Main invocation method - routes to mock or live implementation
+   * 
+   * HUMAN-IN-COMMAND: This method requires explicit human confirmation
+   * before any agent response is generated. Without a valid confirmation
+   * gate in options, the method will throw AgentConfirmationRequiredError.
    */
   async invoke(
     request: AgentRequest,
-    options: InvocationOptions = {}
+    options: InvocationOptions
   ): Promise<AgentResponse> {
+    // CONFIRMATION GATE: Enforce human confirmation before any agent action
+    validateAgentConfirmation(
+      options.confirmation,
+      `Agent invocation: ${this.config.role} responding to user message`
+    );
+    
     const mode = options.mode || agentConfig.agent.mode;
 
     // Log invocation if debug enabled
@@ -48,6 +59,7 @@ export abstract class BaseAgent {
         mode,
         message: request.message.substring(0, 50) + "...",
         conversationId: request.conversationId,
+        confirmationToken: options.confirmation.confirmationToken,
       });
     }
 

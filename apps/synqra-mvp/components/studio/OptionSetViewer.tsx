@@ -1,5 +1,7 @@
+import type { Option } from '@/lib/core';
+
 export type OptionSetViewerProps = {
-  options: any[];
+  options: Option[];
 };
 
 export const OptionSetViewer = ({ options }: OptionSetViewerProps) => {

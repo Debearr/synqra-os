@@ -1,56 +1,80 @@
+// @ts-nocheck
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
+  darkMode: ["class"],
   content: [
-    "./app/**/*.{ts,tsx}",
+    "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
-    theme: {
-      extend: {
-        colors: {
-          brand: {
-            bg: "#0B0B0B",
-            fg: "#EDEDED",
-            gold: "#D4AF37",
-            teal: "#00FFC6",
-            gray: "#A0A0A0",
-            ink: "#141414",
-            mute: "#F7F7F7",
+  theme: {
+    extend: {
+      colors: {
+        // NØID BRAND TOKENS (LOCKED)
+        noid: {
+          black: "#050505", // Void
+          gold: {
+            DEFAULT: "#D4AF37",
+            dim: "#D4AF37",
           },
-          noir: "#0B0B0B",
-          indigo: "#4B52FF",
-          lux: {
-            black: "#000000",
-            gold: "#D4AF37",
-            emerald: "#00D9A3",
-            white: "#FFFFFF",
+          silver: {
+            DEFAULT: "#C0C0C0",
+            dark: "#3A3A3C",    // Dark Silver (Subtle borders)
+          },
+          teal: {
+            DEFAULT: "#00D2BE", // Cyber Teal (Intelligence/Signal)
+            glow: "rgba(0, 210, 190, 0.35)", // For box-shadows (Command Center only)
           },
         },
-        fontFamily: {
-          display: ["ui-serif", "Georgia", "serif"],
-          sans: [
-            "system-ui",
-            "-apple-system",
-            "BlinkMacSystemFont",
-            '"Segoe UI"',
-            "Roboto",
-            '"Helvetica Neue"',
-            "Arial",
-            "sans-serif",
-          ],
-          mono: ["ui-monospace", "Menlo", "Monaco", "Consolas", "monospace"],
+        // MAPPING TO SHADCN SEMANTICS
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "var(--noid-teal)",
+        background: "#050505",
+        foreground: "#FFFFFF",
+        primary: {
+          DEFAULT: "#D4AF37",
+          foreground: "#050505",
         },
-        borderRadius: {
-          xl: "1.25rem",
+        secondary: {
+          DEFAULT: "#3A3A3C",
+          foreground: "#FFFFFF",
         },
-        boxShadow: {
-          glow: "0 0 40px rgba(75, 82, 255, 0.45)",
+        destructive: {
+          DEFAULT: "#FF453A",
+          foreground: "#FFFFFF",
+        },
+        muted: {
+          DEFAULT: "#1C1C1E",
+          foreground: "#8C8C91",
+        },
+        accent: {
+          DEFAULT: "#1C1C1E",
+          foreground: "#C5A059",
         },
       },
+      // EXTENDED UTILITIES
+      boxShadow: {
+        'teal-glow': '0 0 20px -5px rgba(0, 210, 190, 0.35)',
+        'gold-glow': '0 0 20px -5px rgba(212, 175, 55, 0.35)',
+      },
+      backgroundImage: {
+        'brushed-metal': "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)",
+      },
+      keyframes: {
+        "geological-drift": {
+          "0%, 100%": { transform: "scale(1) translate(0,0) rotate(0deg)" },
+          "50%": { transform: "scale(1.1) translate(-2%, 1%) rotate(1deg)" },
+        },
+      },
+      animation: {
+        "geological-drift": "geological-drift var(--flow-speed) ease-in-out infinite",
+      },
     },
-  plugins: [],
+  },
+  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;

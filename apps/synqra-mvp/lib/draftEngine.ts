@@ -1,23 +1,26 @@
-const positiveOpeners = [
-  "Here's a polished take crafted for immediate use:",
-  "This refined version is ready to ship:",
-  "The perfected draft is dialed in below:",
-];
+export type DraftIntent = "draft" | "rewrite" | "summary" | "email";
 
-const closingStatements: Record<string, string> = {
-  email: "Feel free to adjust the sign-off to match your voice before sending.",
-  summarize: "This summary balances clarity, relevance, and momentum.",
-  rewrite: "The language now carries a confident, executive-ready tone.",
-  default: "Every sentence has been tightened for impact and flow.",
+const openerByIntent: Record<DraftIntent, string> = {
+  draft: "Perfect Draft (first pass):",
+  rewrite: "Perfect Draft (rewrite):",
+  summary: "Perfect Draft (summary):",
+  email: "Perfect Draft (email):",
 };
 
-const keywordIntentMap: Record<string, "email" | "summarize" | "rewrite" | "default"> = {
+const closingStatements: Record<DraftIntent, string> = {
+  email: "Adjust the sign-off to match your voice, then send.",
+  summary: "This summary keeps clarity, relevance, and momentum.",
+  rewrite: "This rewrite is tightened for executive clarity and forward motion.",
+  draft: "Review for accuracy, then publish with confidence.",
+};
+
+const keywordIntentMap: Record<string, DraftIntent> = {
   email: "email",
   inbox: "email",
   outreach: "email",
-  summarize: "summarize",
-  summary: "summarize",
-  recap: "summarize",
+  summarize: "summary",
+  summary: "summary",
+  recap: "summary",
   rewrite: "rewrite",
   polish: "rewrite",
   clean: "rewrite",
@@ -31,14 +34,14 @@ const capitalise = (value: string) => {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 };
 
-const detectIntent = (prompt: string): "email" | "summarize" | "rewrite" | "default" => {
+const detectIntent = (prompt: string): DraftIntent => {
   const lower = prompt.toLowerCase();
   for (const [keyword, intent] of Object.entries(keywordIntentMap)) {
     if (lower.includes(keyword)) {
       return intent;
     }
   }
-  return "default";
+  return "draft";
 };
 
 const splitIntoSentences = (text: string): string[] => {
@@ -107,11 +110,11 @@ const craftDefault = (sentences: string[]): string => {
     .join(" ");
 };
 
-const composeFromIntent = (intent: "email" | "summarize" | "rewrite" | "default", sentences: string[]): string => {
+const composeFromIntent = (intent: DraftIntent, sentences: string[]): string => {
   switch (intent) {
     case "email":
       return craftEmail(sentences);
-    case "summarize":
+    case "summary":
       return craftSummary(sentences);
     case "rewrite":
       return craftRewrite(sentences);
@@ -128,14 +131,14 @@ const ensureLength = (content: string, prompt: string): string => {
   return fallback;
 };
 
-export const generatePerfectDraft = async (prompt: string): Promise<string> => {
+export const generatePerfectDraft = async (prompt: string, intentOverride?: DraftIntent): Promise<string> => {
   const cleaned = prompt.replace(/\s+/g, " ").trim();
-  const intent = detectIntent(cleaned);
+  const intent = intentOverride ?? detectIntent(cleaned);
   const sentences = splitIntoSentences(cleaned).map(enrichSentence).filter(Boolean);
-  const opener = positiveOpeners[Math.floor(Math.random() * positiveOpeners.length)];
   const body = composeFromIntent(intent, sentences);
-  const closing = closingStatements[intent] ?? closingStatements.default;
+  const opener = openerByIntent[intent] ?? openerByIntent.draft;
+  const closing = closingStatements[intent] ?? closingStatements.draft;
   const combined = `${opener}\n\n${body}\n\n${closing}`;
   const assured = ensureLength(combined, cleaned);
-  return `Perfect Draft:\n\n${assured}`;
+  return assured;
 };

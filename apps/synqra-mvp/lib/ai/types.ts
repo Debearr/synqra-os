@@ -30,6 +30,12 @@ export interface AITask {
   
   // Model override (testing)
   model?: ModelProvider;
+  
+  /**
+   * REQUIRED: Human confirmation gate.
+   * AI cannot execute without explicit human approval.
+   */
+  confirmation: ConfirmationGate;
 }
 
 export interface TaskComplexity {
@@ -53,6 +59,7 @@ export interface RoutingDecision {
   requiresValidation?: boolean;
   pipeline?: string[];
   response?: any;
+  fallbackChain?: ModelProvider[];
   metadata?: {
     cacheHit?: boolean;
     originalModel?: ModelProvider;
@@ -84,4 +91,86 @@ export interface CompressionResult {
   originalLength: number;
   compressedLength: number;
   compressionRatio: number;
+}
+
+/**
+ * ============================================================
+ * AI CONFIRMATION GATE
+ * ============================================================
+ * Enforces human-in-command principle: AI must never act autonomously.
+ * All AI actions require explicit human confirmation before execution.
+ */
+
+export interface ConfirmationGate {
+  /**
+   * Whether human confirmation has been explicitly granted.
+   * Must be `true` for any AI action to execute.
+   */
+  confirmed: boolean;
+  
+  /**
+   * Unique token proving confirmation was granted.
+   * Generated when human approves an action.
+   */
+  confirmationToken?: string;
+  
+  /**
+   * ISO timestamp when confirmation was granted.
+   */
+  confirmedAt?: string;
+  
+  /**
+   * Human-readable description of what was confirmed.
+   */
+  confirmedAction?: string;
+}
+
+/**
+ * Error thrown when AI action attempts to execute without confirmation.
+ */
+export class ConfirmationRequiredError extends Error {
+  constructor(action: string) {
+    super(`AI action requires human confirmation: ${action}`);
+    this.name = 'ConfirmationRequiredError';
+  }
+}
+
+/**
+ * Validate that a confirmation gate has been properly authorized.
+ * Throws if confirmation is missing or invalid.
+ */
+export function validateConfirmation(
+  gate: ConfirmationGate | undefined,
+  action: string
+): void {
+  if (!gate) {
+    throw new ConfirmationRequiredError(action);
+  }
+  
+  if (!gate.confirmed) {
+    throw new ConfirmationRequiredError(action);
+  }
+  
+  if (!gate.confirmationToken) {
+    throw new ConfirmationRequiredError(`${action} (missing confirmation token)`);
+  }
+}
+
+/**
+ * Generate a confirmation token for human-approved actions.
+ */
+export function generateConfirmationToken(): string {
+  return `confirm_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Create a valid confirmation gate after human approval.
+ */
+export function createConfirmationGate(action: string): ConfirmationGate {
+  return {
+    confirmed: true,
+    confirmationToken: generateConfirmationToken(),
+    confirmedAt: new Date().toISOString(),
+    confirmedAction: action,
+  };
 }

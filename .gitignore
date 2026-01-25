@@ -21,6 +21,11 @@ node_modules/
 .pnp
 .pnp.js
 
+# Package manager lockfiles (pnpm only)
+package-lock.json
+yarn.lock
+apps/*/node_modules
+
 # Build outputs
 dist/
 build/
@@ -89,3 +94,52 @@ n8n-data/
 # Railway cache
 .railway/
 .railway.json
+
+# ============================================================
+# RAILWAY DEPLOY: HARD IGNORE - NON-PRODUCTION FILES
+# ============================================================
+# Documentation and reports
+docs/
+reports/
+*.md
+!README.md
+!apps/synqra-mvp/README.md
+
+# Archives and backups
+*.zip
+*.tar
+*.gz
+*.rar
+node_modules_*/
+*_backup/
+*_trash/
+*_conflict/
+
+# Dashboards and experiments
+noid-dashboard/
+app/decision-studio/
+
+# Legacy and non-deploy folders
+scripts/
+lib/
+packages/
+synqra-os/
+!nixpacks.toml
+!Procfile
+
+# Temporary and diagnostic files
+nul
+*.ps1
+*.sh
+
+# Claude and AI tooling
+.claude/
+
+# NPM artifacts (pnpm only)
+.npmrc
+.vercelignore
+package-lock.json
+apps/*/package-lock.json
+
+# Supabase migrations (not needed for Railway deploy)
+supabase/migrations/

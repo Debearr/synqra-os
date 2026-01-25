@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAnonKey, getSupabaseUrl } from "./supabase/env";
 
 /**
  * ============================================================
@@ -7,20 +8,37 @@ import { createClient } from "@supabase/supabase-js";
  * Zero-cost backend for content flywheel storage
  *
  * Required environment variables:
- * - SUPABASE_URL: Your Supabase project URL
+ * - SUPABASE_URL: Your Supabase project URL (must be valid HTTPS URL)
  * - SUPABASE_ANON_KEY: Your Supabase anonymous/public key
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mock.supabase.co";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "mock-anon-key-for-testing-only";
+let supabase: SupabaseClient | null = null;
+let supabaseInitError: Error | null = null;
 
-if (!supabaseUrl.includes("tjfeindwmpuyayjvftke") || !supabaseAnonKey.startsWith("eyJ")) {
-  console.warn(
-    "⚠️  Supabase credentials not configured correctly. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env.local"
-  );
+try {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnonKey = getSupabaseAnonKey();
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} catch (error) {
+  supabaseInitError = error instanceof Error ? error : new Error("Unknown Supabase init error");
+  supabase = null;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
+
+/**
+ * Helper to get a valid Supabase client or throw
+ */
+export function requireSupabase(): SupabaseClient {
+  if (!supabase) {
+    throw new Error(
+      "❌ Supabase client not available. " +
+      "Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Railway Variables and restart." +
+      (supabaseInitError ? ` Details: ${supabaseInitError.message}` : "")
+    );
+  }
+  return supabase;
+}
 
 /**
  * Database type definitions for type safety

@@ -1,0 +1,21 @@
+{
+  "lighting": {
+    "keyLight": "45° soft diffused",
+    "fill": "10% of key",
+    "backlight": "blue-teal gel at 20%"
+  },
+  "framing": {
+    "crop": "4:5 portrait",
+    "safeZone": "Top of head within 8% of frame",
+    "focus": "Eyes tack sharp"
+  },
+  "wardrobe": {
+    "palette": ["deep charcoal", "ink navy", "oxfords"],
+    "textures": "matte or subtle satin"
+  },
+  "post": {
+    "grading": "Teal linear shadows, warm highlights",
+    "grain": "1.2% organic emulation",
+    "retouch": "Minimal—preserve real detail"
+  }
+}

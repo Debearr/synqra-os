@@ -2,13 +2,15 @@
  * ============================================================
  * INTEGRATION WITH EXISTING AGENT SYSTEM
  * ============================================================
- * Wraps existing BaseAgent with cost-optimized routing
+ * Wraps existing BaseAgent with cost-optimized routing.
+ * 
+ * HUMAN-IN-COMMAND: All invocations require explicit confirmation.
  */
 
 import { BaseAgent } from '../agents/base/agent';
-import { AgentRequest, AgentResponse } from '../agents/base/types';
+import { AgentRequest, AgentResponse, InvocationOptions, createAgentConfirmationGate } from '../agents/base/types';
 import { executeTask } from './router';
-import { AITask } from './types';
+import { AITask, ConfirmationGate, createConfirmationGate } from './types';
 import { getTemplate } from './templates';
 
 /**
@@ -24,27 +26,39 @@ export class OptimizedAgent {
 
   /**
    * INVOKE WITH ROUTING
-   * Uses AI router instead of direct Claude call
+   * Uses AI router instead of direct Claude call.
+   * 
+   * HUMAN-IN-COMMAND: Requires explicit invocation options with confirmation.
    */
-  async invoke(request: AgentRequest): Promise<AgentResponse> {
+  async invoke(request: AgentRequest, options: InvocationOptions): Promise<AgentResponse> {
     // Detect if this is a simple or complex task
     const complexity = this.estimateComplexity(request);
     
     // For simple tasks (< 0.5 complexity), use Mistral
     // For complex tasks, use existing Claude integration
     if (complexity < 0.5) {
-      return this.invokeOptimized(request);
+      return this.invokeOptimized(request, options);
     } else {
       // Use existing agent (Claude) for complex tasks
-      return this.agent.invoke(request);
+      return this.agent.invoke(request, options);
     }
   }
 
   /**
    * INVOKE OPTIMIZED
-   * Routes through cost-optimized pipeline
+   * Routes through cost-optimized pipeline.
+   * 
+   * HUMAN-IN-COMMAND: Uses confirmation from InvocationOptions.
    */
-  private async invokeOptimized(request: AgentRequest): Promise<AgentResponse> {
+  private async invokeOptimized(request: AgentRequest, options: InvocationOptions): Promise<AgentResponse> {
+    // Create AI confirmation gate from agent confirmation
+    const aiConfirmation: ConfirmationGate = {
+      confirmed: options.confirmation.confirmed,
+      confirmationToken: options.confirmation.confirmationToken,
+      confirmedAt: options.confirmation.confirmedAt,
+      confirmedAction: `Optimized agent task: ${request.message.substring(0, 50)}...`,
+    };
+
     // Build AI task
     const task: AITask = {
       type: 'generation',
@@ -53,6 +67,7 @@ export class OptimizedAgent {
       contextHistory: request.history?.map(m => m.content) || [],
       isClientFacing: true, // Assume all agent responses are client-facing
       maxBudget: 0.05, // $0.05 max for simple tasks
+      confirmation: aiConfirmation, // HUMAN-IN-COMMAND: Pass through confirmation
     };
 
     try {
@@ -73,7 +88,7 @@ export class OptimizedAgent {
     } catch (error) {
       console.error('❌ Optimized routing failed, falling back to Claude:', error);
       // Fallback to original agent
-      return this.agent.invoke(request);
+      return this.agent.invoke(request, options);
     }
   }
 
@@ -112,11 +127,14 @@ export function wrapAgent(agent: BaseAgent): OptimizedAgent {
 
 /**
  * TEMPLATE-BASED GENERATION
- * Generate content using predefined templates
+ * Generate content using predefined templates.
+ * 
+ * HUMAN-IN-COMMAND: Requires explicit confirmation gate.
  */
 export async function generateFromTemplate(
   templateId: string,
   input: string,
+  confirmation: ConfirmationGate,
   variables?: Record<string, string>
 ): Promise<string> {
   const template = getTemplate(templateId);
@@ -139,6 +157,7 @@ export async function generateFromTemplate(
     systemPrompt: template.systemPrompt,
     isClientFacing: template.isClientFacing,
     requiresReasoning: template.complexity > 0.7,
+    confirmation, // HUMAN-IN-COMMAND: Require confirmation
   };
 
   // Execute
@@ -147,17 +166,20 @@ export async function generateFromTemplate(
 
 /**
  * BATCH AGENT RESPONSES
- * Process multiple agent requests efficiently
+ * Process multiple agent requests efficiently.
+ * 
+ * HUMAN-IN-COMMAND: Each request requires confirmation.
  */
 export async function batchAgentResponses(
   agent: BaseAgent,
-  requests: AgentRequest[]
+  requests: AgentRequest[],
+  options: InvocationOptions
 ): Promise<AgentResponse[]> {
   const optimizedAgent = wrapAgent(agent);
   
   const responses: AgentResponse[] = [];
   for (const request of requests) {
-    const response = await optimizedAgent.invoke(request);
+    const response = await optimizedAgent.invoke(request, options);
     responses.push(response);
   }
   

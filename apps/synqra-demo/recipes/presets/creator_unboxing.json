@@ -1,0 +1,19 @@
+{
+  "name": "Creator Brand — Unboxing + Reaction",
+  "slug": "creator_unboxing",
+  "recipe": "try_on_react_campaign",
+  "industry": "creator-economy",
+  "description": "Authentic unboxing and first-impression reactions for creator brands",
+  "variables": {
+    "BRAND_NAME": "[Creator Brand Name]",
+    "COLLAB_OR_PRODUCT": "[Product] — Unboxing + First Look",
+    "TALENT_TYPE": "Community members + brand ambassadors + early supporters",
+    "PRIMARY_PLATFORM": "TikTok + YouTube Shorts",
+    "VIBE": "Off-White energy. Effortless confidence. Creative authority. Urban sophistication. Think: hype culture meets authentic community.",
+    "GOAL": "Product drop sales + waitlist signups + social engagement"
+  },
+  "archetype": "The Street-Lux Creator",
+  "color_palette": ["#1A1A1A", "#00CED1", "#F8F8F8", "#FF6B35"],
+  "lighting": "urban_edge_light",
+  "version": "1.0"
+}

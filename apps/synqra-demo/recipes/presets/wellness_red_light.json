@@ -1,0 +1,19 @@
+{
+  "name": "Wellness — First Red Light Therapy Session",
+  "slug": "wellness_red_light",
+  "recipe": "try_on_react_campaign",
+  "industry": "wellness",
+  "description": "Authentic first-time wellness therapy experience reactions",
+  "variables": {
+    "BRAND_NAME": "[Wellness Center Name]",
+    "COLLAB_OR_PRODUCT": "Red Light Therapy — First Session Experience",
+    "TALENT_TYPE": "Wellness enthusiasts + recovery athletes + first-timers",
+    "PRIMARY_PLATFORM": "Instagram Reels + YouTube Shorts",
+    "VIBE": "Calm discipline. Natural strength. Recovery focus. Balanced lifestyle. Think: serene transformation, science meets wellness.",
+    "GOAL": "First session bookings + membership inquiries"
+  },
+  "archetype": "The Wellness Athlete",
+  "color_palette": ["#F5F1E8", "#A89F91", "#B8C5B0", "#FFFFFF"],
+  "lighting": "soft_natural_spa",
+  "version": "1.0"
+}

@@ -17,6 +17,20 @@ import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 // RFC 5322 simplified email regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function isSupabaseUnreachable(error: any): boolean {
+  const message = String(error?.message || "");
+  const details = String(error?.details || "");
+  // Common local failure modes: DNS resolution, network blocked, fetch failing
+  return (
+    message.includes("fetch failed") ||
+    details.includes("fetch failed") ||
+    details.includes("getaddrinfo ENOTFOUND") ||
+    details.includes("ENOTFOUND") ||
+    details.includes("ECONNREFUSED") ||
+    details.includes("ETIMEDOUT")
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -42,7 +56,22 @@ export async function POST(req: Request) {
     }
 
     // Insert into database
-    const supabaseAdmin = requireSupabaseAdmin();
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = requireSupabaseAdmin();
+    } catch (e: any) {
+      // Configuration / env issue (most common in local dev)
+      const message =
+        process.env.NODE_ENV === "production"
+          ? "Service unavailable. Please try again later."
+          : (e instanceof Error ? e.message : "Supabase admin client not configured");
+
+      return NextResponse.json(
+        { ok: false, error: "supabase_not_configured", message },
+        { status: 503 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from('waitlist')
       .insert([{ 
@@ -69,10 +98,29 @@ export async function POST(req: Request) {
         );
       }
 
+      // If Supabase is unreachable locally (DNS/VPN/firewall), allow dev UX to proceed
+      if (process.env.NODE_ENV !== "production" && isSupabaseUnreachable(error)) {
+        console.warn("[Waitlist API] Supabase unreachable in dev; returning non-persisted success.", {
+          message: error?.message,
+          details: error?.details,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          persisted: false,
+          message:
+            "Dev mode: Supabase is unreachable (DNS/Network). Signup not persisted, but flow allowed.",
+        });
+      }
+
       console.error('[Waitlist API] Supabase insert error:', error);
       return NextResponse.json(
-        { ok: false, error: 'Database error. Please try again.' },
-        { status: 500 }
+        {
+          ok: false,
+          error: isSupabaseUnreachable(error) ? "supabase_unreachable" : "database_error",
+          message: "Database error. Please try again.",
+        },
+        { status: isSupabaseUnreachable(error) ? 503 : 500 }
       );
     }
 
@@ -94,21 +142,13 @@ export async function POST(req: Request) {
 }
 
 /**
- * GET: Public waitlist count
- * Optional endpoint to show social proof ("Join 247 others")
+ * GET: Disabled
+ * Social proof count endpoint removed per Design Constitution.
+ * The POST endpoint for signups remains active.
  */
 export async function GET() {
-  try {
-    const supabaseAdmin = requireSupabaseAdmin();
-    const { count, error } = await supabaseAdmin
-      .from('waitlist')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) throw error;
-
-    return NextResponse.json({ count: count || 0 });
-  } catch (e) {
-    console.error('[Waitlist API] Count error:', e);
-    return NextResponse.json({ count: 0 });
-  }
+  return NextResponse.json(
+    { error: 'Endpoint disabled', message: 'Social proof counts are not exposed' },
+    { status: 410 }
+  );
 }

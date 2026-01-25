@@ -1,0 +1,19 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Synqra Favicon">
+  <defs>
+    <linearGradient id="grad-favicon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#0A0A0A"/>
+  
+  <!-- Stylized S / Barcode Hybrid -->
+  <path d="M18 18 H46 V24 H18 Z" fill="url(#grad-favicon)"/>
+  <path d="M18 28 H36 V34 H18 Z" fill="#F5F5F0"/>
+  <path d="M40 28 H46 V34 H40 Z" fill="#14B8A6"/>
+  
+  <path d="M18 38 H24 V44 H18 Z" fill="#14B8A6"/>
+  <path d="M28 38 H46 V44 H28 Z" fill="#F5F5F0"/>
+  
+  <path d="M18 48 H46 V54 H18 Z" fill="url(#grad-favicon)"/>
+</svg>

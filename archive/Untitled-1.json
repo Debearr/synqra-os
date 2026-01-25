@@ -1,0 +1,33 @@
+{
+  "name": "noid-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "20.x",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "predev": "node scripts/check-deprecated-hooks.mjs",
+    "dev": "next dev --hostname 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "fix:hooks": "node scripts/fix-useformstate.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^0.548.0",
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types_node": "^20",
+    "@types_react": "^19",
+    "@types_react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

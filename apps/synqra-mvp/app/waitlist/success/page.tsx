@@ -42,14 +42,14 @@ export default function SuccessPage() {
         {/* CTAs */}
         <div className="space-y-3">
           <a 
-            href="https://www.linkedin.com/company/noidlabs"
+            href="https://www.linkedin.com"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block w-full rounded-xl bg-emerald-400 text-black font-semibold py-3
                        hover:bg-emerald-300 transition-all duration-200
                        focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-black"
           >
-            Follow NØID on LinkedIn
+            Follow on LinkedIn
           </a>
           
           <a 
@@ -76,7 +76,7 @@ export default function SuccessPage() {
         {/* Footer */}
         <div className="mt-10 pt-6 border-t border-zinc-900">
           <p className="text-xs text-zinc-500">
-            NØID Labs Inc. • Toronto, Canada
+            Synqra • Toronto, Canada
           </p>
           <p className="text-xs text-zinc-600 mt-2">
             Building the future of creator automation

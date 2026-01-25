@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { requireSupabase } from "@/lib/supabaseClient";
 
 /**
  * ============================================================
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const { platform, videoId, avgViewDuration, avgCompletion, notes } = body;
 
     // Insert retention note into Supabase
+    const supabase = requireSupabase();
     const { data, error } = await supabase
       .from("retention_notes")
       .insert({
@@ -98,6 +99,7 @@ export async function GET(request: NextRequest) {
     const platform = searchParams.get("platform");
     const limit = parseInt(searchParams.get("limit") || "50");
 
+    const supabase = requireSupabase();
     let query = supabase
       .from("retention_notes")
       .select("*")

@@ -1,0 +1,202 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Synqra Recipe Schema",
+  "description": "Schema for dynamic recipe loading in Synqra Creative Engine",
+  "version": "1.0",
+  "recipes": [
+    {
+      "name": "Try-On & React Campaign",
+      "slug": "try_on_react_campaign",
+      "description": "Universal cinematic campaign recipe for product launches, collabs, and drops. Generates 45-second hero script, shot list, captions, and cross-platform variants.",
+      "category": "campaigns",
+      "complexity": 0.85,
+      "estimatedCost": 0.018,
+      "fields": [
+        {
+          "key": "BRAND_NAME",
+          "label": "Brand Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., Barça Premium Coffee",
+          "description": "The brand name for this campaign"
+        },
+        {
+          "key": "COLLAB_OR_PRODUCT",
+          "label": "Collab Partner / Product",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., FC Barcelona × AMIRI Limited Edition Barista Aprons",
+          "description": "The product or collaboration being featured"
+        },
+        {
+          "key": "TALENT_TYPE",
+          "label": "Talent",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., In-house baristas + 2-3 regular customers",
+          "description": "Who will appear in the video (staff, athletes, customers, etc.)"
+        },
+        {
+          "key": "PRIMARY_PLATFORM",
+          "label": "Primary Platform",
+          "type": "select",
+          "required": true,
+          "options": ["TikTok", "Instagram Reels", "YouTube Shorts", "X (Twitter)", "LinkedIn"],
+          "description": "Main platform for this campaign"
+        },
+        {
+          "key": "VIBE",
+          "label": "Vibe / Aesthetic",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "e.g., Premium street-lux meets football culture, playful energy",
+          "description": "The overall mood and aesthetic direction"
+        },
+        {
+          "key": "GOAL",
+          "label": "Campaign Goal",
+          "type": "select",
+          "required": true,
+          "options": [
+            "Waitlist signups",
+            "Product drop announcement",
+            "Brand awareness",
+            "Community building",
+            "Event registration"
+          ],
+          "description": "Primary objective of this campaign"
+        }
+      ],
+      "template_path": "/synqra-mvp/recipes/try_on_react_campaign.md",
+      "preset_paths": [
+        "/synqra-mvp/recipes/presets/bmw_first_drive.json",
+        "/synqra-mvp/recipes/presets/porsche_interior_reveal.json",
+        "/synqra-mvp/recipes/presets/salon_transformation.json",
+        "/synqra-mvp/recipes/presets/wellness_red_light.json",
+        "/synqra-mvp/recipes/presets/boutique_fw24.json",
+        "/synqra-mvp/recipes/presets/coffee_seasonal.json",
+        "/synqra-mvp/recipes/presets/fitness_class_drop.json",
+        "/synqra-mvp/recipes/presets/real_estate_luxury.json",
+        "/synqra-mvp/recipes/presets/creator_unboxing.json",
+        "/synqra-mvp/recipes/presets/trading_desk_setup.json"
+      ],
+      "industries": [
+        "automotive",
+        "wellness",
+        "salon",
+        "fashion",
+        "fitness",
+        "hospitality",
+        "real-estate",
+        "creator-economy",
+        "finance",
+        "retail"
+      ],
+      "version": "1.0"
+    },
+    {
+      "name": "VO-AI Lifestyle Model Generator",
+      "slug": "voai_lifestyle_model_generator",
+      "description": "Generate cinematic, aspirational lifestyle visuals for luxury brands. Produces 10-shot packages with AI generation prompts, lighting specs, and color grading.",
+      "category": "visuals",
+      "complexity": 0.92,
+      "estimatedCost": 0.023,
+      "fields": [
+        {
+          "key": "BRAND_NAME",
+          "label": "Brand Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., Porsche Design",
+          "description": "The brand name"
+        },
+        {
+          "key": "INDUSTRY",
+          "label": "Industry",
+          "type": "select",
+          "required": true,
+          "options": [
+            "Automotive luxury",
+            "Wellness / Spa",
+            "Salon / Beauty",
+            "Street-lux fashion",
+            "Fitness / Athletics",
+            "Hospitality",
+            "Real estate",
+            "Tech / Finance"
+          ],
+          "description": "Primary industry vertical"
+        },
+        {
+          "key": "PRODUCT_OR_EXPERIENCE",
+          "label": "Product or Experience",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., Premium watch collection launch",
+          "description": "What is being showcased"
+        },
+        {
+          "key": "VIBE",
+          "label": "Target Vibe",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "e.g., Quiet luxury, understated power, cinematic monochrome",
+          "description": "The mood and aesthetic direction"
+        },
+        {
+          "key": "AUDIENCE",
+          "label": "Target Audience",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g., High-net-worth professionals 35-55",
+          "description": "Primary demographic"
+        },
+        {
+          "key": "MODEL_ARCHETYPE",
+          "label": "Model Archetype",
+          "type": "select",
+          "required": true,
+          "options": [
+            "The Modern CEO",
+            "The Quiet Luxury Professional",
+            "The Street-Lux Creator",
+            "The Urban Stylist",
+            "The Wellness Athlete",
+            "The Lifestyle Couple",
+            "The Minimalist Runner",
+            "The After-Hours Executive",
+            "The Global Traveler",
+            "The Shot Caller"
+          ],
+          "description": "Model persona to use (see lifestyle_archetypes.md for full list)"
+        }
+      ],
+      "template_path": "/synqra-mvp/recipes/voai_lifestyle_model_generator.md",
+      "preset_paths": [
+        "/synqra-mvp/recipes/presets/bmw_first_drive.json",
+        "/synqra-mvp/recipes/presets/porsche_interior_reveal.json",
+        "/synqra-mvp/recipes/presets/salon_transformation.json",
+        "/synqra-mvp/recipes/presets/wellness_red_light.json"
+      ],
+      "industries": [
+        "automotive",
+        "wellness",
+        "salon",
+        "fashion",
+        "fitness",
+        "hospitality",
+        "real-estate",
+        "tech",
+        "finance"
+      ],
+      "version": "2.0"
+    }
+  ],
+  "meta": {
+    "engine": "Synqra Creative Engine",
+    "version": "1.0",
+    "created": "2025-11-15",
+    "updated": "2025-11-15",
+    "compatibility": "AI Router v1.0"
+  }
+}

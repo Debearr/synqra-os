@@ -171,7 +171,7 @@ export function enrichScaffoldWithManualData(
     overallConfidence: newOverallConfidence,
     needsManualReview: newOverallConfidence < 0.4,
     fieldConfidences: updatedFieldConfidences,
-    extractionSources: [...new Set([...scaffold.extractionSources, 'manual'])],
+    extractionSources: [...new Set([...scaffold.extractionSources, 'manual' as const])],
   };
 }
 

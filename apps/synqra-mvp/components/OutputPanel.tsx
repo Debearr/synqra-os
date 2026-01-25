@@ -7,6 +7,7 @@ type OutputPanelProps = {
   draft: string | null;
   isVisible: boolean;
   onNewRequest: () => void;
+  generationSeconds?: number | null;
   refineTemplate?: string;
   previousDraft?: string | null;
   dimmed?: boolean;
@@ -18,7 +19,15 @@ const slideVariants = {
   exit: { opacity: 0, y: 16 },
 };
 
-const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousDraft, dimmed = false }: OutputPanelProps) => {
+const OutputPanel = ({
+  draft,
+  isVisible,
+  onNewRequest,
+  generationSeconds = null,
+  refineTemplate,
+  previousDraft,
+  dimmed = false,
+}: OutputPanelProps) => {
   const [copied, setCopied] = useState(false);
   const [flash, setFlash] = useState(false);
 
@@ -47,6 +56,10 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
   };
 
   const copyLabel = copied ? "Copied ✓" : "Copy";
+  const generationLabel =
+    typeof generationSeconds === "number" && Number.isFinite(generationSeconds)
+      ? `${generationSeconds.toFixed(1)}s`
+      : "—";
 
   return (
     <AnimatePresence>
@@ -65,7 +78,7 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
             <button
               type="button"
               onClick={handleCopy}
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-white/80 transition-colors duration-200 hover:border-indigo hover:bg-indigo/30"
+              className="rounded-full border border-noid-silver/60 bg-white/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-white/80 transition-colors duration-200 hover:border-noid-silver hover:shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
             >
               {copyLabel}
             </button>
@@ -90,7 +103,7 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               transition={{ duration: 0.12 }}
-              className="rounded-full border border-white/12 bg-white/8 px-6 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/85 transition-colors duration-200 hover:border-indigo hover:bg-indigo/20"
+              className="rounded-full border border-noid-silver/60 bg-white/8 px-6 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/85 transition-colors duration-200 hover:border-noid-silver hover:shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
             >
               New Request
             </motion.button>
@@ -101,15 +114,33 @@ const OutputPanel = ({ draft, isVisible, onNewRequest, refineTemplate, previousD
             )}
           </div>
 
+          {/* Trust Bar */}
+          <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+            <div className="h-[2px] w-full bg-gradient-to-r from-noid-gold/60 via-noid-silver/35 to-transparent" aria-hidden />
+            <div className="px-4 py-3 font-mono text-[0.72rem] tracking-[0.14em] text-noid-silver/50">
+              ✓ Ready to publish • Matched to your voice • Generated in {generationLabel}
+            </div>
+          </div>
+
+          {/* Output-only Synqra watermark (no third-party attribution) */}
+          <a
+            href="/"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-noid-silver/70 hover:border-noid-silver/30 hover:text-white/75"
+            aria-label="SYNQRA"
+          >
+            <img src="/assets/synqra-q.svg" width={14} height={14} alt="" aria-hidden className="opacity-85" />
+            SYNQRA
+          </a>
+
           <AnimatePresence>
             {flash && (
               <motion.div
                 key="flash"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.45 }}
+                animate={{ opacity: 0.22 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-none absolute inset-0 bg-indigo/60 mix-blend-screen"
+                className="pointer-events-none absolute inset-0 bg-noid-gold/30 mix-blend-screen"
               />
             )}
           </AnimatePresence>
