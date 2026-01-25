@@ -16,6 +16,8 @@ Create a complete short-form campaign called **"TRY-ON & REACT"** for the follow
   (e.g., Barça × AMIRI, premium street-lux, playful, cinematic)
 - **Target Outcome:** {{GOAL}}  
   (waitlist signups, product drop announcement, brand awareness)
+- **Identity Profile:** {{IDENTITY_PROFILE}}  
+  (synqra | noid | aurafx)
 
 ---
 
@@ -73,6 +75,27 @@ Clarify:
 - Scripts must work with regular people (not celebrities)  
 - Keep production simple and fast  
 - Output must be formatted cleanly in clear sections
+
+---
+
+## IDENTITY ENFORCEMENT (MANDATORY)
+
+Apply these identity controls in every output plan:
+
+- Identity hierarchy order is fixed: `System Seal > Monogram Stamp > Creator Stamp`.
+- Use at most one identity asset per surface. Never combine marks on the same surface.
+- System Seal is authority-only (access, auth, restricted states, system status), static, and non-decorative.
+- Monogram Stamp is compact and secondary to content (favicon/avatar/optional attribution only).
+- Creator Stamp is optional only. If present, keep it extremely subtle in bottom-right placement only.
+- Creator Stamp must never be mandatory and must never be louder than the content.
+- Attribution text, if used, may include `{{IDENTITY_PROFILE}}` name or monogram only.
+- Viral loop constraint: attribution must feel earned, never promotional.
+- Forbid all of the following:
+  - Calls to action tied to attribution
+  - Marketing language in attribution
+  - Decorative logos
+  - Competing marks
+  - Enlarged attribution
 
 ---
 

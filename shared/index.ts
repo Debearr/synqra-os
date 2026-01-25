@@ -29,6 +29,15 @@ export {
   type OutputMode as AIOutputMode,
 } from "./ai/client";
 
+export {
+  queryCouncil,
+  type CouncilMember,
+  type CouncilRequest,
+  type CouncilResult,
+  type CouncilMemberResult,
+  type CouncilDecision,
+} from "./ai/council";
+
 // ============================================================
 // RPRD DNA PATTERNS
 // ============================================================
@@ -56,12 +65,18 @@ export {
   getSupabaseServiceClient,
   isSupabaseConfigured,
   logIntelligence,
+  logCouncilQuery,
+  logCouncilResponse,
+  logCouncilDecision,
   trackRecipeUsage,
   getTopRecipes,
   getIntelligenceMetrics,
   supabase, // Legacy compatibility
   type IntelligenceLog,
   type RecipeUsage,
+  type CouncilQueryLog,
+  type CouncilResponseLog,
+  type CouncilDecisionLog,
   type ContentJob,
   type ContentVariant,
   type Profile,
@@ -326,4 +341,3 @@ export * from "./engagement-agent/classifier";
 export * from "./engagement-agent/spam-filter";
 export * from "./engagement-agent/reply-generator";
 export * from "./engagement-agent/product-router";
-

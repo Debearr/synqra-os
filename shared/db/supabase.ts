@@ -126,6 +126,45 @@ export interface RecipeUsage {
 }
 
 // ============================================================
+// COUNCIL LOGGING TYPES
+// ============================================================
+
+export interface CouncilQueryLog {
+  id?: string;
+  app: "synqra" | "noid" | "aurafx" | "shared";
+  prompt: string;
+  system_prompt?: string;
+  requester?: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+}
+
+export interface CouncilResponseLog {
+  id?: string;
+  query_id: string;
+  member_name: string;
+  member_role?: string;
+  task_type?: string;
+  model_used?: string;
+  model_tier?: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  response: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+}
+
+export interface CouncilDecisionLog {
+  id?: string;
+  query_id: string;
+  selection_method: string;
+  selected_response_id?: string | null;
+  summary?: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+}
+
+// ============================================================
 // INTELLIGENCE LOGGING FUNCTIONS
 // ============================================================
 
@@ -291,6 +330,96 @@ export async function getIntelligenceMetrics(
       totalTokens: 0,
       topOperations: [],
     };
+  }
+}
+
+// ============================================================
+// COUNCIL LOGGING FUNCTIONS
+// ============================================================
+
+export async function logCouncilQuery(log: CouncilQueryLog): Promise<string | undefined> {
+  if (!isSupabaseConfigured()) {
+    return undefined;
+  }
+
+  try {
+    const client = getSupabaseServiceClient();
+    const { data, error } = await client
+      .from("council_queries")
+      .insert({
+        ...log,
+        created_at: log.created_at || new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.warn("⚠️  Council query logging failed (non-critical):", error.message);
+      return undefined;
+    }
+
+    return data?.id;
+  } catch (err) {
+    console.warn("⚠️  Council query logging error:", err);
+    return undefined;
+  }
+}
+
+export async function logCouncilResponse(
+  log: CouncilResponseLog
+): Promise<string | undefined> {
+  if (!isSupabaseConfigured()) {
+    return undefined;
+  }
+
+  try {
+    const client = getSupabaseServiceClient();
+    const { data, error } = await client
+      .from("council_responses")
+      .insert({
+        ...log,
+        created_at: log.created_at || new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.warn("⚠️  Council response logging failed (non-critical):", error.message);
+      return undefined;
+    }
+
+    return data?.id;
+  } catch (err) {
+    console.warn("⚠️  Council response logging error:", err);
+    return undefined;
+  }
+}
+
+export async function logCouncilDecision(log: CouncilDecisionLog): Promise<string | undefined> {
+  if (!isSupabaseConfigured()) {
+    return undefined;
+  }
+
+  try {
+    const client = getSupabaseServiceClient();
+    const { data, error } = await client
+      .from("council_decisions")
+      .insert({
+        ...log,
+        created_at: log.created_at || new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.warn("⚠️  Council decision logging failed (non-critical):", error.message);
+      return undefined;
+    }
+
+    return data?.id;
+  } catch (err) {
+    console.warn("⚠️  Council decision logging error:", err);
+    return undefined;
   }
 }
 

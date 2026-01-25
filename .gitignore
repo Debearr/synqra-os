@@ -135,10 +135,37 @@ synqra-os/
 !apps/synqra-mvp/scripts/
 !apps/synqra-mvp/scripts/safeguards-smoke.ts
 
+# Allow tracked implementation files inside synqra-mvp app
+!apps/synqra-mvp/lib/
+apps/synqra-mvp/lib/*
+!apps/synqra-mvp/lib/jobs/
+!apps/synqra-mvp/lib/integrations/
+!apps/synqra-mvp/lib/telemetry/
+apps/synqra-mvp/lib/integrations/*
+!apps/synqra-mvp/lib/integrations/google/
+apps/synqra-mvp/lib/jobs/*
+apps/synqra-mvp/lib/telemetry/*
+!apps/synqra-mvp/tests/
+!apps/synqra-mvp/tests/automation/
+!apps/synqra-mvp/lib/jobs/internal-auth.ts
+!apps/synqra-mvp/lib/jobs/idempotency.ts
+!apps/synqra-mvp/lib/jobs/job-signature.ts
+!apps/synqra-mvp/lib/jobs/retry-policy.ts
+!apps/synqra-mvp/lib/jobs/stable-stringify.ts
+!apps/synqra-mvp/lib/integrations/google/gmail-drafts.ts
+!apps/synqra-mvp/lib/integrations/google/token-store.ts
+!apps/synqra-mvp/lib/telemetry/firebase-events.ts
+!apps/synqra-mvp/tests/tsconfig.json
+!apps/synqra-mvp/tests/automation/automation-libs.test.ts
+!apps/synqra-mvp/services/cloud-run-worker/deploy.sh
+!apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh
+
 # Temporary and diagnostic files
 nul
 *.ps1
 *.sh
+!apps/synqra-mvp/services/cloud-run-worker/deploy.sh
+!apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh
 
 # Claude and AI tooling
 .claude/

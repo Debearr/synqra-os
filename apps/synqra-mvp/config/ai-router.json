@@ -1,0 +1,113 @@
+{
+  "providers": {
+    "openrouter": {
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "model": "anthropic/claude-sonnet-4.5",
+      "timeoutMs": 30000,
+      "cost": {
+        "usdPer1kTokens": 0.003
+      }
+    },
+    "gemini": {
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/models",
+      "model": "gemini-1.5-flash",
+      "timeoutMs": 20000,
+      "cost": {
+        "usdPer1kTokens": 0
+      },
+      "quota": {
+        "monthlyRequests": 100000,
+        "switchAtPercent": 0.8
+      }
+    }
+  },
+  "routing": {
+    "councilTask": "council_decision",
+    "councilProvider": "openrouter",
+    "defaultProvider": "gemini"
+  },
+  "promptPolicy": {
+    "identityHierarchy": [
+      "system_seal",
+      "monogram_stamp",
+      "creator_stamp"
+    ],
+    "singleAssetPerSurface": true,
+    "identityAssets": {
+      "system_seal": {
+        "purpose": "authority_access_state",
+        "allowedSurfaces": [
+          "access",
+          "authentication",
+          "restricted_environment",
+          "system_state_indicator"
+        ],
+        "rules": [
+          "static",
+          "non_decorative",
+          "never_in_content_creation_flow"
+        ]
+      },
+      "monogram_stamp": {
+        "purpose": "compact_identity_marker",
+        "allowedSurfaces": [
+          "favicon",
+          "avatar",
+          "optional_output_attribution"
+        ],
+        "rules": [
+          "minimal",
+          "secondary_to_content",
+          "never_combined_with_system_seal_on_same_surface"
+        ]
+      },
+      "creator_stamp": {
+        "purpose": "optional_output_attribution",
+        "allowedSurfaces": [
+          "generated_image",
+          "generated_video",
+          "generated_document"
+        ],
+        "placement": "bottom-right",
+        "rules": [
+          "optional",
+          "extremely_subtle",
+          "never_mandatory",
+          "never_louder_than_content",
+          "text_may_include_synqra_name_or_monogram_only"
+        ]
+      }
+    },
+    "viralLoopConstraint": {
+      "attributionTone": "earned_not_promotional",
+      "forbidden": [
+        "calls_to_action",
+        "marketing_language",
+        "decorative_logos",
+        "competing_marks",
+        "enlarged_attribution"
+      ]
+    },
+    "cloneProfiles": {
+      "synqra": {
+        "activeIdentityAssetSet": "synqra"
+      },
+      "noid": {
+        "activeIdentityAssetSet": "noid"
+      },
+      "aurafx": {
+        "activeIdentityAssetSet": "aurafx"
+      }
+    }
+  },
+  "cache": {
+    "ttlSeconds": 300
+  },
+  "rateLimit": {
+    "councilPerUserPerDay": 5
+  },
+  "budget": {
+    "alertUsd": 32,
+    "hardStopUsd": 38
+  }
+}
