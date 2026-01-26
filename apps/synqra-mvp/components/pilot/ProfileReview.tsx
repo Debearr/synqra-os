@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { StudioLayout } from "@/components/studio/StudioLayout";
+import { StudioSection } from "@/components/studio/StudioSection";
+import { StudioContainer } from "@/components/studio/StudioContainer";
 
 export type ExtractedProfile = {
   name: string;
@@ -118,6 +121,7 @@ export function ProfileReview({
               <textarea
                 value={data.summary}
                 onChange={(event) => setField("summary", event.target.value)}
+                aria-label="Bio summary"
                 className="min-h-[160px] w-full resize-none rounded-lg border border-noid-silver/40 bg-white/5 p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-noid-teal"
               />
               <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -220,63 +224,7 @@ export function ProfileReview({
   );
 }
 
-function StudioLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#0B0B0B] via-[#0F0F0F] to-[#070707] p-10 shadow-[0_50px_160px_-80px_rgba(212,175,55,0.45)]">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-12 left-10 h-52 w-52 rounded-full bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.25),transparent_55%)] blur-3xl opacity-70" />
-        <div className="absolute -bottom-10 right-6 h-48 w-48 rounded-full bg-[radial-gradient(circle_at_center,rgba(0,255,198,0.18),transparent_55%)] blur-3xl opacity-70" />
-      </div>
-      <div className="relative space-y-10">{children}</div>
-    </div>
-  );
-}
 
-function StudioSection({
-  title,
-  hint,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
-        <div>
-          <h4 className="text-lg font-light text-white md:text-xl">{title}</h4>
-          {hint ? <p className="text-sm text-noid-silver">{hint}</p> : null}
-        </div>
-        <span className="text-xs uppercase tracking-[0.22em] text-white/60">
-          Draft mode
-        </span>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function StudioContainer({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-noid-gold">Draft</p>
-          <h5 className="text-base font-medium text-white">{title}</h5>
-        </div>
-        <div className="h-px flex-1 bg-gradient-to-r from-noid-gold/60 via-white/20 to-transparent" />
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function Field({
   label,

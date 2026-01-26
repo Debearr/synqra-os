@@ -290,7 +290,7 @@ export default function PilotApplicationForm() {
         {/* Full Name */}
         <div className="relative">
           <label htmlFor="fullName" className={labelClasses}>
-            Full Name <span style={{ color: '#2DD4BF' }}>*</span>
+            Full Name <span className="text-[#2DD4BF]">*</span>
           </label>
           <input
             id="fullName"
@@ -312,7 +312,7 @@ export default function PilotApplicationForm() {
         {/* Email */}
         <div className="relative">
           <label htmlFor="email" className={labelClasses}>
-            Email Address <span style={{ color: '#2DD4BF' }}>*</span>
+            Email Address <span className="text-[#2DD4BF]">*</span>
           </label>
           <input
             id="email"
@@ -334,7 +334,7 @@ export default function PilotApplicationForm() {
         {/* Company Name */}
         <div className="relative">
           <label htmlFor="companyName" className={labelClasses}>
-            Company Name <span style={{ color: '#2DD4BF' }}>*</span>
+            Company Name <span className="text-[#2DD4BF]">*</span>
           </label>
           <input
             id="companyName"
@@ -356,7 +356,7 @@ export default function PilotApplicationForm() {
         {/* Role */}
         <div className="relative">
           <label htmlFor="role" className={labelClasses}>
-            Your Role <span style={{ color: '#2DD4BF' }}>*</span>
+            Your Role <span className="text-[#2DD4BF]">*</span>
           </label>
           <input
             id="role"
@@ -378,7 +378,7 @@ export default function PilotApplicationForm() {
         {/* Company Size */}
         <div className="relative">
           <label htmlFor="companySize" className={labelClasses}>
-            Company Size <span style={{ color: '#2DD4BF' }}>*</span>
+            Company Size <span className="text-[#2DD4BF]">*</span>
           </label>
           <select
             id="companySize"
@@ -402,7 +402,7 @@ export default function PilotApplicationForm() {
               <option
                 key={option.value}
                 value={option.value}
-                style={{ backgroundColor: '#0A0A0A', color: '#F5F3F0' }}
+                className="bg-[#0A0A0A] text-[#F5F3F0]"
               >
                 {option.label}
               </option>
@@ -445,7 +445,7 @@ export default function PilotApplicationForm() {
         <div className="relative">
           <label htmlFor="whyPilot" className={labelClasses}>
             Why do you want to join the Synqra Pilot?{' '}
-            <span style={{ color: '#2DD4BF' }}>*</span>
+            <span className="text-[#2DD4BF]">*</span>
           </label>
           <textarea
             id="whyPilot"
@@ -464,16 +464,13 @@ export default function PilotApplicationForm() {
           <div className="mt-2 flex items-center justify-between">
             <div>
               {errors.whyPilot && (
-                <p style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+                <p className="text-xs text-[#EF4444]">
                   {errors.whyPilot}
                 </p>
               )}
             </div>
             <p
-              style={{
-                fontSize: '0.75rem',
-                color: 'rgba(245, 243, 240, 0.4)',
-              }}
+              className="text-xs text-[#F5F3F0]/40"
             >
               {formData.whyPilot?.length || 0} / 1000 characters
             </p>
@@ -484,18 +481,7 @@ export default function PilotApplicationForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-98"
-          style={{
-            height: '56px',
-            padding: '16px',
-            backgroundColor: '#C5A572',
-            color: '#0A0A0A',
-            fontSize: '0.875rem',
-            fontWeight: 700,
-            letterSpacing: '0.025em',
-            textTransform: 'uppercase',
-            borderRadius: '8px',
-          }}
+          className="w-full rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-98 h-14 p-4 bg-[#C5A572] text-[#0A0A0A] text-sm font-bold tracking-wide uppercase"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
