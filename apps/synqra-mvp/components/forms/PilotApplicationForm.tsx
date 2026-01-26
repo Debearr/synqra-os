@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileText, CheckCircle, Loader2, Sparkles, X } from 'lucide-react';
 import { pilotApplicationSchema, type PilotApplicationData } from '@/lib/validations/pilot-form';
+import { cn } from '@/lib/utils';
 
 /**
  * ============================================================
@@ -47,6 +49,62 @@ export default function PilotApplicationForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof PilotApplicationData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- New Features State ---
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [deckFile, setDeckFile] = useState<File | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [extractedFields, setExtractedFields] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Simulation of "AI Extraction"
+  const handleDeckDrop = async (e: React.DragEvent | React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+
+    let file: File | null = null;
+    if ('dataTransfer' in e) {
+      file = e.dataTransfer.files[0];
+    } else if (e.target.files) {
+      file = e.target.files[0];
+    }
+
+    if (file) {
+      setDeckFile(file);
+      setIsScanning(true);
+      setScanProgress(0);
+      setExtractedFields([]); // Clear previous extractions
+
+      // Simulate scanning progress
+      const interval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 5;
+        });
+      }, 100);
+
+      // "Finish" scanning
+      setTimeout(() => {
+        setIsScanning(false);
+        setFormData(prev => ({
+          ...prev,
+          fullName: "Alex Rivera",
+          email: "alex.rivera@example.com",
+          companyName: "Nexus AI",
+          role: "Founder & CEO",
+          companySize: "11-50",
+          linkedinProfile: "linkedin.com/in/arivera-demo",
+          whyPilot: "We are scaling our autonomous agents and need a robust OS to manage the fleet..."
+        }));
+        setExtractedFields(['fullName', 'email', 'companyName', 'role', 'companySize', 'linkedinProfile', 'whyPilot']);
+      }, 2200);
+    }
+  };
+
   const handleInputChange = (field: keyof PilotApplicationData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field when user starts typing
@@ -63,7 +121,7 @@ export default function PilotApplicationForm() {
     try {
       // Validate form data with Zod (client-side)
       const validatedData = pilotApplicationSchema.parse(formData);
-      
+
       // Submit to API (Phase 3: Backend Integration)
       const response = await fetch('/api/pilot/apply', {
         method: 'POST',
@@ -83,7 +141,7 @@ export default function PilotApplicationForm() {
           });
           return;
         }
-        
+
         if (result.error === 'validation_failed' && result.details) {
           // Map server validation errors to form fields
           const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
@@ -101,10 +159,10 @@ export default function PilotApplicationForm() {
       // Success - redirect to success page
       console.log('[Pilot Application] Submitted successfully:', result.data.id);
       router.push('/pilot/apply/success');
-      
+
     } catch (error: any) {
       console.error('[Pilot Application] Submit error:', error);
-      
+
       if (error.errors) {
         // Parse Zod validation errors (client-side)
         const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
@@ -119,10 +177,42 @@ export default function PilotApplicationForm() {
           email: error.message || 'Failed to submit application. Please try again.',
         });
       }
-      
+
       setIsSubmitting(false);
     }
   };
+
+  // Icon Wrappers for strict type compatibility
+  const UploadIcon = Upload as React.ElementType;
+  const FileTextIcon = FileText as React.ElementType;
+  const CheckCircleIcon = CheckCircle as React.ElementType;
+  const Loader2Icon = Loader2 as React.ElementType;
+  const SparklesIcon = Sparkles as React.ElementType;
+  const XIcon = X as React.ElementType;
+
+  const inputClasses = (hasError: boolean, fieldName?: string) => cn(
+    "w-full h-14 px-4 rounded-lg bg-white/[0.04] border text-brand-fg placeholder:text-brand-gray/50 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-brand-gold/50 focus:border-brand-gold/50 hover:bg-white/[0.06]",
+    hasError ? "border-red-500/50 focus:ring-red-500/50" : "border-white/10",
+    fieldName && extractedFields.includes(fieldName) && "animate-pulse-gold border-brand-gold/30 bg-brand-gold/[0.02]"
+  );
+
+  const labelClasses = "block mb-2 text-xs font-bold uppercase tracking-widest text-brand-gray/80";
+
+  // Confidence Cue Component
+  const ConfidenceCue = ({ visible }: { visible: boolean }) => (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.5 }}
+          className="absolute right-4 top-10 pointer-events-none"
+        >
+          <CheckCircleIcon className="text-brand-gold w-5 h-5 drop-shadow-[0_0_8px_rgba(197,165,114,0.5)]" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <motion.form
@@ -130,25 +220,76 @@ export default function PilotApplicationForm() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       onSubmit={handleSubmit}
-      className="w-full max-w-2xl mx-auto p-8 rounded-xl"
-      style={{
-        backgroundColor: 'rgba(245, 243, 240, 0.02)',
-        border: '1px solid rgba(245, 243, 240, 0.08)',
-      }}
+      className="w-full max-w-2xl mx-auto p-8 rounded-xl glass-panel"
     >
       <div className="space-y-6">
+        {/* Upload Section */}
+        <div className="relative mb-8 p-6 rounded-xl border border-dashed border-white/20 bg-white/[0.02] text-center transition-all duration-300"
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragActive(true); }}
+          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragActive(false); }}
+          onDrop={handleDeckDrop}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleDeckDrop}
+            accept=".pdf,.ppt,.pptx"
+          />
+          {deckFile ? (
+            <div className="flex flex-col items-center justify-center">
+              <FileTextIcon className="w-10 h-10 text-brand-gold mb-3" />
+              <p className="text-lg font-semibold text-brand-fg">{deckFile.name}</p>
+              <p className="text-sm text-brand-gray/70 mb-4">
+                {(deckFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+              {isScanning ? (
+                <div className="w-full max-w-xs bg-white/10 rounded-full h-2.5 mb-4">
+                  <div
+                    className="bg-brand-gold h-2.5 rounded-full transition-all duration-100"
+                    style={{ width: `${scanProgress}%` }}
+                  ></div>
+                  <p className="text-xs text-brand-gray/70 mt-2 flex items-center justify-center gap-2">
+                    <Loader2Icon className="animate-spin w-4 h-4" /> Scanning for details...
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-brand-gold drop-shadow-[0_0_8px_rgba(197,165,114,0.5)]">
+                  <SparklesIcon className="w-5 h-5" />
+                  <span className="font-medium">Details Extracted!</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => { setDeckFile(null); setExtractedFields([]); setScanProgress(0); }}
+                className="absolute top-3 right-3 text-brand-gray/50 hover:text-brand-fg transition-colors"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-4">
+              <UploadIcon className="w-10 h-10 text-brand-gray/50 mb-3" />
+              <p className="text-lg font-semibold text-brand-fg mb-1">
+                Drag & drop your pitch deck
+              </p>
+              <p className="text-sm text-brand-gray/70 mb-3">
+                or click to upload (PDF, PPTX)
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 rounded-lg bg-brand-gold text-brand-bg text-sm font-medium hover:bg-brand-gold/90 transition-colors"
+              >
+                Browse Files
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Full Name */}
-        <div>
-          <label
-            htmlFor="fullName"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="fullName" className={labelClasses}>
             Full Name <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
           <input
@@ -158,48 +299,19 @@ export default function PilotApplicationForm() {
             onChange={(e) => handleInputChange('fullName', e.target.value)}
             disabled={isSubmitting}
             placeholder="Sarah Chen"
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.fullName
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.fullName) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.fullName) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={inputClasses(!!errors.fullName, 'fullName')}
           />
+          <ConfidenceCue visible={extractedFields.includes('fullName')} />
           {errors.fullName && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.fullName}
             </p>
           )}
         </div>
 
         {/* Email */}
-        <div>
-          <label
-            htmlFor="email"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="email" className={labelClasses}>
             Email Address <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
           <input
@@ -209,48 +321,19 @@ export default function PilotApplicationForm() {
             onChange={(e) => handleInputChange('email', e.target.value)}
             disabled={isSubmitting}
             placeholder="sarah@company.com"
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.email
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.email) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.email) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={inputClasses(!!errors.email, 'email')}
           />
+          <ConfidenceCue visible={extractedFields.includes('email')} />
           {errors.email && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.email}
             </p>
           )}
         </div>
 
         {/* Company Name */}
-        <div>
-          <label
-            htmlFor="companyName"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="companyName" className={labelClasses}>
             Company Name <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
           <input
@@ -260,48 +343,19 @@ export default function PilotApplicationForm() {
             onChange={(e) => handleInputChange('companyName', e.target.value)}
             disabled={isSubmitting}
             placeholder="Acme Inc."
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.companyName
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.companyName) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.companyName) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={inputClasses(!!errors.companyName, 'companyName')}
           />
+          <ConfidenceCue visible={extractedFields.includes('companyName')} />
           {errors.companyName && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.companyName}
             </p>
           )}
         </div>
 
         {/* Role */}
-        <div>
-          <label
-            htmlFor="role"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="role" className={labelClasses}>
             Your Role <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
           <input
@@ -311,48 +365,19 @@ export default function PilotApplicationForm() {
             onChange={(e) => handleInputChange('role', e.target.value)}
             disabled={isSubmitting}
             placeholder="CEO & Co-Founder"
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.role
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.role) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.role) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={inputClasses(!!errors.role, 'role')}
           />
+          <ConfidenceCue visible={extractedFields.includes('role')} />
           {errors.role && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.role}
             </p>
           )}
         </div>
 
         {/* Company Size */}
-        <div>
-          <label
-            htmlFor="companySize"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="companySize" className={labelClasses}>
             Company Size <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
           <select
@@ -360,30 +385,19 @@ export default function PilotApplicationForm() {
             value={formData.companySize || ''}
             onChange={(e) => handleInputChange('companySize', e.target.value)}
             disabled={isSubmitting}
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
+            className={cn(inputClasses(!!errors.companySize, 'companySize'), !formData.companySize && "text-brand-gray/50")}
             style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.companySize
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: formData.companySize ? '#F5F3F0' : 'rgba(245, 243, 240, 0.5)',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.companySize) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.companySize) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
+              // Override default select arrow color for consistency
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23F5F3F0' opacity='0.5'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1.5em 1.5em',
             }}
           >
-            <option value="">Select company size...</option>
+            <option value="" disabled>Select company size...</option>
             {COMPANY_SIZE_OPTIONS.map(option => (
               <option
                 key={option.value}
@@ -394,27 +408,19 @@ export default function PilotApplicationForm() {
               </option>
             ))}
           </select>
+          <ConfidenceCue visible={extractedFields.includes('companySize')} />
           {errors.companySize && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.companySize}
             </p>
           )}
         </div>
 
         {/* LinkedIn Profile (Optional) */}
-        <div>
-          <label
-            htmlFor="linkedinProfile"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="linkedinProfile" className={labelClasses}>
             LinkedIn Profile{' '}
-            <span style={{ color: 'rgba(245, 243, 240, 0.5)', fontWeight: 400 }}>
+            <span className="text-brand-gray/50 font-normal">
               (optional)
             </span>
           </label>
@@ -425,48 +431,19 @@ export default function PilotApplicationForm() {
             onChange={(e) => handleInputChange('linkedinProfile', e.target.value)}
             disabled={isSubmitting}
             placeholder="https://linkedin.com/in/yourprofile"
-            className="w-full px-4 rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '56px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.linkedinProfile
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '150%',
-            }}
-            onFocus={(e) => {
-              if (!errors.linkedinProfile) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.linkedinProfile) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={inputClasses(!!errors.linkedinProfile, 'linkedinProfile')}
           />
+          <ConfidenceCue visible={extractedFields.includes('linkedinProfile')} />
           {errors.linkedinProfile && (
-            <p className="mt-2" style={{ fontSize: '0.875rem', color: '#EF4444' }}>
+            <p className="mt-2 text-xs text-red-500">
               {errors.linkedinProfile}
             </p>
           )}
         </div>
 
         {/* Why Pilot */}
-        <div>
-          <label
-            htmlFor="whyPilot"
-            className="block mb-2"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: '#F5F3F0',
-              letterSpacing: '0.01em',
-            }}
-          >
+        <div className="relative">
+          <label htmlFor="whyPilot" className={labelClasses}>
             Why do you want to join the Synqra Pilot?{' '}
             <span style={{ color: '#2DD4BF' }}>*</span>
           </label>
@@ -477,28 +454,13 @@ export default function PilotApplicationForm() {
             disabled={isSubmitting}
             placeholder="Tell us about your content challenges and what you hope to achieve with Synqra..."
             rows={5}
-            className="w-full px-4 py-4 rounded-lg transition-all duration-200 focus:outline-none resize-none"
-            style={{
-              borderRadius: '8px',
-              backgroundColor: 'rgba(245, 243, 240, 0.04)',
-              border: errors.whyPilot
-                ? '2px solid rgba(239, 68, 68, 0.5)'
-                : '1px solid rgba(245, 243, 240, 0.12)',
-              color: '#F5F3F0',
-              fontSize: '1rem',
-              lineHeight: '160%',
-            }}
-            onFocus={(e) => {
-              if (!errors.whyPilot) {
-                e.target.style.border = '2px solid #2DD4BF';
-              }
-            }}
-            onBlur={(e) => {
-              if (!errors.whyPilot) {
-                e.target.style.border = '1px solid rgba(245, 243, 240, 0.12)';
-              }
-            }}
+            className={cn(
+              "w-full p-4 rounded-lg bg-white/[0.04] border text-brand-fg placeholder:text-brand-gray/50 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-brand-gold/50 focus:border-brand-gold/50 hover:bg-white/[0.06] resize-none",
+              errors.whyPilot ? "border-red-500/50 focus:ring-red-500/50" : "border-white/10",
+              extractedFields.includes('whyPilot') && "animate-pulse-gold border-brand-gold/30 bg-brand-gold/[0.02]"
+            )}
           />
+          <ConfidenceCue visible={!!formData.whyPilot && !errors.whyPilot} />
           <div className="mt-2 flex items-center justify-between">
             <div>
               {errors.whyPilot && (

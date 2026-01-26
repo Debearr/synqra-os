@@ -25,32 +25,33 @@ export default function PilotApplyPage() {
       }}
     >
       {/* Content Container */}
-      <div className="relative z-10 mx-auto max-w-4xl px-6 py-16 md:py-24">
+      <div className="relative z-10 mx-auto max-w-4xl px-6 py-16 md:py-24 space-y-16">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12 text-center"
+          className="text-center"
         >
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="inline-flex items-center px-4 py-2 rounded-full mb-6"
+            className="inline-flex items-center px-5 py-2 rounded-full mb-8 luxury-hover-lift"
             style={{
-              backgroundColor: 'rgba(45, 212, 191, 0.1)',
-              border: '1px solid rgba(45, 212, 191, 0.2)',
+              backgroundColor: 'rgba(245, 243, 240, 0.03)',
+              border: '1px solid rgba(197, 165, 114, 0.2)',
+              boxShadow: '0 0 20px -10px rgba(197, 165, 114, 0.3)'
             }}
           >
             <span
               style={{
                 fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.15em',
+                fontWeight: 600,
+                letterSpacing: '0.2em',
                 textTransform: 'uppercase',
-                color: '#2DD4BF',
+                color: '#C5A572',
               }}
             >
               Founder Pilot • Limited to 50 Seats
@@ -59,13 +60,14 @@ export default function PilotApplyPage() {
 
           {/* Title */}
           <h1
-            className="mb-6"
+            className="mb-6 font-display"
             style={{
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 600,
-              letterSpacing: '0.075em',
+              fontSize: 'clamp(3rem, 6vw, 5rem)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
               color: '#F5F3F0',
-              lineHeight: 1.1,
+              lineHeight: 1.05,
+              textShadow: '0 0 40px rgba(245, 243, 240, 0.1)'
             }}
           >
             Join the Synqra Pilot
@@ -73,11 +75,11 @@ export default function PilotApplyPage() {
 
           {/* Subtitle */}
           <p
-            className="mx-auto max-w-2xl"
+            className="mx-auto max-w-2xl font-light"
             style={{
-              fontSize: '1.125rem',
+              fontSize: '1.25rem',
               lineHeight: '160%',
-              color: 'rgba(245, 243, 240, 0.7)',
+              color: 'rgba(245, 243, 240, 0.6)',
             }}
           >
             Get early access to Synqra's executive content engine. Shape the product,
@@ -90,7 +92,7 @@ export default function PilotApplyPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="mb-12 grid gap-4 md:grid-cols-3"
+          className="grid gap-6 md:grid-cols-3"
         >
           {[
             {
@@ -114,19 +116,18 @@ export default function PilotApplyPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + index * 0.1 }}
-              className="p-6 rounded-xl text-center"
+              className="p-8 rounded-2xl text-center group hover:bg-white/[0.02] transition-colors duration-500"
               style={{
-                backgroundColor: 'rgba(245, 243, 240, 0.02)',
-                border: '1px solid rgba(245, 243, 240, 0.08)',
+                border: '1px solid rgba(245, 243, 240, 0.06)',
               }}
             >
-              <div className="text-3xl mb-3">{benefit.icon}</div>
+              <div className="text-3xl mb-4 grayscale group-hover:grayscale-0 transition-all duration-500 transform group-hover:scale-110">{benefit.icon}</div>
               <h3
-                className="mb-2"
+                className="mb-2 font-display"
                 style={{
                   fontSize: '0.875rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   color: '#C5A572',
                 }}
@@ -136,8 +137,8 @@ export default function PilotApplyPage() {
               <p
                 style={{
                   fontSize: '0.875rem',
-                  lineHeight: '150%',
-                  color: 'rgba(245, 243, 240, 0.6)',
+                  lineHeight: '160%',
+                  color: 'rgba(245, 243, 240, 0.5)',
                 }}
               >
                 {benefit.description}
