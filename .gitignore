@@ -30,6 +30,7 @@ apps/*/node_modules
 dist/
 build/
 .next/
+.next-build/
 out/
 .nuxt/
 .cache/

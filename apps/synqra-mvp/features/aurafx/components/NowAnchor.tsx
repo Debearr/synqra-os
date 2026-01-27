@@ -1,17 +1,34 @@
 import React from 'react';
 
-export const NowAnchor: React.FC = () => {
+interface NowAnchorProps {
+    status: 'PENDING' | 'ACTIVE' | 'DECAYING' | 'EXPIRED' | 'INVALID';
+}
+
+export const NowAnchor: React.FC<NowAnchorProps> = ({ status = 'PENDING' }) => {
     // Layout position for "Now" - usually roughly 70% to show lead into future
     const nowXPercent = 70;
+
+    // Visual State Logic
+    const isDecaying = status === 'DECAYING';
+    const isExpired = status === 'EXPIRED';
+
+    // Line style: Solid when active, Dashed/Faint when decaying
+    const lineOpacity = isExpired ? 0.2 : isDecaying ? 0.5 : 1;
 
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {/* The Hard Edge of Now - Vertical Line */}
             <div
-                className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] z-50"
-                style={{ left: `${nowXPercent}%` }}
+                className={`absolute top-0 bottom-0 w-[2px] bg-white transition-all duration-1000 z-50`}
+                style={{
+                    left: `${nowXPercent}%`,
+                    opacity: lineOpacity,
+                    boxShadow: isExpired ? 'none' : '0 0 15px rgba(255,255,255,0.8)'
+                }}
             >
-                <div className="absolute -top-4 -translate-x-1/2 text-[9px] font-mono text-white/70">NOW</div>
+                <div className="absolute -top-4 -translate-x-1/2 text-[9px] font-mono text-white/70">
+                    {status === 'EXPIRED' ? 'PAST' : 'NOW'}
+                </div>
             </div>
 
             {/* Past State - Degraded Visuals (Overlay) */}
