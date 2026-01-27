@@ -40,7 +40,7 @@ export function getSignalState(signal: AuraSignal, currentTime: number = Date.no
 export function calculateConfidence(signal: AuraSignal, currentTime: number = Date.now()): number {
     const state = getSignalState(signal, currentTime);
 
-    if (state === SignalState.PENDING || state === SignalState.EXPIRED || state === SignalState.INVALID) {
+    if (state === SignalState.PENDING || state === SignalState.EXPIRED || state === SignalState.INVALID || state === SignalState.NO_DATA || state === SignalState.PARTIAL_DATA) {
         return 0;
     }
 

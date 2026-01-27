@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface NowAnchorProps {
-    status: 'PENDING' | 'ACTIVE' | 'DECAYING' | 'EXPIRED' | 'INVALID';
+    status: 'PENDING' | 'ACTIVE' | 'DECAYING' | 'EXPIRED' | 'INVALID' | 'NO_DATA' | 'PARTIAL_DATA';
 }
 
 export const NowAnchor: React.FC<NowAnchorProps> = ({ status = 'PENDING' }) => {

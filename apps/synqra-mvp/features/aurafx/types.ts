@@ -7,16 +7,16 @@ export interface AuraSignal {
   id: string;
   symbol: string;
   timestamp: number;
-  
+
   // Core Intelligence Data
   type: 'MOMENTUM' | 'VOLATILITY' | 'MEAN_REVERSION' | 'FLOW';
   direction: 'UP' | 'DOWN' | 'NEUTRAL';
   confidence: number; // 0.0 to 0.99. NEVER 1.0.
-  
+
   // Context & Explanation
   context: string; // "Why" this signal exists. No "Buy"/"Sell" language.
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  
+
   // Time & Lifecycle
   validityPeriod: {
     start: number;
@@ -38,7 +38,9 @@ export enum SignalState {
   ACTIVE = 'ACTIVE',
   DECAYING = 'DECAYING',
   EXPIRED = 'EXPIRED',
-  INVALID = 'INVALID'
+  INVALID = 'INVALID',
+  NO_DATA = 'NO_DATA',
+  PARTIAL_DATA = 'PARTIAL_DATA'
 }
 
 export interface SignalValidationResult {
