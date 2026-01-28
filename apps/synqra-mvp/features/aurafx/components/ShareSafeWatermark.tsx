@@ -1,33 +1,116 @@
 import React from 'react';
 
-export const ShareSafeWatermark: React.FC = () => {
-    // In a real implementation, these would come from a secure context or prop
-    const timestamp = new Date();
-    const expiry = new Date(timestamp.getTime() + 1000 * 60 * 15); // 15 min expiry
+export interface ShareSafeWatermarkProps {
+    sessionId?: string;
+    generatedAt?: number;
+    expiresAt?: number;
+    includeDisclaimer?: boolean;
+    opacity?: number;
+}
+
+/**
+ * ShareSafeWatermark Component
+ * Phase 2: Export & Share Safety
+ * 
+ * Renders mandatory watermark and metadata for all visual exports.
+ * MUST be included in all image and PDF exports.
+ */
+export const ShareSafeWatermark: React.FC<ShareSafeWatermarkProps> = ({
+    sessionId,
+    generatedAt,
+    expiresAt,
+    includeDisclaimer = true,
+    opacity = 0.3,
+}) => {
+    // Generate session ID if not provided
+    const finalSessionId = sessionId || `SESS-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Use provided timestamps or generate defaults
+    const timestamp = generatedAt ? new Date(generatedAt) : new Date();
+    const expiry = expiresAt ? new Date(expiresAt) : new Date(timestamp.getTime() + 1000 * 60 * 15); // 15 min default
 
     // Formatting helper
     const fmt = (d: Date) => d.toISOString().split('T')[1].slice(0, 8);
+    const fmtFull = (d: Date) => d.toISOString().replace('T', ' ').slice(0, 19);
 
     return (
-        <div className="w-full h-full flex flex-col justify-between p-4 opacity-30 select-none">
-            {/* Repeated Background Pattern could go here via CSS mask, keeping it simple DOM for now */}
-            <div className="absolute inset-0 flex flex-wrap content-start opacity-[0.03] overflow-hidden pointer-events-none">
-                {Array.from({ length: 40 }).map((_, i) => (
-                    <span key={i} className="text-xs font-mono m-8 rotate-[-15deg] whitespace-nowrap">
+        <div className="w-full h-full flex flex-col justify-between pointer-events-none select-none">
+            {/* Repeating Background Pattern - "NON-TRANSACTIONAL" watermark */}
+            <div
+                className="absolute inset-0 flex flex-wrap content-start overflow-hidden"
+                style={{ opacity: 0.03 }}
+            >
+                {Array.from({ length: 60 }).map((_, i) => (
+                    <span
+                        key={i}
+                        className="text-xs font-mono m-8 whitespace-nowrap text-synqra-gold"
+                        style={{ transform: 'rotate(-15deg)' }}
+                    >
                         NON-TRANSACTIONAL // INTELLIGENCE ONLY
                     </span>
                 ))}
             </div>
 
-            <div className="relative z-50 flex justify-between items-end text-[10px] text-synqra-gold font-mono tracking-wider">
-                <div className="flex flex-col gap-1">
-                    <span>LIMITED LICENSE: ANALYTICAL USE ONLY</span>
-                    <span>ID: SESS-{Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+            {/* Top-Left: License Badge */}
+            <div
+                className="relative z-50 p-4"
+                style={{ opacity }}
+            >
+                <div className="inline-block px-3 py-1.5 bg-black/60 border border-synqra-gold/30 rounded">
+                    <span className="text-[10px] text-synqra-gold font-mono tracking-wider">
+                        LIMITED LICENSE: ANALYTICAL USE ONLY
+                    </span>
                 </div>
-                <div className="flex flex-col gap-1 text-right">
-                    <span>GEN: {fmt(timestamp)}</span>
-                    <span className="text-red-400">EXP: {fmt(expiry)}UTC</span>
+            </div>
+
+            {/* Bottom: Metadata Footer */}
+            <div
+                className="relative z-50 p-4 bg-gradient-to-t from-black/80 to-transparent"
+                style={{ opacity }}
+            >
+                <div className="flex justify-between items-end text-[10px] font-mono tracking-wider">
+                    {/* Left: Session ID */}
+                    <div className="flex flex-col gap-1 text-synqra-gold/80">
+                        <span className="text-synqra-gold font-semibold">SESSION ID</span>
+                        <span className="font-mono">{finalSessionId}</span>
+                    </div>
+
+                    {/* Right: Timestamps */}
+                    <div className="flex flex-col gap-1 text-right">
+                        <div className="flex items-center gap-2 text-synqra-gold/80">
+                            <span>GENERATED:</span>
+                            <span className="text-synqra-gold">{fmt(timestamp)} UTC</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-synqra-gold/80">
+                            <span>EXPIRES:</span>
+                            <span className="text-red-400 font-semibold">{fmt(expiry)} UTC</span>
+                        </div>
+                    </div>
                 </div>
+
+                {/* Legal Disclaimer (if enabled) */}
+                {includeDisclaimer && (
+                    <div className="mt-4 pt-3 border-t border-synqra-gold/20">
+                        <div className="text-[9px] text-synqra-gold/60 leading-relaxed max-w-4xl">
+                            <p className="font-semibold text-synqra-gold/80 mb-1">
+                                ⚠️ IMPORTANT LEGAL NOTICE
+                            </p>
+                            <p>
+                                This document contains probabilistic market intelligence generated by AuraFX.
+                                This is <span className="text-red-400 font-semibold">NOT financial advice</span>,
+                                trading recommendations, or investment guidance. Signals are time-sensitive and
+                                decay in reliability. All confidence scores are probabilistic (never 100%).
+                                You are solely responsible for your trading decisions. Synqra assumes no liability
+                                for trading losses.
+                            </p>
+                            <p className="mt-1 text-synqra-gold/80">
+                                <span className="font-semibold">License:</span> Personal analytical use only.
+                                Redistribution, commercial use, or integration into automated trading systems
+                                is strictly prohibited.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
