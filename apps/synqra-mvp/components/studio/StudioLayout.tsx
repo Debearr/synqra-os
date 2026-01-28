@@ -2,6 +2,9 @@
 
 import { Suspense } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { useDisclaimerState } from '@/hooks/useDisclaimerState';
+import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { getDisclaimerContent } from '@/lib/compliance/disclaimer-manager';
 import StudioSystemHeader from '@/components/studio/StudioSystemHeader';
 import EnvironmentLayer from '@/components/studio/EnvironmentLayer';
 
@@ -35,6 +38,12 @@ function AuthRequiredShell() {
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
+  const disclaimerFallback = getDisclaimerContent('assessment');
+  const disclaimer = useDisclaimerState({
+    assessmentType: 'assessment_calibration',
+    userId: session?.identityCode,
+    autoCheck: true,
+  });
 
   // Always render shell - never return null
   if (loading) {
@@ -45,7 +54,23 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     return <AuthRequiredShell />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <div className="px-6 pt-6">
+        {/* Regulatory safety: global disclaimer for all AuraFX scenario views. */}
+        <DisclaimerBanner
+          content={disclaimer.content}
+          methodologyContent={disclaimer.methodologyContent}
+          disclaimer={disclaimerFallback}
+          requiresAcknowledgment={disclaimer.requiresAcknowledgment}
+          triggerMessage={disclaimer.triggerMessage}
+          onAcknowledge={disclaimer.acknowledge}
+          isAcknowledging={disclaimer.isAcknowledging}
+        />
+      </div>
+      {children}
+    </>
+  );
 }
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
