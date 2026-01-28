@@ -1,0 +1,39 @@
+{
+  "providers": {
+    "openrouter": {
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "model": "anthropic/claude-sonnet-4.5",
+      "timeoutMs": 30000,
+      "cost": {
+        "usdPer1kTokens": 0.003
+      }
+    },
+    "gemini": {
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/models",
+      "model": "gemini-1.5-flash",
+      "timeoutMs": 20000,
+      "cost": {
+        "usdPer1kTokens": 0
+      },
+      "quota": {
+        "monthlyRequests": 100000,
+        "switchAtPercent": 0.8
+      }
+    }
+  },
+  "routing": {
+    "councilTask": "council_decision",
+    "councilProvider": "openrouter",
+    "defaultProvider": "gemini"
+  },
+  "cache": {
+    "ttlSeconds": 300
+  },
+  "rateLimit": {
+    "councilPerUserPerDay": 5
+  },
+  "budget": {
+    "alertUsd": 32,
+    "hardStopUsd": 38
+  }
+}

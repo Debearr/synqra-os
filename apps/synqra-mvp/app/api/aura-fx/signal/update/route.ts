@@ -3,7 +3,7 @@ import { z } from "zod";
 import { updateSignal } from "@/lib/aura-fx/tracking";
 import { sendTelegramMessage } from "@/lib/aura-fx/telegram";
 
-const statusEnum = z.enum(["open", "tp1", "tp2", "tp3", "closed", "stopped"]);
+const statusEnum = z.enum(["UNRESOLVED", "PARTIAL_RESOLUTION_1", "PARTIAL_RESOLUTION_2", "PARTIAL_RESOLUTION_3", "RESOLVED_AS_ASSESSED", "RESOLVED_CONTRARY"]);
 
 const bodySchema = z.object({
   id: z.string().uuid(),
@@ -13,20 +13,20 @@ const bodySchema = z.object({
 
 function summaryMessage(id: string, status: string, note?: string) {
   const lines = [
-    `<b>AURA-FX SIGNAL UPDATE</b>`,
+    `<b>AURA-FX ASSESSMENT UPDATE</b>`,
     `ID: ${id}`,
-    `Status: ${status}`,
+    `Calibration Status: ${status}`,
     note ? `Note: ${note}` : null,
-    `Educational use only — not financial advice`,
+    `Historical analysis only — not financial advice or recommendation`,
   ].filter(Boolean);
   return lines.join("\n");
 }
 
 function lessonFromReason(reason?: string) {
-  if (!reason) return ["Review setup vs. execution.", "Track adherence to plan."];
+  if (!reason) return ["Review assessment methodology vs. historical outcome.", "Track calibration accuracy over time."];
   return [
     `Reason: ${reason}`,
-    "Log what worked and what failed for next setup.",
+    "Document directional assessment factors for future calibration analysis.",
   ];
 }
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     await updateSignal(id, status, note);
 
-    if (["closed", "tp1", "tp2", "tp3", "stopped"].includes(status)) {
+    if (["RESOLVED_AS_ASSESSED", "PARTIAL_RESOLUTION_1", "PARTIAL_RESOLUTION_2", "PARTIAL_RESOLUTION_3", "RESOLVED_CONTRARY"].includes(status)) {
       const message = summaryMessage(id, status, note);
       await sendTelegramMessage(message);
     }

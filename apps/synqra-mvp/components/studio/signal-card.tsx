@@ -12,7 +12,7 @@ interface SignalCardProps {
   signal: TradeSignal;
   accountBalance: number;
   riskPercent?: number;
-  currentDailyPnL?: number;
+  currentDailyPnL?: number; // Note: Represents daily assessment variance, not profit/loss
 }
 
 export function SignalCard({
@@ -46,14 +46,14 @@ export function SignalCard({
     <div className="rounded-xl border border-noid-silver/20 bg-noid-black p-4">
       <div className="mb-2 flex items-center justify-between">
         <div className="font-mono text-xs uppercase tracking-[0.14em] text-noid-silver/70">
-          Zero-Math Calculator
+          Assessment Calibration Calculator
         </div>
         <div className="font-mono text-[11px] text-noid-silver/60">{aiBypassNotice}</div>
       </div>
 
       <div className="space-y-3 text-sm text-white">
         <div>
-          <div className="text-noid-silver/70">Risk % Per Trade</div>
+          <div className="text-noid-silver/70">Risk % Per Assessment</div>
           <div className="font-mono">
             {(limits.maxRiskPerTrade * 100).toFixed(2)}%
           </div>

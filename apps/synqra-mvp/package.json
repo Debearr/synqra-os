@@ -9,11 +9,13 @@
     "start": "PORT=${PORT:-3000} next start",
     "lint": "next lint || echo 'lint skipped'",
     "test:red-team": "ts-node --project tests/tsconfig.json tests/red-team/audit-report.ts",
+    "test:ai-router": "ts-node --project tests/tsconfig.json tests/smoke-test-ai-router.ts",
     "verify:db": "ts-node --project tests/tsconfig.json scripts/verify-db.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@fingerprintjs/fingerprintjs": "^5.0.1",
+    "@prisma/client": "^7.3.0",
     "@react-pdf/renderer": "^4.3.1",
     "@supabase/supabase-js": "^2.45.0",
     "clsx": "^2.1.1",
@@ -23,6 +25,7 @@
     "next": "15.1.9",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "redis": "^5.10.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^10.0.0",
     "zod": "^3.23.0"
@@ -33,6 +36,7 @@
     "autoprefixer": "10.4.20",
     "eslint": "9.14.0",
     "postcss": "8.4.47",
+    "prisma": "^7.3.0",
     "supabase": "^2.72.8",
     "tailwindcss": "3.4.14",
     "tailwindcss-animate": "^1.0.7",

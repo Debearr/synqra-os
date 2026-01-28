@@ -149,7 +149,7 @@ export interface Database {
           tp2: string | null
           tp3: string | null
           reason: string | null
-          status: 'open' | 'tp1' | 'tp2' | 'tp3' | 'closed' | 'stopped'
+          status: 'UNRESOLVED' | 'PARTIAL_RESOLUTION_1' | 'PARTIAL_RESOLUTION_2' | 'PARTIAL_RESOLUTION_3' | 'RESOLVED_AS_ASSESSED' | 'RESOLVED_CONTRARY'
           notes: string | null
           created_at: string | null
           updated_at: string | null
@@ -165,7 +165,7 @@ export interface Database {
           tp2?: string | null
           tp3?: string | null
           reason?: string | null
-          status?: 'open' | 'tp1' | 'tp2' | 'tp3' | 'closed' | 'stopped'
+          status?: 'UNRESOLVED' | 'PARTIAL_RESOLUTION_1' | 'PARTIAL_RESOLUTION_2' | 'PARTIAL_RESOLUTION_3' | 'RESOLVED_AS_ASSESSED' | 'RESOLVED_CONTRARY'
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -181,7 +181,7 @@ export interface Database {
           tp2?: string | null
           tp3?: string | null
           reason?: string | null
-          status?: 'open' | 'tp1' | 'tp2' | 'tp3' | 'closed' | 'stopped'
+          status?: 'UNRESOLVED' | 'PARTIAL_RESOLUTION_1' | 'PARTIAL_RESOLUTION_2' | 'PARTIAL_RESOLUTION_3' | 'RESOLVED_AS_ASSESSED' | 'RESOLVED_CONTRARY'
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -195,7 +195,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      aura_signal_status: 'open' | 'tp1' | 'tp2' | 'tp3' | 'closed' | 'stopped'
+      aura_signal_status: 'UNRESOLVED' | 'PARTIAL_RESOLUTION_1' | 'PARTIAL_RESOLUTION_2' | 'PARTIAL_RESOLUTION_3' | 'RESOLVED_AS_ASSESSED' | 'RESOLVED_CONTRARY'
     }
   }
 }

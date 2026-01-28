@@ -44,10 +44,10 @@ async function attackBackendAccess(): Promise<GateCrasherResult> {
     const mockTrades: TradeRecord[] = [];
     const mockAccountState: AccountState = {
       balance: 10000,
-      currentDailyPnL: 0,
-      currentWeeklyPnL: 0,
+      currentDailyPnL: 0, // Note: Represents daily assessment variance
+      currentWeeklyPnL: 0, // Note: Represents weekly assessment variance
       tradesToday: 0,
-      consecutiveLosses: 0,
+      consecutiveLosses: 0, // Note: Represents consecutive contrary resolutions
       isLocked: false,
     };
 

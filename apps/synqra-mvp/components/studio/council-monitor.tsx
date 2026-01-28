@@ -44,7 +44,7 @@ export default function CouncilMonitor({ verdict, response }: CouncilMonitorProp
 
   if (!verdict) return null;
 
-  // DISCIPLINE STATUS — NO TRADE / PRESERVE CAPITAL (legacy check)
+  // DISCIPLINE STATUS — NO ASSESSMENT / PRESERVE CAPITAL (legacy check)
   if ("message" in verdict && !("data" in verdict)) {
     return (
       <motion.div

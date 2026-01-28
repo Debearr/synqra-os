@@ -27,7 +27,7 @@ async function calculatePositionSize(inputs: RiskInputs) {
       lots: 0,
       riskAmount: 0,
       isLocked: true,
-      message: "SESSION LOCKED: DAILY DRAWDOWN LIMIT REACHED. RECOVER MENTAL CAPITAL.",
+      message: "SESSION LOCKED: DAILY ASSESSMENT CALIBRATION VARIANCE LIMIT REACHED. REVIEW METHODOLOGY.",
     };
   }
 
@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
     const { signal, accountBalance, riskPercent } = body;
 
     if (!signal || !accountBalance) {
-      return NextResponse.json({ error: "Signal and accountBalance required" }, { status: 400 });
+      return NextResponse.json({ error: "Assessment parameters and accountBalance required" }, { status: 400 });
     }
 
     const { data: account, error: accountError } = await supabase
       .from("user_accounts")
-      .select("daily_pnl, daily_loss_limit, is_locked")
+      .select("daily_assessment_variance, daily_variance_limit, is_locked")
       .eq("user_id", user.id)
       .single();
 
@@ -83,18 +83,18 @@ export async function POST(request: NextRequest) {
 
     const locked =
       account?.is_locked ||
-      (account?.daily_pnl !== null &&
-        account?.daily_loss_limit !== null &&
-        typeof account?.daily_pnl !== "undefined" &&
-        typeof account?.daily_loss_limit !== "undefined" &&
-        account.daily_pnl <= -account.daily_loss_limit);
+      (account?.daily_assessment_variance !== null &&
+        account?.daily_variance_limit !== null &&
+        typeof account?.daily_assessment_variance !== "undefined" &&
+        typeof account?.daily_variance_limit !== "undefined" &&
+        account.daily_assessment_variance <= -account.daily_variance_limit);
 
     if (locked) {
       return NextResponse.json(
         {
           allowed: false,
           lots: 0,
-          message: "SESSION LOCKED: DAILY DRAWDOWN LIMIT REACHED. RECOVER MENTAL CAPITAL.",
+          message: "SESSION LOCKED: DAILY ASSESSMENT CALIBRATION VARIANCE LIMIT REACHED. REVIEW METHODOLOGY.",
         },
         { status: 200 }
       );
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     const accountState = {
       balance: accountBalance,
-      currentDailyPnL: typeof account?.daily_pnl === "number" ? account.daily_pnl : 0,
+      currentDailyPnL: typeof account?.daily_assessment_variance === "number" ? account.daily_assessment_variance : 0,
       currentWeeklyPnL: 0,
       tradesToday: 0,
       consecutiveLosses: 0,

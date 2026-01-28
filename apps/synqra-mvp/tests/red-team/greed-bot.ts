@@ -12,10 +12,10 @@ export async function runGreedBot(): Promise<GreedBotResult[]> {
 
   const mockAccountState: AccountState = {
     balance: 100000,
-    currentDailyPnL: -3900,
-    currentWeeklyPnL: -6900,
+    currentDailyPnL: -3900, // Note: Represents daily assessment variance
+    currentWeeklyPnL: -6900, // Note: Represents weekly assessment variance
     tradesToday: 0,
-    consecutiveLosses: 0,
+    consecutiveLosses: 0, // Note: Represents consecutive contrary resolutions
     isLocked: false,
   };
 
@@ -23,7 +23,7 @@ export async function runGreedBot(): Promise<GreedBotResult[]> {
     entryZone: { low: 1.1000, high: 1.1010 },
     stopLoss: 1.0950,
     targetZones: [1.1100, 1.1200, 1.1300],
-    direction: "long",
+    direction: "LONG",
     indicationIndex: 0,
     continuationIndex: 0,
   };
@@ -55,7 +55,7 @@ async function attackDirectRiskViolation(
         return {
           attack: "direct_risk_violation",
           blocked: false,
-          error: "System allowed trade that would breach 4% hard deck",
+          error: "System allowed assessment that would breach 4% variance limit",
         };
       }
     }
@@ -79,7 +79,7 @@ async function attackIndirectRiskInflation(accountState: AccountState): Promise<
       entryZone: { low: 1.1000, high: 1.1001 },
       stopLoss: 1.0999,
       targetZones: [1.1100, 1.1200, 1.1300],
-      direction: "long",
+      direction: "LONG",
       indicationIndex: 0,
       continuationIndex: 0,
     };
@@ -91,7 +91,7 @@ async function attackIndirectRiskInflation(accountState: AccountState): Promise<
 
     const result = calculatePositionSize(ultraTightStopSignal, accountState, limits);
 
-    if (result.allowed) {
+    if (result.allowed && ultraTightStopSignal.entryZone && ultraTightStopSignal.stopLoss) {
       const riskPerUnit = Math.abs((ultraTightStopSignal.entryZone.low + ultraTightStopSignal.entryZone.high) / 2 - ultraTightStopSignal.stopLoss);
       if (riskPerUnit < 0.0001) {
         const impliedRisk = (result.riskAmount / accountState.balance) * 100;
@@ -99,7 +99,7 @@ async function attackIndirectRiskInflation(accountState: AccountState): Promise<
           return {
             attack: "indirect_risk_inflation",
             blocked: false,
-            error: "System allowed oversized position via stop manipulation",
+            error: "System allowed oversized assessment position via invalidation level manipulation",
           };
         }
       }

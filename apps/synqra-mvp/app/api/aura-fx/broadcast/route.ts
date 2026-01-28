@@ -15,19 +15,19 @@ const bodySchema = z.object({
 });
 
 function formatMessage(payload: z.infer<typeof bodySchema>): string {
-  const [tp1, tp2, tp3] = payload.targets ?? [];
+  const [cp1, cp2, cp3] = payload.targets ?? [];
   const lines = [
-    `<b>AURA-FX SIGNAL</b>`,
+    `<b>AURA-FX DIRECTIONAL ASSESSMENT</b>`,
     `Pair: ${payload.pair}`,
     `Style: ${payload.style}`,
-    `Direction: ${payload.direction}`,
-    `Entry: ${payload.entry}`,
-    `Stop: ${payload.stop}`,
-    tp1 ? `TP1: ${tp1}` : null,
-    tp2 ? `TP2: ${tp2}` : null,
-    tp3 ? `TP3: ${tp3}` : null,
-    payload.reason ? `Reason: ${payload.reason}` : null,
-    `Educational use only — not financial advice`,
+    `Assessed Direction: ${payload.direction}`,
+    `Reference Level: ${payload.entry}`,
+    `Invalidation Level: ${payload.stop}`,
+    cp1 ? `Calibration Point 1: ${cp1}` : null,
+    cp2 ? `Calibration Point 2: ${cp2}` : null,
+    cp3 ? `Calibration Point 3: ${cp3}` : null,
+    payload.reason ? `Assessment Basis: ${payload.reason}` : null,
+    `Historical probability analysis only — not financial advice or recommendation`,
   ].filter(Boolean);
   return lines.join("\n");
 }
