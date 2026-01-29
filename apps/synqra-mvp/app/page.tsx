@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
@@ -22,6 +22,8 @@ function EntranceInner() {
   const [scrollY, setScrollY] = useState(0);
   const [showRequestAccess, setShowRequestAccess] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [oauthStatus, setOauthStatus] = useState<"idle" | "loading" | "error">("idle");
+  const oauthTimeoutRef = useRef<number | null>(null);
 
   const normalized = useMemo(() => code.trim().toUpperCase(), [code]);
   const isValid = useMemo(() => CODE_REGEX.test(normalized), [normalized]);
@@ -33,6 +35,28 @@ function EntranceInner() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (oauthTimeoutRef.current) {
+        window.clearTimeout(oauthTimeoutRef.current);
+        oauthTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  const clearOAuthTimeout = () => {
+    if (oauthTimeoutRef.current) {
+      window.clearTimeout(oauthTimeoutRef.current);
+      oauthTimeoutRef.current = null;
+    }
+  };
+
+  const setOAuthError = (message: string) => {
+    setAuthError(message);
+    setOauthStatus("error");
+    setShowRequestAccess(true);
+  };
+
   const supabase = useMemo(() => {
     if (typeof window === "undefined") return null;
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,12 +67,19 @@ function EntranceInner() {
 
   const handleOAuth = async (provider: "google" | "apple") => {
     if (!supabase) {
-      setAuthError("Authentication unavailable");
-      setShowRequestAccess(true);
+      setOAuthError("Authentication unavailable");
       return;
     }
 
     try {
+      setAuthError(null);
+      setOauthStatus("loading");
+      console.info("[demo] OAuth start", provider);
+      clearOAuthTimeout();
+      oauthTimeoutRef.current = window.setTimeout(() => {
+        setOAuthError("Authentication timed out. Please retry.");
+      }, 8000);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -57,12 +88,15 @@ function EntranceInner() {
       });
 
       if (error) {
-        setAuthError(error.message);
-        setShowRequestAccess(true);
+        setOAuthError(error.message);
+      } else {
+        setOauthStatus("idle");
       }
     } catch (err) {
-      setAuthError("Authentication failed");
-      setShowRequestAccess(true);
+      console.warn("[demo] OAuth failed", err);
+      setOAuthError("Authentication failed");
+    } finally {
+      clearOAuthTimeout();
     }
   };
 
@@ -217,7 +251,8 @@ function EntranceInner() {
                 <button
                   type="button"
                   onClick={() => handleOAuth("google")}
-                  className="flex items-center justify-center rounded-lg border border-noid-silver/30 bg-noid-black/40 px-4 py-2 transition-opacity hover:opacity-80"
+                  disabled={oauthStatus === "loading"}
+                  className="flex items-center justify-center rounded-lg border border-noid-silver/30 bg-noid-black/40 px-4 py-2 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Sign in with Google"
                 >
                   <svg
@@ -249,7 +284,8 @@ function EntranceInner() {
                 <button
                   type="button"
                   onClick={() => handleOAuth("apple")}
-                  className="flex items-center justify-center rounded-lg border border-noid-silver/30 bg-noid-black/40 px-4 py-2 transition-opacity hover:opacity-80"
+                  disabled={oauthStatus === "loading"}
+                  className="flex items-center justify-center rounded-lg border border-noid-silver/30 bg-noid-black/40 px-4 py-2 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Sign in with Apple"
                 >
                   <svg

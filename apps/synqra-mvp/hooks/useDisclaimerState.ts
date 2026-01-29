@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { AssessmentType, AcknowledgmentTrigger } from "@/app/api/aura-fx/disclaimer/types";
+import { getDisclaimerContent } from "@/lib/compliance/disclaimer-manager";
 
 interface DisclaimerState {
   isLoading: boolean;
@@ -41,6 +42,7 @@ export function useDisclaimerState({
   });
 
   const [isAcknowledging, setIsAcknowledging] = useState(false);
+  const checkTimeoutRef = useRef<number | null>(null);
 
   /**
    * Check disclaimer state from API
@@ -53,18 +55,36 @@ export function useDisclaimerState({
 
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      console.info("[demo] disclaimer check start");
+
+      const controller = new AbortController();
+      if (checkTimeoutRef.current) {
+        window.clearTimeout(checkTimeoutRef.current);
+      }
+      checkTimeoutRef.current = window.setTimeout(() => {
+        controller.abort();
+      }, 8000);
 
       const response = await fetch("/api/aura-fx/disclaimer/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, assessmentType }),
+        signal: controller.signal,
       });
+
+      if (checkTimeoutRef.current) {
+        window.clearTimeout(checkTimeoutRef.current);
+        checkTimeoutRef.current = null;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to check disclaimer state");
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+      if (!data || typeof data !== "object") {
+        throw new Error("Malformed disclaimer response");
+      }
 
       setState({
         isLoading: false,
@@ -76,11 +96,26 @@ export function useDisclaimerState({
         triggerMessage: data.triggerMessage,
         error: null,
       });
+      console.info("[demo] disclaimer check complete");
     } catch (error) {
+      if (checkTimeoutRef.current) {
+        window.clearTimeout(checkTimeoutRef.current);
+        checkTimeoutRef.current = null;
+      }
+      const fallback = getDisclaimerContent("assessment");
+      const message =
+        error instanceof Error ? error.message : "Unknown error";
+      console.warn("[demo] disclaimer check fallback", message);
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        requiresAcknowledgment: false,
+        trigger: null,
+        version: "local",
+        content: fallback.short,
+        methodologyContent: fallback.methodology,
+        triggerMessage: "",
+        error: message,
       }));
     }
   }, [userId, assessmentType]);
@@ -135,6 +170,15 @@ export function useDisclaimerState({
       checkDisclaimerState();
     }
   }, [autoCheck, checkDisclaimerState]);
+
+  useEffect(() => {
+    return () => {
+      if (checkTimeoutRef.current) {
+        window.clearTimeout(checkTimeoutRef.current);
+        checkTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     ...state,

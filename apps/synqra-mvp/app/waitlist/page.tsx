@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useRef, useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -21,12 +21,22 @@ export default function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitTimeoutRef = useRef<number | null>(null);
   // Social proof count removed per Design Constitution
 
   // Client-side email validation
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
+
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        window.clearTimeout(submitTimeoutRef.current);
+        submitTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,8 +50,17 @@ export default function WaitlistPage() {
     }
 
     setLoading(true);
+    console.info('[demo] waitlist submit start');
 
     try {
+      const controller = new AbortController();
+      if (submitTimeoutRef.current) {
+        window.clearTimeout(submitTimeoutRef.current);
+      }
+      submitTimeoutRef.current = window.setTimeout(() => {
+        controller.abort();
+      }, 8000);
+
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,24 +68,53 @@ export default function WaitlistPage() {
           email: cleanEmail, 
           full_name: fullName.trim() || null
         }),
+        signal: controller.signal,
       });
 
-      const data = await res.json();
+      if (submitTimeoutRef.current) {
+        window.clearTimeout(submitTimeoutRef.current);
+        submitTimeoutRef.current = null;
+      }
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
 
       if (!res.ok) {
         // Handle specific error cases
-        if (data.error === 'already_registered') {
+        if (data?.error === 'already_registered') {
           setError('You\'re already on the list! Check your email for updates.');
           return;
         }
         // Prefer server-provided message when available (keeps UX human-friendly)
-        throw new Error(data.message || data.error || 'Something went wrong');
+        throw new Error(data?.message || data?.error || 'Something went wrong');
       }
 
       // Success - redirect to success page
-      router.push('/waitlist/success');
+      console.info('[demo] waitlist submit success');
+      try {
+        router.push('/waitlist/success');
+      } catch {
+        window.location.href = '/waitlist/success';
+      }
+      window.setTimeout(() => {
+        if (window.location.pathname !== '/waitlist/success') {
+          window.location.href = '/waitlist/success';
+        }
+      }, 1200);
 
     } catch (err: any) {
+      if (submitTimeoutRef.current) {
+        window.clearTimeout(submitTimeoutRef.current);
+        submitTimeoutRef.current = null;
+      }
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Unable to join waitlist. Please try again.');
+        return;
+      }
       // Avoid Next.js dev overlay noise for expected user-facing errors
       if (process.env.NODE_ENV !== "production") {
         console.warn('[Waitlist] Submit error:', err);

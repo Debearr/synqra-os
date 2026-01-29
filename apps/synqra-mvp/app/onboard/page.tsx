@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadZone } from "@/components/pilot/UploadZone";
 import {
@@ -37,22 +37,39 @@ export default function OnboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const extractTimeoutRef = useRef<number | null>(null);
+  const confirmTimeoutRef = useRef<number | null>(null);
 
   const handleExtract = async ({ link, file }: ExtractPayload) => {
     setIsLoading(true);
     setStatusNote(null);
     setError(null);
     setConfirmError(null);
+    console.info("[demo] onboard extract start");
 
     const formData = new FormData();
     if (link) formData.append("link", link);
     if (file) formData.append("file", file);
 
     try {
+      const controller = new AbortController();
+      if (extractTimeoutRef.current) {
+        window.clearTimeout(extractTimeoutRef.current);
+      }
+      extractTimeoutRef.current = window.setTimeout(() => {
+        controller.abort();
+      }, 8000);
+
       const response = await fetch("/api/onboard/extract", {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
+
+      if (extractTimeoutRef.current) {
+        window.clearTimeout(extractTimeoutRef.current);
+        extractTimeoutRef.current = null;
+      }
 
       if (!response.ok) {
         const message = await safeErrorMessage(response);
@@ -73,8 +90,29 @@ export default function OnboardPage() {
       }
 
       setProfile(normalized);
-      setStatusNote("Extractor responded. Edit anything; this is your draft.");
+      const confidence =
+        payload && typeof payload === "object" && typeof (payload as any).confidence === "number"
+          ? (payload as any).confidence
+          : null;
+      if (confidence !== null && confidence < 0.5) {
+        setStatusNote("Limited signal extracted. Please review.");
+      } else {
+        setStatusNote("Extractor responded. Edit anything; this is your draft.");
+      }
+      console.info("[demo] onboard extract complete", {
+        confidence,
+        hasProfile: true,
+      });
     } catch (err) {
+      if (extractTimeoutRef.current) {
+        window.clearTimeout(extractTimeoutRef.current);
+        extractTimeoutRef.current = null;
+      }
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("We could not reach the extractor. Please retry.");
+        setProfile(null);
+        return;
+      }
       console.error("Extractor failed", err);
       setError("We could not reach the extractor. Please retry.");
       setProfile(null);
@@ -95,13 +133,28 @@ export default function OnboardPage() {
     setIsConfirming(true);
     setConfirmError(null);
     setStatusNote(null);
+    console.info("[demo] onboard confirm start");
 
     try {
+      const controller = new AbortController();
+      if (confirmTimeoutRef.current) {
+        window.clearTimeout(confirmTimeoutRef.current);
+      }
+      confirmTimeoutRef.current = window.setTimeout(() => {
+        controller.abort();
+      }, 8000);
+
       const response = await fetch("/api/onboard/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile }),
+        signal: controller.signal,
       });
+
+      if (confirmTimeoutRef.current) {
+        window.clearTimeout(confirmTimeoutRef.current);
+        confirmTimeoutRef.current = null;
+      }
 
       if (!response.ok) {
         const message = await safeErrorMessage(response);
@@ -110,8 +163,18 @@ export default function OnboardPage() {
         return;
       }
 
+      console.info("[demo] onboard confirm complete");
       router.push("/");
     } catch (err) {
+      if (confirmTimeoutRef.current) {
+        window.clearTimeout(confirmTimeoutRef.current);
+        confirmTimeoutRef.current = null;
+      }
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setConfirmError("Network issue while confirming. Please retry.");
+        setIsConfirming(false);
+        return;
+      }
       console.error("Confirm failed", err);
       setConfirmError("Network issue while confirming. Please retry.");
       setIsConfirming(false);
