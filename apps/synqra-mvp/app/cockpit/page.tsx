@@ -255,45 +255,45 @@ export default function CockpitPage() {
                     {!isSidebarCollapsed && <h1 className="text-xl font-light tracking-tight text-white uppercase select-none">Synqra</h1>}
                     <button
                         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        className="p-1.5 hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+                        className="p-3 hover:bg-white/5 text-white/40 hover:text-white transition-colors flex items-center justify-center min-w-[44px] min-h-[44px]"
                         title={isSidebarCollapsed ? "Expand" : "Collapse"}
                     >
-                        {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                        {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
                     </button>
                 </div>
 
                 <nav className={`space-y-10 ${isSidebarCollapsed ? 'px-2' : ''}`} role="navigation">
                     <div>
-                        {!isSidebarCollapsed && <h4 className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/30 mb-4 ml-4">System</h4>}
+                        {!isSidebarCollapsed && <h4 className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/30 mb-4 ml-4">Monitor</h4>}
                         <div className="space-y-1">
-                            <SidebarItem icon={Activity} label="Current activity" isActive isCollapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={Bell} label="Action required" isCollapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={Database} label="Workspaces" isCollapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={ShieldCheck} label="History" isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Activity} label="Activity" isActive isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Bell} label="Actions" isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Database} label="Inventory" isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={ShieldCheck} label="Logs" isCollapsed={isSidebarCollapsed} />
                         </div>
                     </div>
 
                     <div>
-                        {!isSidebarCollapsed && <h4 className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/30 mb-4 ml-4">Storage</h4>}
+                        {!isSidebarCollapsed && <h4 className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/30 mb-4 ml-4">Resources</h4>}
                         <div className="space-y-1">
                             <SidebarItem icon={ChevronRight} label="Schedules" isCollapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={ChevronRight} label="Drafts" isCollapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={ChevronRight} label="Library" isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={ChevronRight} label="Outputs" isCollapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={ChevronRight} label="Archive" isCollapsed={isSidebarCollapsed} />
                         </div>
                     </div>
                 </nav>
 
                 <div className="mt-auto pt-8 border-t border-white/5">
                     <div className={`flex items-center gap-3 px-8 ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}>
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#00D9A3]" />
-                        {!isSidebarCollapsed && <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">System active</span>}
+                        <div className="h-2 w-2 rounded-full bg-[#00D9A3] shadow-[0_0_8px_#00D9A3]" />
+                        {!isSidebarCollapsed && <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">System Active</span>}
                     </div>
                 </div>
             </aside>
 
             {/* CENTER PANE: WORK AREA */}
-            <main className="flex-1 flex flex-col min-w-0 bg-[#000000] pt-2">
-                <header className="h-20 border-b border-white/5 flex items-center justify-between px-10 bg-[#000000] sticky top-0 z-50">
+            <main className="flex-1 flex flex-col min-w-0 bg-[#000000] overflow-hidden">
+                <header className="h-16 lg:h-20 border-b border-white/5 flex items-center justify-between px-6 lg:px-10 bg-[#000000] sticky top-0 z-50">
                     <div className="flex-1 max-w-2xl">
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-[#00D9A3] transition-colors">
@@ -301,55 +301,55 @@ export default function CockpitPage() {
                             </div>
                             <input
                                 type="text"
-                                placeholder="Search workspaces and actions..."
-                                className="w-full bg-white/5 border border-white/5 py-2.5 pl-12 pr-6 text-sm outline-none focus:border-[#00D9A3]/30 transition-all font-sans placeholder:text-white/20"
+                                placeholder="Search inventory and actions..."
+                                className="w-full bg-white/5 border border-white/5 py-2.5 lg:py-3 pl-12 pr-6 text-sm lg:text-base outline-none focus:border-[#00D9A3]/30 transition-all font-sans placeholder:text-white/20 rounded-md"
                             />
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6 ml-8">
-                        <div className="flex items-center gap-4 border-r border-white/5 pr-6">
+                    <div className="flex items-center gap-4 lg:gap-6 ml-4 lg:ml-8">
+                        <div className="hidden md:flex items-center gap-4 border-r border-white/5 pr-6">
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-white/20" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
                                     <span className="text-[10px] uppercase tracking-widest text-white/20">Groq</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-[#00D9A3] animate-pulse" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#00D9A3] animate-pulse" />
                                     <span className="text-[10px] uppercase tracking-widest text-[#00D9A3]">Claude</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-white/20" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
                                     <span className="text-[10px] uppercase tracking-widest text-white/20">Google</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest">ADMIN_01</div>
-                            <div className="w-8 h-8 rounded-full bg-[#00D9A3]/10 border border-[#00D9A3]/20 flex items-center justify-center text-[#00D9A3] font-bold text-[10px]">JD</div>
+                        <div className="flex items-center gap-3">
+                            <div className="hidden sm:block text-[10px] font-mono text-white/30 uppercase tracking-widest">ADMIN_01</div>
+                            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-[#00D9A3]/10 border border-[#00D9A3]/20 flex items-center justify-center text-[#00D9A3] font-bold text-[11px] lg:text-[12px] select-none">JD</div>
                         </div>
                     </div>
                 </header>
 
-                <div className="flex-1 p-10 overflow-y-auto">
-                    <div className="max-w-6xl mx-auto space-y-12">
+                <div className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
+                    <div className="max-w-6xl mx-auto space-y-10 lg:space-y-12 pb-24 lg:pb-0">
 
                         {/* WORK AREA CONTROLS */}
-                        <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                            <div className="flex items-center gap-8">
-                                <h3 className="text-[18px] font-light tracking-tight text-[#00D9A3]">System activity</h3>
-                                <div className="flex items-center gap-2 bg-white/5 rounded-md p-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-6 gap-4">
+                            <div className="flex items-center gap-6 lg:gap-8 overflow-x-auto no-scrollbar">
+                                <h3 className="text-[16px] lg:text-[18px] font-light tracking-tight text-[#00D9A3] whitespace-nowrap">Activity</h3>
+                                <div className="flex items-center gap-2 bg-white/5 rounded-md p-1 shrink-0">
                                     {['1H', '24H', '7D'].map((t) => (
-                                        <button key={t} className={`px-3 py-1 text-[10px] font-bold uppercase transition-all rounded ${t === '1H' ? 'bg-[#00D9A3] text-black' : 'text-white/40 hover:text-white'}`}>
+                                        <button key={t} className={`px-3 py-1.5 lg:px-4 text-[10px] font-bold uppercase transition-all rounded min-w-[32px] ${t === '1H' ? 'bg-[#00D9A3] text-black' : 'text-white/40 hover:text-white'}`}>
                                             {t}
                                         </button>
                                     ))}
                                 </div>
-                                <div className="flex items-center gap-2 text-white/40">
+                                <div className="flex items-center gap-2 text-white/40 shrink-0">
                                     <Filter size={14} />
                                     <select
-                                        className="bg-transparent text-[10px] font-bold uppercase outline-none cursor-pointer hover:text-white transition-colors"
+                                        className="bg-transparent text-[10px] font-bold uppercase outline-none cursor-pointer hover:text-white transition-colors py-2"
                                         onChange={(e) => setFilterStatus(e.target.value as any)}
                                         title="Filter by status"
                                     >
@@ -363,43 +363,43 @@ export default function CockpitPage() {
 
                             <div className="flex items-center gap-3">
                                 {activeActionsCount > 0 && (
-                                    <div className="px-3 py-1 bg-[#FF4444]/10 border border-[#FF4444]/20 flex items-center gap-2 rounded">
+                                    <div className="px-3 py-1.5 bg-[#FF4444]/10 border border-[#FF4444]/20 flex items-center gap-2 rounded">
                                         <span className="w-1.5 h-1.5 bg-[#FF4444] animate-pulse rounded-full" />
-                                        <span className="text-[10px] font-bold text-[#FF4444] uppercase">{activeActionsCount} actions required</span>
+                                        <span className="text-[10px] font-bold text-[#FF4444] uppercase">{activeActionsCount} pending actions</span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* CHART SECTION */}
-                        <section aria-label="System activity chart">
-                            <div className="h-[320px] flex flex-col relative">
-                                <div className="flex justify-between items-start mb-10">
-                                    <div className="flex gap-12">
+                        <section aria-label="System activity timeline">
+                            <div className="h-[280px] lg:h-[320px] flex flex-col relative select-none">
+                                <div className="flex justify-between items-start mb-8 lg:mb-10 overflow-x-auto no-scrollbar">
+                                    <div className="flex gap-8 lg:gap-12 shrink-0">
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">System actions</span>
+                                            <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Throughput</span>
                                             <div className="flex items-baseline gap-2">
-                                                <span className="font-mono text-[24px] font-light text-white">4.2k</span>
-                                                <span className="text-[#00D9A3] text-[12px] font-medium">↑ 12%</span>
+                                                <span className="font-mono text-[20px] lg:text-[24px] font-light text-white">4.2k</span>
+                                                <span className="text-[#00D9A3] text-[11px] lg:text-[12px] font-medium">↑ 12%</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Avg. processing cost</span>
+                                            <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Cost Efficiency</span>
                                             <div className="flex items-baseline gap-2">
-                                                <span className="font-mono text-[24px] font-light text-white">$.0024</span>
-                                                <span className="text-[#00D9A3] text-[12px] font-medium">↓ 4%</span>
+                                                <span className="font-mono text-[20px] lg:text-[24px] font-light text-white">$.0024</span>
+                                                <span className="text-[#00D9A3] text-[11px] lg:text-[12px] font-medium">↓ 4%</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="relative flex-1 w-full group">
+                                <div className="relative flex-1 w-full group overflow-hidden">
                                     <AnimatePresence>
                                         {hoveredPoint && (
                                             <div
-                                                className="absolute top-[-30px] left-1/2 -translate-x-1/2 bg-[#000] border border-white/10 px-3 py-1 z-50 pointer-events-none"
+                                                className="absolute top-[-30px] left-1/2 -translate-x-1/2 bg-[#000] border border-white/10 px-3 py-1.5 z-50 pointer-events-none rounded shadow-2xl"
                                             >
-                                                <span className="text-[10px] font-mono text-white/60 tracking-wider uppercase">
+                                                <span className="text-[10px] font-mono text-white/80 tracking-wider uppercase">
                                                     {hoveredPoint.timestamp} • {hoveredPoint.linkedId || 'System'}
                                                 </span>
                                             </div>
@@ -412,7 +412,7 @@ export default function CockpitPage() {
                                         ))}
 
                                         {['60m ago', '45m', '30m', '15m', 'Now'].map((time, i) => (
-                                            <text key={time} x={i * 200} y="195" className="text-[10px] fill-white/10 font-sans uppercase tracking-[0.2em]">{time}</text>
+                                            <text key={time} x={i * 200} y="195" className="text-[9px] lg:text-[10px] fill-white/10 font-sans uppercase tracking-[0.2em]">{time}</text>
                                         ))}
 
                                         {mounted && bars.map((bar, i) => {
@@ -432,7 +432,7 @@ export default function CockpitPage() {
                                                     style={{
                                                         opacity: isFilteredOut ? 0.05 : 1,
                                                         cursor: 'pointer',
-                                                        filter: isSelected ? 'drop-shadow(0 0 8px #00D9A3)' : 'none'
+                                                        filter: isSelected ? 'drop-shadow(0 0 10px #00D9A3)' : 'none'
                                                     }}
                                                     onClick={() => bar.linkedId && handleEventSelect(bar.linkedId)}
                                                     onMouseEnter={() => setHoveredPoint(bar)}
@@ -445,33 +445,39 @@ export default function CockpitPage() {
                             </div>
                         </section>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-white/[0.02] border border-white/5 p-6 rounded-lg space-y-4 shadow-sm hover:border-white/10 transition-all">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                            <div className="bg-white/[0.02] border border-white/5 p-5 lg:p-6 rounded-lg space-y-4 shadow-sm hover:border-white/10 transition-all">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="text-[12px] font-medium text-white/40 uppercase tracking-widest">Active workspaces</h4>
+                                    <h4 className="text-[11px] lg:text-[12px] font-medium text-white/40 uppercase tracking-widest">Active workspaces</h4>
                                     <ChevronRight size={14} className="text-white/20" />
                                 </div>
-                                <div className="space-y-3">
-                                    {['Marketing Intelligence', 'Competitor Analysis'].map(ws => (
-                                        <div key={ws} className="flex items-center justify-between group cursor-pointer">
-                                            <span className="text-[14px] text-white/80 group-hover:text-white transition-colors">{ws}</span>
-                                            <span className="text-[11px] font-mono text-[#00D9A3]">ACTIVE</span>
+                                <div className="space-y-4">
+                                    {[
+                                        { name: 'Marketing Distribution', status: 'ACTIVE' },
+                                        { name: 'Competitive Analysis', status: 'ACTIVE' }
+                                    ].map(ws => (
+                                        <div key={ws.name} className="flex items-center justify-between group cursor-pointer py-1">
+                                            <span className="text-[13px] lg:text-[14px] text-white/80 group-hover:text-white transition-colors">{ws.name}</span>
+                                            <span className="text-[10px] font-mono text-[#00D9A3] tracking-wider">{ws.status}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="bg-white/[0.02] border border-white/5 p-6 rounded-lg space-y-4 shadow-sm hover:border-white/10 transition-all">
+                            <div className="bg-white/[0.02] border border-white/5 p-5 lg:p-6 rounded-lg space-y-4 shadow-sm hover:border-white/10 transition-all">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="text-[12px] font-medium text-white/40 uppercase tracking-widest">Active runs</h4>
+                                    <h4 className="text-[11px] lg:text-[12px] font-medium text-white/40 uppercase tracking-widest">Active runs</h4>
                                     <ChevronRight size={14} className="text-white/20" />
                                 </div>
-                                <div className="space-y-3">
-                                    {['Hourly Brief Generation', 'Social Media Scraping'].map(run => (
-                                        <div key={run} className="flex items-center justify-between group cursor-pointer">
-                                            <span className="text-[14px] text-white/80 group-hover:text-white transition-colors">{run}</span>
+                                <div className="space-y-4">
+                                    {[
+                                        { name: 'Portfolio Synthesis', status: 'In progress' },
+                                        { name: 'Autonomous Scraping', status: 'In progress' }
+                                    ].map(run => (
+                                        <div key={run.name} className="flex items-center justify-between group cursor-pointer py-1">
+                                            <span className="text-[13px] lg:text-[14px] text-white/80 group-hover:text-white transition-colors">{run.name}</span>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-1 h-1 bg-[#00D9A3] animate-pulse rounded-full" />
-                                                <span className="text-[11px] font-mono text-white/40 italic">In progress</span>
+                                                <div className="w-1.5 h-1.5 bg-[#00D9A3] animate-pulse rounded-full" />
+                                                <span className="text-[10px] font-mono text-white/40 italic whitespace-nowrap">{run.status}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -480,13 +486,33 @@ export default function CockpitPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* MOBILE NAVIGATION BAR */}
+                <nav className="lg:hidden h-16 border-t border-white/5 bg-[#000000] flex items-center justify-around px-4 sticky bottom-0 z-50">
+                    <button className="flex flex-col items-center gap-1 text-[#00D9A3] min-w-[44px]">
+                        <Activity size={20} />
+                        <span className="text-[9px] uppercase tracking-wider font-bold">Activity</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-1 text-white/30 min-w-[44px]">
+                        <Bell size={20} />
+                        <span className="text-[9px] uppercase tracking-wider">Actions</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-1 text-white/30 min-w-[44px]">
+                        <Database size={20} />
+                        <span className="text-[9px] uppercase tracking-wider">Inventory</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-1 text-white/30 min-w-[44px]">
+                        <SearchIcon size={20} />
+                        <span className="text-[9px] uppercase tracking-wider">Search</span>
+                    </button>
+                </nav>
             </main>
 
             {/* RIGHT PANE: SYSTEM ACTIONS */}
             <aside className="hidden xl:flex w-[400px] h-full border-l border-white/5 bg-[#000000] flex-col p-8 pt-24 overflow-hidden shrink-0">
                 <div className="flex justify-between items-center mb-10">
                     <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">Recent actions</h3>
-                    <button className="text-[9px] font-bold uppercase text-white/40 hover:text-[#00D9A3] transition-colors">Dismiss resolved</button>
+                    <button className="text-[9px] font-bold uppercase text-white/40 hover:text-[#00D9A3] transition-colors min-h-[32px]">Clear resolved</button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
@@ -503,45 +529,46 @@ export default function CockpitPage() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1, scale: isSelected ? 1.02 : 1 }}
                                 className={`group p-5 rounded-md transition-all duration-300 border
-                                    ${isSelected ? 'bg-white/[0.04] border-[#00D9A3]/30 shadow-lg' : 'bg-transparent border-white/5 hover:border-white/10'}`}
+                                    ${isSelected ? 'bg-white/[0.04] border-[#00D9A3]/30 shadow-lg' : 'bg-transparent border-white/5 hover:border-white/10'}
+                                    cursor-pointer`}
                                 onClick={() => setSelectedId(req.id)}
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="font-mono text-[18px] leading-none" style={{ color: statusColor }}>{icon}</div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="font-mono text-[18px] leading-none shrink-0" style={{ color: statusColor }}>{icon}</div>
                                         <div>
-                                            <div className="text-[13px] font-medium text-white/90 leading-tight">{req.label}</div>
+                                            <div className="text-[13px] font-medium text-white/95 leading-tight">{req.label}</div>
                                             <div className="text-[10px] font-mono text-white/30 mt-1 uppercase tracking-tighter">{req.timestamp} • {req.id}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#00D9A3] shadow-[0_0_8px_#00D9A3]" />}
+                                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#00D9A3] shadow-[0_0_10px_#00D9A3]" />}
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="grid grid-cols-2 gap-6 mb-5">
                                     <div>
-                                        <span className="text-[9px] uppercase tracking-widest text-white/20 block mb-1">Cause</span>
-                                        <span className="text-[11px] text-white/60 leading-tight block">{req.cause}</span>
+                                        <span className="text-[9px] uppercase tracking-[0.1em] text-white/20 block mb-1">Trigger</span>
+                                        <span className="text-[11px] text-white/60 leading-snug block">{req.cause}</span>
                                     </div>
                                     <div>
-                                        <span className="text-[9px] uppercase tracking-widest text-white/20 block mb-1">Outcome</span>
-                                        <span className="text-[11px] text-white/60 leading-tight block">{req.outcome}</span>
+                                        <span className="text-[9px] uppercase tracking-[0.1em] text-white/20 block mb-1">Outcome</span>
+                                        <span className="text-[11px] text-white/60 leading-snug block">{req.outcome}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                <div className="flex items-center justify-between pt-4 border-t border-white/5 gap-4">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); resolveAction(req.id); }}
-                                        className="text-[10px] font-bold uppercase text-white/20 hover:text-white transition-colors"
+                                        className="text-[10px] font-bold uppercase text-white/25 hover:text-white transition-colors min-h-[32px] shrink-0"
                                     >
                                         Mark handled
                                     </button>
-                                    <div className="flex items-center gap-4">
-                                        <button className="text-[10px] font-bold uppercase text-white/40 hover:text-white transition-colors">
+                                    <div className="flex items-center gap-5">
+                                        <button className="text-[10px] font-bold uppercase text-white/40 hover:text-white transition-colors px-2 py-1">
                                             View
                                         </button>
-                                        <button className="text-[10px] font-bold uppercase text-[#00D9A3] hover:brightness-110 transition-all">
+                                        <button className="text-[10px] font-bold uppercase text-[#00D9A3] hover:brightness-110 transition-all bg-[#00D9A3]/5 px-3 py-1.5 rounded">
                                             Open
                                         </button>
                                     </div>
@@ -553,8 +580,12 @@ export default function CockpitPage() {
             </aside>
 
             <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 2px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
+                .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
         </div>
     );
