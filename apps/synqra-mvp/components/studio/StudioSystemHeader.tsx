@@ -7,15 +7,9 @@ export default function StudioSystemHeader() {
           SYNQRA
         </div>
 
-        {/* Center */}
-        <div className="absolute left-1/2 transform -translate-x-1/2 text-xs text-white/70">
-          NØID Intelligence Platform v1.0
-        </div>
-
         {/* Right */}
-        <div className="flex items-center gap-3 text-xs text-white/80">
-          <div className="h-2 w-2 rounded-full bg-green-500" />
-          <span>SYSTEM ACTIVE | Operator: DEBEAR01</span>
+        <div className="text-xs text-white/70">
+          DEBEAR01
         </div>
       </div>
     </div>

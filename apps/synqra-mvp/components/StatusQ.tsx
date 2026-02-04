@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { motion, useAnimationControls, useMotionValue } from "framer-motion";
+import { useMemo } from "react";
 import clsx from "clsx";
 
 type Status = "idle" | "generating" | "complete" | "error";
@@ -16,8 +15,6 @@ type StatusQProps = {
   size?: 16 | 20 | 24 | 28 | 32;
 };
 
-const TEXTURE_HEIGHT = 64; // used for deterministic looping / snap-to-rest
-
 export function StatusQ({
   status,
   label,
@@ -26,10 +23,6 @@ export function StatusQ({
   placement = "bottom-right",
   size = 24,
 }: StatusQProps) {
-  // Motion values for the texture translateY (only moving layer)
-  const y = useMotionValue(0);
-  const controls = useAnimationControls();
-
   const containerClasses = useMemo(() => {
     const pos = fixed
       ? {
@@ -41,67 +34,18 @@ export function StatusQ({
       : "";
     return clsx(
       "pointer-events-none select-none",
-      "rounded-2xl border border-noid-silver/20 bg-noid-black/80 backdrop-blur",
-      "px-3 py-2 flex items-center gap-3 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]",
+      "rounded-2xl border border-white/10 bg-noid-black",
+      "px-3 py-2 flex items-center gap-3",
       pos,
       className
     );
   }, [placement, fixed, className]);
 
-  // Interruptible motion: stop any in-flight animation whenever status changes
-  useEffect(() => {
-    controls.stop();
-
-    // Determine target motion based on status
-    if (status === "idle") {
-      controls.start({
-        y: [0, -4, 0],
-        transition: {
-          // slow drift; "spring" feel without timers; interruptible via controls.stop()
-          duration: 8,
-          ease: "easeInOut",
-          repeat: Infinity,
-        },
-      });
-    } else if (status === "generating") {
-      // Continuous vertical motion, seamless by looping over texture height
-      controls.start({
-        y: [0, -TEXTURE_HEIGHT],
-        transition: {
-          duration: 2,
-          ease: "linear",
-          repeat: Infinity,
-          repeatType: "loop",
-        },
-      });
-    } else if (status === "complete") {
-      // Snap to nearest rest position and freeze
-      const current = y.get();
-      const snapped = Math.round(current / TEXTURE_HEIGHT) * TEXTURE_HEIGHT;
-      controls.start({
-        y: snapped,
-        transition: { type: "spring", stiffness: 420, damping: 38, mass: 0.7 },
-      });
-    } else if (status === "error") {
-      // Snap with subtle negative offset then freeze
-      const current = y.get();
-      const snapped = Math.round(current / TEXTURE_HEIGHT) * TEXTURE_HEIGHT - 4;
-      controls.start({
-        y: snapped,
-        transition: { type: "spring", stiffness: 420, damping: 40, mass: 0.75 },
-      });
-    }
-  }, [status, controls, y]);
-
   return (
     <div className={containerClasses} aria-live="polite">
       <div className="relative h-10 w-10 shrink-0">
         {/* Texture layer: always mounted to avoid flicker; animated via translateY */}
-        <motion.div
-          className="absolute inset-0 overflow-hidden"
-          animate={controls}
-          style={{ y }}
-        >
+        <div className="absolute inset-0 overflow-hidden">
           <div
             className="h-[200%] w-full"
             style={{
@@ -120,7 +64,7 @@ export function StatusQ({
               backgroundColor: "#0a0a0a",
             }}
           />
-        </motion.div>
+        </div>
 
         {/* Fixed Q silhouette */}
         <div className="absolute inset-0 flex items-center justify-center">
@@ -138,7 +82,7 @@ export function StatusQ({
 
       {label ? (
         <div className="flex flex-col leading-tight">
-          <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-noid-silver/70">
+          <span className="text-xs font-mono uppercase tracking-[0.12em] text-noid-silver/70">
             Status
           </span>
           <span className="text-sm font-mono uppercase tracking-[0.12em] text-white">

@@ -76,7 +76,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
           ? "NETWORK ERROR"
           : "RETRY";
       default:
-        return "INITIALIZE";
+        return "ENTER";
     }
   };
 
@@ -106,15 +106,15 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
         <div className="relative p-6">
           <div className="mb-6">
             <div className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-noid-silver/70">
-              Command Center
+              Synqra Frame
             </div>
-            <div className="mt-2 text-sm text-white/70">Enter your prompt to initialize.</div>
+            <div className="mt-2 text-sm text-white/70">Enter prompt to initialize.</div>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="mb-2 block font-mono text-[0.72rem] uppercase tracking-[0.16em] text-noid-silver/70">
-                Input
+                Prompt
               </label>
               <textarea
                 value={code}
@@ -129,7 +129,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
                 }}
                 spellCheck={false}
                 className="w-full rounded-lg border border-noid-silver/35 bg-noid-black/60 backdrop-blur-md px-4 py-3 font-mono text-sm tracking-[0.08em] text-white outline-none focus:ring-2 focus:ring-[var(--noid-teal)]"
-                placeholder="Enter your prompt here..."
+                placeholder="Enter prompt..."
                 rows={4}
                 disabled={isProcessing}
               />
@@ -137,7 +137,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
 
             <div className="flex items-center justify-between">
               <div className="text-xs text-noid-silver/70">
-                {isValid ? "Ready to initialize" : "Enter a prompt"}
+                {isValid ? "Ready to proceed" : "Enter a prompt"}
               </div>
 
               <motion.button
