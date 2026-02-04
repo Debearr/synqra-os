@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import aiRouterConfig from "@/config/ai-router.json";
 import { callOpenRouter } from "@/lib/providers/openrouter";
@@ -8,13 +8,16 @@ import { enforceCouncilRateLimit } from "@/lib/middleware/rate-limit";
 import { calculateCostUsd } from "@/lib/utils/cost-calculator";
 import { validateOutput } from "@/lib/utils/output-validator";
 
-type ProviderKey = "openrouter" | "gemini";
+export type ProviderKey = "openrouter" | "gemini";
 
 interface AiRouterRequest {
   task: string;
   prompt: string;
   userId?: string;
   metadata?: Record<string, unknown>;
+  cacheKey?: string;
+  skipCache?: boolean;
+  forceRefresh?: boolean;
 }
 
 interface AiUsageTotals {
@@ -31,6 +34,7 @@ interface AiRouterResponse {
   costUsd: number;
   cached: boolean;
   budget: BudgetStatus;
+  traceId: string;
 }
 
 interface BudgetStatus {
@@ -79,8 +83,9 @@ function getPrismaClient() {
   return prismaClient;
 }
 
-function hashCacheKey(task: string, prompt: string) {
-  return createHash("sha256").update(`${task}:${prompt}`).digest("hex");
+function hashCacheKey(task: string, prompt: string, brand?: string) {
+  const scope = brand ? `${task}:${brand}` : task;
+  return createHash("sha256").update(`${scope}:${prompt}`).digest("hex");
 }
 
 function getOpenRouterKey() {
@@ -113,6 +118,24 @@ function getBudgetState(usedUsd: number, alertUsd: number, hardStopUsd: number) 
     return "ALERT";
   }
   return "NORMAL";
+}
+
+export function resolveRouting(task: string): {
+  provider: ProviderKey;
+  model: string;
+  isCouncil: boolean;
+} {
+  const councilTask = aiRouterConfig.routing.councilTask;
+  const isCouncil = task === councilTask;
+  const provider: ProviderKey = isCouncil
+    ? (aiRouterConfig.routing.councilProvider as ProviderKey)
+    : (aiRouterConfig.routing.defaultProvider as ProviderKey);
+
+  return {
+    provider,
+    model: aiRouterConfig.providers[provider].model,
+    isCouncil,
+  };
 }
 
 export async function getBudgetStatus(): Promise<BudgetStatus> {
@@ -227,10 +250,24 @@ export async function routeAiRequest(
     throw new AiRouterError("task and prompt are required", 400, "INVALID_INPUT");
   }
 
-  const cacheKey = `ai:cache:${hashCacheKey(task, prompt)}`;
-  const cached = await getCachedResponse<AiRouterResponse>(cacheKey);
-  if (cached) {
-    return { ...cached, cached: true };
+  const metadata = request.metadata ?? {};
+  const brand = typeof metadata.brand === "string" ? metadata.brand : undefined;
+  const traceId =
+    typeof metadata.traceId === "string" && metadata.traceId.trim() !== ""
+      ? metadata.traceId
+      : `ai_${randomUUID()}`;
+  const traceDetails = { traceId };
+
+  const cacheKey = request.cacheKey
+    ? request.cacheKey.startsWith("ai:cache:")
+      ? request.cacheKey
+      : `ai:cache:${request.cacheKey}`
+    : `ai:cache:${hashCacheKey(task, prompt, brand)}`;
+  if (!request.forceRefresh && !request.skipCache) {
+    const cached = await getCachedResponse<AiRouterResponse>(cacheKey);
+    if (cached) {
+      return { ...cached, cached: true, traceId };
+    }
   }
 
   const budgetStatus = await getBudgetStatus();
@@ -239,35 +276,34 @@ export async function routeAiRequest(
       "Service temporarily unavailable due to budget limit",
       503,
       "BUDGET_HARD_STOP",
-      budgetStatus
+      { ...budgetStatus, ...traceDetails }
     );
   }
 
-  const councilTask = aiRouterConfig.routing.councilTask;
-  const isCouncil = task === councilTask;
-  const provider: ProviderKey = isCouncil
-    ? (aiRouterConfig.routing.councilProvider as ProviderKey)
-    : (aiRouterConfig.routing.defaultProvider as ProviderKey);
+  const routing = resolveRouting(task);
+  const { provider, isCouncil } = routing;
 
   if (isCouncil && provider !== "openrouter") {
     throw new AiRouterError(
       "Council tasks must use OpenRouter",
       400,
-      "INVALID_PROVIDER"
+      "INVALID_PROVIDER",
+      traceDetails
     );
   }
   if (!isCouncil && provider !== "gemini") {
     throw new AiRouterError(
       "Non-council tasks must use Gemini",
       400,
-      "INVALID_PROVIDER"
+      "INVALID_PROVIDER",
+      traceDetails
     );
   }
 
   let rateLimitDetails: RateLimitDetails | undefined;
   if (isCouncil) {
     if (!userId) {
-      throw new AiRouterError("userId is required for council tasks", 400, "MISSING_USER");
+      throw new AiRouterError("userId is required for council tasks", 400, "MISSING_USER", traceDetails);
     }
     const limitResult = await enforceCouncilRateLimit(
       userId,
@@ -283,12 +319,12 @@ export async function routeAiRequest(
         "Council rate limit exceeded",
         429,
         "RATE_LIMITED",
-        rateLimitDetails
+        { ...rateLimitDetails, ...traceDetails }
       );
     }
   }
 
-  const promptHash = hashCacheKey(task, prompt);
+  const promptHash = hashCacheKey(task, prompt, brand);
   let callResult;
 
   if (provider === "openrouter") {
@@ -312,7 +348,7 @@ export async function routeAiRequest(
 
   await logAiCall({
     provider,
-    model: aiRouterConfig.providers[provider].model,
+    model: routing.model,
     task,
     userId,
     promptHash,
@@ -322,7 +358,11 @@ export async function routeAiRequest(
   });
 
   try {
-    validateOutput(callResult.text);
+    const validation = validateOutput(callResult.text, {
+      brand: typeof brand === "string" ? (brand as "synqra" | "noid" | "aurafx") : undefined,
+      enforceBrand: Boolean(metadata.enforceBrand),
+    });
+    callResult.text = validation.processed ?? callResult.text;
   } catch (error) {
     throw new AiRouterError(
       "Output blocked by policy",
@@ -330,6 +370,7 @@ export async function routeAiRequest(
       "OUTPUT_BLOCKED",
       {
         reason: error instanceof Error ? error.message : "Blocked phrase detected",
+        ...traceDetails,
       }
     );
   }
@@ -348,14 +389,17 @@ export async function routeAiRequest(
   const response: AiRouterResponse = {
     text: callResult.text,
     provider,
-    model: aiRouterConfig.providers[provider].model,
+    model: routing.model,
     usage: callResult.usage,
     costUsd,
     cached: false,
     budget: updatedBudget,
+    traceId,
   };
 
-  await setCachedResponse(cacheKey, response, aiRouterConfig.cache.ttlSeconds);
+  if (!request.skipCache) {
+    await setCachedResponse(cacheKey, response, aiRouterConfig.cache.ttlSeconds);
+  }
   return response;
 }
 

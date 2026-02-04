@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { initializationStore } from "@/lib/workspace/initialization-store";
 import BarcodeHorizon from "@/components/portal/barcode-horizon";
-import TelemetryDeck from "@/components/portal/telemetry-deck";
 import StatusQ from "@/components/StatusQ";
 
 const CODE_REGEX = /^[A-Z0-9]{6,12}$/;
@@ -19,7 +18,6 @@ function EntranceInner() {
   const [touched, setTouched] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "accepted" | "denied">("idle");
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
   const [showRequestAccess, setShowRequestAccess] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [oauthStatus, setOauthStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -27,12 +25,13 @@ function EntranceInner() {
 
   const normalized = useMemo(() => code.trim().toUpperCase(), [code]);
   const isValid = useMemo(() => CODE_REGEX.test(normalized), [normalized]);
-  const showTelemetry = scrollY > 100;
 
+  // Dev-only: Verify Google Maps API key is loaded
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (process.env.NODE_ENV === "development") {
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      console.log("[DEV] Google Maps API Key check:", apiKey ? `✅ Loaded (${apiKey.substring(0, 10)}...)` : "❌ Missing");
+    }
   }, []);
 
   useEffect(() => {
@@ -139,7 +138,7 @@ function EntranceInner() {
   };
 
   return (
-    <main className="min-h-screen bg-noid-black text-white">
+    <main className="relative min-h-screen overflow-hidden bg-noid-black text-white">
       <StatusQ status={status === "loading" ? "generating" : status === "accepted" ? "complete" : status === "denied" ? "error" : "idle"} label={status === "loading" ? "Processing" : status === "accepted" ? "Accepted" : status === "denied" ? "Denied" : "Idle"} />
       <div className="mx-auto max-w-5xl px-6">
         <div className="h-[120px]" />
@@ -155,31 +154,18 @@ function EntranceInner() {
         <div className="h-[80px]" />
 
         <motion.div
-          initial={{ opacity: 1, scale: 1 }}
-          animate={{
-            opacity: showTelemetry ? 0 : 1,
-            scale: showTelemetry ? 0.95 : 1,
-          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative overflow-hidden rounded-[32px] border border-noid-silver/35 bg-noid-black/35 backdrop-blur-xl"
+          className="relative overflow-hidden rounded-[32px] border border-noid-silver/35 bg-noid-black/60 backdrop-blur-xl"
         >
-          <div className="pointer-events-none absolute inset-0">
-            <Image
-              src="/assets/atmosphere-glow.jpg"
-              alt=""
-              fill
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              style={{ objectFit: "cover", opacity: 0.35 }}
-            />
-          </div>
-
           <div className="relative p-8 md:p-10">
             <div className="flex items-center justify-between gap-6">
               <div>
                 <div className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-noid-silver/70">
-                  Command Center
+                  Synqra Frame
                 </div>
-                <div className="mt-2 text-sm text-white/70">Enter barcode identity.</div>
+                <div className="mt-2 text-sm text-white/70">Enter access code.</div>
               </div>
 
               {status !== "idle" && !isTransitioning ? (
@@ -195,7 +181,7 @@ function EntranceInner() {
 
             <div className="mt-10 grid gap-4">
               <label className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-noid-silver/70">
-                Identity Code
+                Access Code
               </label>
 
               <input
@@ -212,7 +198,7 @@ function EntranceInner() {
               />
 
               <div className="flex items-center justify-between gap-4">
-                <div className="text-xs text-noid-silver/70">Format: A–Z / 0–9, 6–12 chars</div>
+                <div className="text-xs text-noid-silver/70">Format: A–Z / 0–9, 6–12 characters</div>
 
                 <button
                   type="button"
@@ -220,7 +206,7 @@ function EntranceInner() {
                   disabled={isTransitioning || status === "loading" || !isValid}
                   className="rounded-full bg-noid-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-noid-black transition-opacity hover:opacity-95 active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--noid-teal)] disabled:opacity-50"
                 >
-                  {isTransitioning || status === "loading" ? "Processing" : "Initialize"}
+                  {isTransitioning || status === "loading" ? "Processing" : "Enter"}
                 </button>
               </div>
 
@@ -307,19 +293,6 @@ function EntranceInner() {
           </div>
         </motion.div>
 
-        <AnimatePresence>
-          {showTelemetry && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.4 }}
-            >
-              <TelemetryDeck />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="h-[160px]" />
       </div>
 
@@ -359,7 +332,7 @@ function EntranceInner() {
               )}
 
               <p className="mb-6 font-mono text-sm text-white/70">
-                Access to the Gated OS is restricted. Please request clearance to proceed.
+                Access to Synqra Frame is restricted. Request clearance to proceed.
               </p>
 
               <button

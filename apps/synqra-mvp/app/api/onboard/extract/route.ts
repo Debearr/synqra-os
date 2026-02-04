@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { routeSynqraAiRequest } from '@/lib/ai/adapters';
 
 type ExtractedProfile = {
   name: string;
@@ -17,10 +17,6 @@ type ExtractedProfile = {
   proofPoints: string[];
   confidence: number;
 };
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
 
 export async function POST(req: Request) {
   try {
@@ -46,13 +42,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: `${extractionInput}
+    // Build structured prompt for profile extraction
+    const prompt = `${extractionInput}
 
 Extract and return ONLY a valid JSON object with these exact fields:
 {
@@ -77,23 +68,20 @@ Rules:
 - Use empty strings "" for missing fields
 - Use empty arrays [] for missing lists
 - Set confidence 0.0-1.0 based on data quality
-- Extract real data when available`
-        }
-      ],
+- Extract real data when available`;
+
+    // Route through AI router (enforces budget, rate limits, logging)
+    const response = await routeSynqraAiRequest({
+      task: 'profile_extraction',
+      prompt,
+      metadata: {
+        source: link ? 'link' : 'file',
+        endpoint: '/api/onboard/extract',
+      },
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      return NextResponse.json(
-        {
-          profile: createMinimalDraft(),
-          confidence: 0.0,
-        },
-        { status: 200 }
-      );
-    }
-
-    const extracted = JSON.parse(content.text);
+    // Parse AI response
+    const extracted = JSON.parse(response.text);
     const normalized = normalizeExtractedProfile(extracted);
     const validated = validateProfile(normalized);
 

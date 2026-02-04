@@ -49,7 +49,7 @@ export async function processHybridRequest(
   trackRouting(routing);
   
   // Step 2: Check budget before proceeding
-  const budgetCheck = checkBudget(routing.estimatedCost);
+  const budgetCheck = await checkBudget(routing.estimatedCost);
   if (!budgetCheck.allowed) {
     console.error(`   🚫 Budget check failed: ${budgetCheck.reason}`);
     
@@ -134,7 +134,7 @@ export async function processHybridRequest(
         console.log(`   ✅ Response accepted, delivering`);
         
         // Record cost and log learning data
-        recordCost(inferenceResult.cost);
+        await recordCost(inferenceResult.cost);
         logLearningData({
           input: request.message,
           modelUsed: currentModel,
@@ -171,7 +171,7 @@ export async function processHybridRequest(
           // No more escalation options, deliver what we have
           console.log(`   ⚠️  No escalation options, delivering current response`);
           
-          recordCost(inferenceResult.cost);
+          await recordCost(inferenceResult.cost);
           logLearningData({
             input: request.message,
             modelUsed: currentModel,

@@ -3,6 +3,7 @@ import { getQueueSize } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
 
 export async function GET() {
+  const size = await getQueueSize();
   return NextResponse.json({
     ok: true,
     status: 'operational',
@@ -12,7 +13,7 @@ export async function GET() {
       approvalRequired: config.approvalRequired,
     },
     queue: {
-      size: getQueueSize(),
+      size,
     },
     timestamp: new Date().toISOString(),
   });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { createHash } from 'crypto';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime'];
@@ -33,15 +34,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const extension = file.name.split('.').pop();
-    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`;
-
     // Convert to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
+    const contentHash = createHash('sha256').update(buffer).digest('hex');
+    const extension = file.name.split('.').pop() || 'bin';
+    const filename = `${contentHash}.${extension}`;
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage (idempotent by content hash)
     const { error: uploadError } = await supabase.storage
       .from('synqra-media')
       .upload(filename, buffer, {
@@ -51,11 +50,17 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return NextResponse.json(
-        { ok: false, error: `Upload failed: ${uploadError.message}` },
-        { status: 500 }
-      );
+      const message = uploadError.message || '';
+      const statusCode = (uploadError as any).statusCode;
+      const isDuplicate = statusCode === 409 || message.toLowerCase().includes('already exists');
+
+      if (!isDuplicate) {
+        console.error('Upload error:', uploadError);
+        return NextResponse.json(
+          { ok: false, error: `Upload failed: ${uploadError.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     // Get public URL
@@ -71,6 +76,7 @@ export async function POST(req: NextRequest) {
         filename: file.name,
         size: file.size,
         mimeType: file.type,
+        idempotencyKey: contentHash,
       },
     });
 

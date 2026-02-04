@@ -45,7 +45,7 @@ export function UploadZone({ isLoading, error, onSubmit }: UploadZoneProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0B0B0B] via-[#0F0F0F] to-[#050505] px-8 py-10 shadow-[0_40px_120px_-60px_rgba(212,175,55,0.35)]"
+      className="relative overflow-hidden rounded-3xl border border-white/10 bg-noid-black px-8 py-10 shadow-[0_40px_120px_-60px_rgba(212,175,55,0.35)]"
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-24 left-8 h-48 w-48 rounded-full bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.35),transparent_55%)] blur-3xl opacity-70" />

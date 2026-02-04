@@ -45,7 +45,6 @@ const GenerateButton = ({ label, onClick, disabled = false, isProcessing = false
           <span className="h-2 w-2 animate-ping rounded-full bg-white/80" aria-hidden />
         )}
       </motion.span>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/5 opacity-60" />
     </motion.button>
   );
 };

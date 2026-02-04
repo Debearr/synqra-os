@@ -17,6 +17,7 @@ import { requireSupabase } from "@/lib/supabaseClient";
 interface GenerateRequest {
   brief: string;
   platforms: Platform[];
+  media_url?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { brief, platforms } = body;
+    const { brief, platforms, media_url } = body;
 
     // Generate variants for all platforms
     const allVariants = generateMultiPlatform(brief, platforms);
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
           cta: variant.cta,
           platform: variant.platform,
           variant_index: variant.variantIndex,
+          media_url: media_url || null,
         }))
     );
 
@@ -156,6 +158,7 @@ export async function GET() {
     method: "POST",
     description: "Generate platform-native hooks and CTAs from a brief",
     requiredFields: ["brief", "platforms"],
+    optionalFields: ["media_url"],
     supportedPlatforms: ["youtube", "tiktok", "x", "linkedin"],
     example: {
       brief: "How to build a content flywheel with zero budget",

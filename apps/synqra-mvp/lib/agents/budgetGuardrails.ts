@@ -6,6 +6,8 @@
  * Automatic safety mechanisms to prevent runaway costs
  */
 
+import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
+
 export interface BudgetConfig {
   monthlyBudget: number; // Maximum budget in dollars
   dailyBudget: number; // Maximum per day
@@ -31,78 +33,109 @@ const DEFAULT_BUDGET: BudgetConfig = {
   },
 };
 
-// Cost tracking by time period
-interface CostTracking {
-  hourly: { timestamp: number; cost: number }[];
-  daily: { date: string; cost: number }[];
-  monthly: { month: string; cost: number };
-}
-
-let costTracking: CostTracking = {
-  hourly: [],
-  daily: [],
-  monthly: { month: getCurrentMonth(), cost: 0 },
-};
-
-let isBudgetLocked = false; // Emergency stop flag
 let lastAlertSent: { [key: string]: number } = {}; // Prevent alert spam
 
-/**
- * Get current month string (YYYY-MM)
- */
 function getCurrentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/**
- * Get current date string (YYYY-MM-DD)
- */
 function getCurrentDate(): string {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+}
+
+async function getBudgetUsageRecord(): Promise<{
+  id?: string;
+  used: number;
+  limit: number;
+  period_start: string;
+  period_end: string;
+  last_updated: string;
+}> {
+  const supabase = requireSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("budget_usage")
+    .select("id, used, limit, period_start, period_end, last_updated")
+    .order("period_start", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load budget usage: ${error.message}`);
+  }
+
+  if (!data) {
+    const now = new Date();
+    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+    const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0));
+    return {
+      used: 0,
+      limit: DEFAULT_BUDGET.monthlyBudget,
+      period_start: periodStart.toISOString(),
+      period_end: periodEnd.toISOString(),
+      last_updated: new Date().toISOString(),
+    };
+  }
+
+  return data;
+}
+
+async function sumCostSince(cutoffIso: string): Promise<number> {
+  const supabase = requireSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("budget_tracking")
+    .select("cost_usd")
+    .gte("timestamp", cutoffIso);
+
+  if (error) {
+    throw new Error(`Failed to load budget tracking: ${error.message}`);
+  }
+
+  return (data || []).reduce((sum, row) => sum + (row.cost_usd || 0), 0);
+}
+
+async function getThrottlingState(): Promise<
+  { state: string; percentage: number } | { state: "NORMAL"; percentage: number }
+> {
+  const supabase = requireSupabaseAdmin();
+  const { data, error } = await supabase.rpc("get_current_throttling_state");
+
+  if (error || !data || data.length === 0) {
+    return { state: "NORMAL", percentage: 0 };
+  }
+
+  return {
+    state: data[0].state,
+    percentage: Number(data[0].percentage || 0),
+  };
 }
 
 /**
  * Check if request is allowed based on budget
  * Returns: { allowed, reason, currentCost, remainingBudget }
  */
-export function checkBudget(estimatedCost: number): {
+export async function checkBudget(estimatedCost: number): Promise<{
   allowed: boolean;
   reason: string;
   currentCost: number;
   remainingBudget: number;
   alertLevel: "none" | "warning" | "critical" | "emergency";
-} {
-  // Emergency stop - budget locked
-  if (isBudgetLocked) {
-    return {
-      allowed: false,
-      reason: "Budget locked due to emergency threshold reached. Contact admin.",
-      currentCost: costTracking.monthly.cost,
-      remainingBudget: 0,
-      alertLevel: "emergency",
-    };
-  }
+}> {
+  const now = new Date();
+  const usage = await getBudgetUsageRecord();
+  const monthlyCost = usage.used || 0;
 
-  const now = Date.now();
-  const currentMonth = getCurrentMonth();
-  const currentDate = getCurrentDate();
+  const dailyCutoff = new Date(now);
+  dailyCutoff.setDate(dailyCutoff.getDate() - 1);
+  const hourlyCutoff = new Date(now.getTime() - 60 * 60 * 1000);
 
-  // Reset monthly tracking if new month
-  if (costTracking.monthly.month !== currentMonth) {
-    costTracking.monthly = { month: currentMonth, cost: 0 };
-    costTracking.daily = [];
-    costTracking.hourly = [];
-    isBudgetLocked = false;
-  }
-
-  // Calculate current costs
-  const monthlyCost = costTracking.monthly.cost;
-  const dailyCost = costTracking.daily.find((d) => d.date === currentDate)?.cost || 0;
-  const hourlyCost = costTracking.hourly
-    .filter((h) => now - h.timestamp < 3600000) // Last hour
-    .reduce((sum, h) => sum + h.cost, 0);
+  const [dailyCost, hourlyCost] = await Promise.all([
+    sumCostSince(dailyCutoff.toISOString()),
+    sumCostSince(hourlyCutoff.toISOString()),
+  ]);
 
   // Check per-request limit
   if (estimatedCost > DEFAULT_BUDGET.perRequestMax) {
@@ -116,9 +149,9 @@ export function checkBudget(estimatedCost: number): {
   }
 
   // Check monthly limit
-  const monthlyPercentage = ((monthlyCost + estimatedCost) / DEFAULT_BUDGET.monthlyBudget) * 100;
+  const monthlyPercentage =
+    ((monthlyCost + estimatedCost) / DEFAULT_BUDGET.monthlyBudget) * 100;
   if (monthlyCost + estimatedCost >= DEFAULT_BUDGET.monthlyBudget) {
-    isBudgetLocked = true;
     sendAlert("emergency", monthlyCost, DEFAULT_BUDGET.monthlyBudget);
     return {
       allowed: false,
@@ -176,36 +209,32 @@ export function checkBudget(estimatedCost: number): {
 /**
  * Record actual cost after request completes
  */
-export function recordCost(actualCost: number): void {
-  const now = Date.now();
-  const currentDate = getCurrentDate();
-  const currentMonth = getCurrentMonth();
+export async function recordCost(actualCost: number): Promise<void> {
+  const supabase = requireSupabaseAdmin();
+  await supabase.rpc("increment_budget_usage", { p_cost: actualCost });
 
-  // Record hourly
-  costTracking.hourly.push({ timestamp: now, cost: actualCost });
+  const throttling = await getThrottlingState();
+  const usage = await getBudgetUsageRecord();
+  const usagePercentage = usage.limit > 0 ? (usage.used / usage.limit) * 100 : 0;
 
-  // Clean up old hourly data (keep last 2 hours)
-  costTracking.hourly = costTracking.hourly.filter((h) => now - h.timestamp < 7200000);
+  const { error } = await supabase.from("budget_tracking").insert({
+    timestamp: new Date().toISOString(),
+    usage_percentage: usagePercentage,
+    throttling_state: throttling.state,
+    requests_allowed: 1,
+    requests_throttled: 0,
+    cache_hits: 0,
+    cache_misses: 0,
+    cost_usd: actualCost,
+  });
 
-  // Record daily
-  const dailyEntry = costTracking.daily.find((d) => d.date === currentDate);
-  if (dailyEntry) {
-    dailyEntry.cost += actualCost;
-  } else {
-    costTracking.daily.push({ date: currentDate, cost: actualCost });
+  if (error) {
+    console.error("Failed to record budget tracking snapshot:", error);
   }
 
-  // Record monthly
-  if (costTracking.monthly.month === currentMonth) {
-    costTracking.monthly.cost += actualCost;
-  } else {
-    costTracking.monthly = { month: currentMonth, cost: actualCost };
-  }
-
-  // Log to console (could be persisted to Supabase)
   if (process.env.DEBUG_AGENTS === "true") {
-    console.log(`💰 Cost recorded: $${actualCost.toFixed(4)}`);
-    console.log(`   Monthly: $${costTracking.monthly.cost.toFixed(2)} / $${DEFAULT_BUDGET.monthlyBudget}`);
+    console.log(`?? Cost recorded: $${actualCost.toFixed(4)}`);
+    console.log(`   Monthly: $${usage.used.toFixed(2)} / $${DEFAULT_BUDGET.monthlyBudget}`);
   }
 }
 
@@ -229,15 +258,15 @@ function sendAlert(
 
   const percentage = (currentCost / budgetLimit) * 100;
   const message = `
-🚨 BUDGET ALERT: ${level.toUpperCase()}
+?? BUDGET ALERT: ${level.toUpperCase()}
 
 Current: $${currentCost.toFixed(2)} (${percentage.toFixed(1)}%)
 Budget: $${budgetLimit}
 Remaining: $${(budgetLimit - currentCost).toFixed(2)}
 
-${level === "emergency" ? "⛔ ALL REQUESTS BLOCKED" : ""}
-${level === "critical" ? "⚠️ APPROACHING LIMIT" : ""}
-${level === "warning" ? "📊 Monitor closely" : ""}
+${level === "emergency" ? "?? ALL REQUESTS BLOCKED" : ""}
+${level === "critical" ? "?? APPROACHING LIMIT" : ""}
+${level === "warning" ? "?? Monitor closely" : ""}
 
 Time: ${new Date().toISOString()}
 `.trim();
@@ -258,33 +287,33 @@ Time: ${new Date().toISOString()}
       }),
     }).catch((err) => console.error("Failed to send Telegram alert:", err));
   }
-
-  // TODO: Send email alert to admin
 }
 
 /**
  * Get current budget status
  */
-export function getBudgetStatus(): {
+export async function getBudgetStatus(): Promise<{
   monthly: { used: number; limit: number; percentage: number };
   daily: { used: number; limit: number; percentage: number };
   hourly: { used: number; limit: number; percentage: number };
-  isLocked: boolean;
   projectedMonthlyTotal: number;
-} {
-  const now = Date.now();
-  const currentDate = getCurrentDate();
+}> {
+  const usage = await getBudgetUsageRecord();
+  const now = new Date();
 
-  const monthlyCost = costTracking.monthly.cost;
-  const dailyCost = costTracking.daily.find((d) => d.date === currentDate)?.cost || 0;
-  const hourlyCost = costTracking.hourly
-    .filter((h) => now - h.timestamp < 3600000)
-    .reduce((sum, h) => sum + h.cost, 0);
+  const dailyCutoff = new Date(now);
+  dailyCutoff.setDate(dailyCutoff.getDate() - 1);
+  const hourlyCutoff = new Date(now.getTime() - 60 * 60 * 1000);
 
-  // Project monthly total based on daily average
-  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const [dailyCost, hourlyCost] = await Promise.all([
+    sumCostSince(dailyCutoff.toISOString()),
+    sumCostSince(hourlyCutoff.toISOString()),
+  ]);
+
+  const monthlyCost = usage.used || 0;
   const dayOfMonth = new Date().getDate();
-  const avgDailyCost = monthlyCost / dayOfMonth;
+  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const avgDailyCost = dayOfMonth > 0 ? monthlyCost / dayOfMonth : 0;
   const projectedMonthlyTotal = avgDailyCost * daysInMonth;
 
   return {
@@ -303,7 +332,6 @@ export function getBudgetStatus(): {
       limit: DEFAULT_BUDGET.hourlyBudget,
       percentage: (hourlyCost / DEFAULT_BUDGET.hourlyBudget) * 100,
     },
-    isLocked: isBudgetLocked,
     projectedMonthlyTotal,
   };
 }
@@ -311,28 +339,46 @@ export function getBudgetStatus(): {
 /**
  * Admin override to unlock budget (use carefully!)
  */
-export function unlockBudget(adminKey: string): boolean {
-  // TODO: Implement proper admin authentication
-  if (adminKey === process.env.ADMIN_OVERRIDE_KEY) {
-    isBudgetLocked = false;
-    console.warn("⚠️ Budget manually unlocked by admin");
+export async function unlockBudget(adminKey: string): Promise<boolean> {
+  if (adminKey !== process.env.ADMIN_OVERRIDE_KEY) {
+    return false;
+  }
+
+  const supabase = requireSupabaseAdmin();
+  const usage = await getBudgetUsageRecord();
+  if (!usage.id) {
     return true;
   }
-  return false;
+
+  const { error } = await supabase
+    .from("budget_usage")
+    .update({ used: 0, last_updated: new Date().toISOString() })
+    .eq("id", usage.id);
+
+  if (error) {
+    console.error("Failed to unlock budget:", error);
+    return false;
+  }
+
+  console.warn("?? Budget manually unlocked by admin");
+  return true;
 }
 
 /**
  * Reset cost tracking (for testing only)
  */
-export function resetTracking(): void {
+export async function resetTracking(): Promise<void> {
   if (process.env.NODE_ENV !== "production") {
-    costTracking = {
-      hourly: [],
-      daily: [],
-      monthly: { month: getCurrentMonth(), cost: 0 },
-    };
-    isBudgetLocked = false;
-    console.log("✅ Cost tracking reset");
+    const supabase = requireSupabaseAdmin();
+    await supabase.from("budget_tracking").delete().neq("id", "");
+    const usage = await getBudgetUsageRecord();
+    if (usage.id) {
+      await supabase
+        .from("budget_usage")
+        .update({ used: 0, last_updated: new Date().toISOString() })
+        .eq("id", usage.id);
+    }
+    console.log("? Cost tracking reset");
   }
 }
 

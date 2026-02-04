@@ -1,424 +1,95 @@
 /**
- * ============================================================
- * AI MODEL ROUTER - COST-OPTIMIZED HIERARCHY
- * ============================================================
- * Implements 40-60% cost reduction through intelligent routing:
- * - 95% Mistral (default, fast, cheap)
- * - DeepSeek (validator, logic optimizer, compressor)
- * - Claude (complex client-facing only, >0.85 complexity)
- * - GPT-5 (final signed deliverables only)
+ * Legacy AI router (deprecated).
+ * Delegates to unified core in lib/ai-router.ts with brand adapters.
  */
 
-import { ModelProvider, RoutingDecision, TaskComplexity, AITask, validateConfirmation } from './types';
-import { scoreComplexity } from './complexity';
-import { estimateCost } from './cost';
-import { compressInput, reduceContext } from './compression';
-import { getCachedResponse, setCachedResponse } from './cache';
-import { logModelUsage } from './logging';
-import { assessConfidence } from './confidence-handler';
+import type { AITask, RoutingDecision, ModelProvider } from "./types";
+import { validateConfirmation } from "./types";
+import { resolveRouting } from "@/lib/ai-router";
+import {
+  buildBrandPrompt,
+  routeAiRequestWithAdapter,
+  type AiRouterBrand,
+} from "@/lib/ai/adapters";
 
-/**
- * TOKEN BUDGETS (HARD LIMITS)
- */
 export const TOKEN_LIMITS = {
   mistral: 350,
   deepseek: 600,
   claude: 1200,
-  'gpt-5': 1500,
+  "gpt-5": 1500,
 } as const;
 
-/**
- * MODEL COSTS (per 1M tokens)
- */
-const MODEL_COSTS = {
-  mistral: { input: 0.25, output: 0.25 },
-  deepseek: { input: 0.27, output: 1.10 },
-  claude: { input: 3.00, output: 15.00 },
-  'gpt-5': { input: 10.00, output: 30.00 },
-} as const;
+const PROVIDER_TO_MODEL: Record<string, ModelProvider> = {
+  openrouter: "claude",
+  gemini: "mistral",
+};
 
-/**
- * ROUTING HIERARCHY
- * Determines which model to use based on complexity score
- */
-function selectModel(
-  complexity: TaskComplexity,
-  isClientFacing: boolean,
-  isFinalDeliverable: boolean
-): ModelProvider {
-  // GPT-5 only for final signed deliverables
-  if (isFinalDeliverable) {
-    return 'gpt-5';
-  }
-
-  // Claude only for high complexity + client-facing
-  if (complexity.score > 0.85 && isClientFacing) {
-    return 'claude';
-  }
-
-  // DeepSeek for logic refinement (0.8-0.85)
-  if (complexity.score >= 0.8) {
-    return 'deepseek';
-  }
-
-  // Mistral + DeepSeek for moderate complexity (0.5-0.7)
-  if (complexity.score >= 0.5) {
-    return 'mistral'; // Note: DeepSeek validation happens in pipeline
-  }
-
-  // Default: Mistral (0-0.4)
-  return 'mistral';
-}
-
-function buildFallbackChain(primaryModel: ModelProvider): ModelProvider[] {
-  const hierarchy: ModelProvider[] = ['mistral', 'deepseek', 'claude', 'gpt-5'];
-  const start = hierarchy.indexOf(primaryModel);
-  return start >= 0 ? hierarchy.slice(start + 1) : [];
-}
-
-/**
- * MAIN ROUTING FUNCTION
- * Routes tasks through optimized pipeline
- */
-export async function route(task: AITask): Promise<RoutingDecision> {
-  // Step 1: Check cache first
-  const cacheKey = task.cacheKey || generateCacheKey(task);
-  const cached = await getCachedResponse(cacheKey);
-  if (cached && !task.forceRefresh) {
-    return {
-      model: 'cached' as ModelProvider,
-      estimatedCost: 0,
-      actualCost: 0,
-      response: cached.response,
-      metadata: {
-        cacheHit: true,
-        originalModel: cached.model,
-        timestamp: cached.timestamp,
-      },
-    };
-  }
-
-  // Step 2: Compress input if needed
-  let processedInput = task.input;
-  if (task.input.length > 500) {
-    processedInput = await compressInput(task.input, task.contextHistory || []);
-  }
-
-  // Step 3: Score complexity
-  const complexity = scoreComplexity(processedInput, {
-    isClientFacing: task.isClientFacing || false,
-    hasStructuredOutput: task.requiresStructuredOutput || false,
-    requiresReasoning: task.requiresReasoning || false,
-  });
-
-  // Step 4: Select model
-  const selectedModel = selectModel(
-    complexity,
-    task.isClientFacing || false,
-    task.isFinalDeliverable || false
-  );
-  const fallbackChain = buildFallbackChain(selectedModel);
-
-  // Step 5: Estimate cost BEFORE execution
-  const tokenLimit = TOKEN_LIMITS[selectedModel as keyof typeof TOKEN_LIMITS] || 350;
-  const estimatedTokens = {
-    input: Math.min(Math.ceil(processedInput.length / 4), tokenLimit * 0.7),
-    output: Math.ceil(tokenLimit * 0.3),
+function buildRequest(task: AITask, brand: AiRouterBrand, userId?: string) {
+  return {
+    task: task.type,
+    prompt: buildBrandPrompt({
+      systemPrompt: task.systemPrompt,
+      userPrompt: task.input,
+      contextHistory: task.contextHistory,
+      brand,
+    }),
+    userId,
+    cacheKey: task.cacheKey,
+    skipCache: task.skipCache,
+    forceRefresh: task.forceRefresh,
+    metadata: {
+      traceId: task.id,
+      taskId: task.id,
+      requestedModel: task.model,
+      maxBudget: task.maxBudget,
+      tokenBudget: task.tokenBudget,
+      source: "legacy-ai-router",
+    },
   };
-  const estimatedCost = estimateCost(selectedModel, estimatedTokens);
-
-  // Step 6: Apply budget guardrail
-  if (task.maxBudget && estimatedCost > task.maxBudget) {
-    // Downgrade to cheaper model
-    console.warn(`⚠️ Cost guardrail triggered. Budget: $${task.maxBudget}, Estimated: $${estimatedCost}`);
-    const fallbackModel = downgradModel(selectedModel);
-    return route({ ...task, model: fallbackModel });
-  }
-
-  // Step 7: Build execution plan
-  const decision: RoutingDecision = {
-    model: selectedModel,
-    estimatedCost,
-    actualCost: 0, // Set after execution
-    complexity: complexity.score,
-    reasoning: complexity.reasoning,
-    tokenBudget: tokenLimit,
-    requiresValidation: complexity.score >= 0.5,
-    fallbackChain,
-    pipeline: buildPipeline(selectedModel, complexity.score),
-  };
-
-  return decision;
 }
 
-/**
- * BUILD EXECUTION PIPELINE
- * Mistral → DeepSeek validation → [Claude/GPT-5 if needed]
- */
-function buildPipeline(model: ModelProvider, complexity: number): string[] {
-  const pipeline: string[] = [];
+export async function route(
+  task: AITask,
+  options?: { brand?: AiRouterBrand }
+): Promise<RoutingDecision> {
+  const routing = resolveRouting(task.type);
+  const mapped = PROVIDER_TO_MODEL[routing.provider] ?? "mistral";
 
-  // Always start with Mistral for extraction (unless already GPT-5)
-  if (model !== 'gpt-5' && model !== 'mistral') {
-    pipeline.push('mistral-extract');
-  }
-
-  // Add DeepSeek compression for moderate+ complexity
-  if (complexity >= 0.5) {
-    pipeline.push('deepseek-compress');
-  }
-
-  // Main model execution
-  pipeline.push(`${model}-execute`);
-
-  // DeepSeek validation for high-stakes tasks
-  if (complexity >= 0.8) {
-    pipeline.push('deepseek-validate');
-  }
-
-  return pipeline;
-}
-
-/**
- * DOWNGRADE MODEL (cost guardrail)
- */
-function downgradModel(model: ModelProvider): ModelProvider {
-  const hierarchy: ModelProvider[] = ['mistral', 'deepseek', 'claude', 'gpt-5'];
-  const currentIndex = hierarchy.indexOf(model);
-  if (currentIndex > 0) {
-    return hierarchy[currentIndex - 1];
-  }
-  return 'mistral'; // Absolute fallback
-}
-
-/**
- * GENERATE CACHE KEY
- */
-function generateCacheKey(task: AITask): string {
-  const hash = simpleHash(task.input + (task.systemPrompt || ''));
-  return `ai:${task.type}:${hash}`;
-}
-
-/**
- * SIMPLE HASH FUNCTION
- */
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(36);
-}
-
-/**
- * EXECUTE TASK (with pipeline)
- * 
- * HUMAN-IN-COMMAND: This function requires explicit human confirmation
- * before any AI action executes. Without a valid confirmation gate,
- * the function will throw ConfirmationRequiredError.
- */
-export async function executeTask(task: AITask): Promise<any> {
-  // CONFIRMATION GATE: Enforce human confirmation before any AI execution
-  validateConfirmation(task.confirmation, `AI task execution: ${task.type}`);
-  
-  // Get routing decision
-  const decision = await route(task);
-
-  // If cached, return immediately
-  if (decision.metadata?.cacheHit) {
-    await logModelUsage({
-      taskId: task.id || generateTaskId(),
-      model: 'cached',
-      inputTokens: 0,
-      outputTokens: 0,
-      estimatedCost: 0,
-      actualCost: 0,
-      complexity: 0,
-      cacheHit: true,
-    });
-    return decision.response;
-  }
-
-  // Execute pipeline
-  let response: any;
-  let totalCost = 0;
-  let inputTokens = 0;
-  let outputTokens = 0;
-  for (const step of decision.pipeline || []) {
-    const [model, action] = step.split('-');
-    
-    switch (action) {
-      case 'extract':
-        // Mistral extracts key information
-        response = await callModelWithFallback(
-          'mistral',
-          task.input,
-          task.systemPrompt,
-          TOKEN_LIMITS.mistral
-        );
-        break;
-      
-      case 'compress':
-        // DeepSeek compresses/validates
-        response = await callModelWithFallback(
-          'deepseek',
-          response || task.input,
-          'Compress and validate this content. Return only essential information.',
-          TOKEN_LIMITS.deepseek
-        );
-        break;
-      
-      case 'execute':
-        // Main model execution
-        response = await callModelWithFallback(
-          model as ModelProvider,
-          response || task.input,
-          task.systemPrompt,
-          TOKEN_LIMITS[model as keyof typeof TOKEN_LIMITS] || 350
-        );
-        // Confidence assessment after primary execution
-        const confidence = assessConfidence(response, task.type);
-        if (!confidence.isConfident && decision.fallbackChain?.length) {
-          // Attempt one-tier escalation if available
-          const nextModel = decision.fallbackChain[0];
-          if (nextModel) {
-            response = await callModelWithFallback(
-              nextModel,
-              response || task.input,
-              task.systemPrompt,
-              TOKEN_LIMITS[nextModel as keyof typeof TOKEN_LIMITS] || 350
-            );
-          }
-        }
-        break;
-      
-      case 'validate':
-        // DeepSeek validates output
-        const validationPrompt = `Validate this output for accuracy and completeness: ${response}`;
-        await callModelWithFallback(
-          'deepseek',
-          validationPrompt,
-          'You are a quality validator.',
-          TOKEN_LIMITS.deepseek
-        );
-        break;
-    }
-  }
-
-  // Calculate actual cost
-  const actualCost = decision.estimatedCost; // Simplified - would track actual tokens in production
-
-  // Cache response if cacheable
-  if (!task.skipCache) {
-    const cacheKey = task.cacheKey || generateCacheKey(task);
-    await setCachedResponse(cacheKey, {
-      response,
-      model: decision.model,
+  return {
+    model: mapped,
+    estimatedCost: 0,
+    actualCost: 0,
+    tokenBudget: task.tokenBudget,
+    requiresValidation: false,
+    metadata: {
+      cacheHit: false,
+      originalModel: mapped,
       timestamp: Date.now(),
-    });
-  }
-
-  // Log usage
-  await logModelUsage({
-    taskId: task.id || generateTaskId(),
-    model: decision.model,
-    inputTokens,
-    outputTokens,
-    estimatedCost: decision.estimatedCost,
-    actualCost,
-    complexity: decision.complexity || 0,
-    cacheHit: false,
-  });
-
-  return response;
+    },
+  };
 }
 
-/**
- * CALL MODEL (placeholder - implement actual API calls)
- */
-async function callModelWithFallback(
-  model: ModelProvider,
-  input: string,
-  systemPrompt: string | undefined,
-  maxTokens: number
+export async function executeTask(
+  task: AITask,
+  options?: { brand?: AiRouterBrand; userId?: string }
 ): Promise<string> {
-  const candidates = [model, ...buildFallbackChain(model)];
-  let lastError: unknown;
+  validateConfirmation(task.confirmation, `AI task execution: ${task.type}`);
 
-  for (const candidate of candidates) {
-    try {
-      return await callModel(candidate, input, systemPrompt, maxTokens);
-    } catch (error) {
-      lastError = error;
-      console.warn(`Model ${candidate} failed, attempting fallback...`);
-    }
-  }
+  const brand = options?.brand ?? "synqra";
+  const request = buildRequest(task, brand, options?.userId);
+  const response = await routeAiRequestWithAdapter(brand, request);
 
-  throw lastError ?? new Error("All models in fallback chain failed");
+  return response.text;
 }
 
-async function callModel(
-  model: ModelProvider,
-  input: string,
-  systemPrompt: string | undefined,
-  maxTokens: number
-): Promise<string> {
-  // This would integrate with actual model APIs
-  // For now, return placeholder
-  console.log(`🤖 Calling ${model} with ${input.length} chars, max ${maxTokens} tokens`);
-  
-  // In production, implement actual API calls:
-  // - Mistral via KIE.AI or direct API
-  // - DeepSeek via KIE.AI or direct API
-  // - Claude via Anthropic SDK (already exists)
-  // - GPT-5 via OpenAI SDK
-  
-  return `Response from ${model}: Processed ${input.substring(0, 50)}...`;
-}
-
-/**
- * GENERATE TASK ID
- */
-function generateTaskId(): string {
-  return `task_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-}
-
-/**
- * BATCH PROCESSOR
- * Batches similar tasks for efficiency
- * 
- * HUMAN-IN-COMMAND: All tasks in the batch require individual confirmation.
- * Each task's confirmation gate is validated before execution.
- */
-export async function batchProcess(tasks: AITask[]): Promise<any[]> {
-  // CONFIRMATION GATE: Validate all tasks have confirmation before processing
+export async function batchProcess(
+  tasks: AITask[],
+  options?: { brand?: AiRouterBrand; userId?: string }
+): Promise<string[]> {
+  const results: string[] = [];
   for (const task of tasks) {
-    validateConfirmation(task.confirmation, `Batch AI task: ${task.type}`);
+    const result = await executeTask(task, options);
+    results.push(result);
   }
-  
-  // Group by model type
-  const grouped = new Map<ModelProvider, AITask[]>();
-  
-  for (const task of tasks) {
-    const decision = await route(task);
-    const model = decision.model;
-    if (!grouped.has(model)) {
-      grouped.set(model, []);
-    }
-    grouped.get(model)!.push(task);
-  }
-
-  // Process each group
-  const results: any[] = [];
-  for (const [model, taskGroup] of grouped.entries()) {
-    console.log(`📦 Batch processing ${taskGroup.length} tasks with ${model}`);
-    for (const task of taskGroup) {
-      const result = await executeTask(task);
-      results.push(result);
-    }
-  }
-
   return results;
 }

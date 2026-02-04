@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  routeAiRequest,
-  type AiRouterRequest,
-  AiRouterError,
-} from "@/lib/ai-router";
+import { type AiRouterRequest, AiRouterError } from "@/lib/ai-router";
+import { routeAuraFxAiRequest } from "@/lib/ai/adapters";
 
 export const runtime = "nodejs";
 
@@ -19,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await routeAiRequest({ task, prompt, userId, metadata });
+    const response = await routeAuraFxAiRequest({ task, prompt, userId, metadata });
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     if (error instanceof AiRouterError) {

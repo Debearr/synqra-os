@@ -137,7 +137,7 @@ export abstract class BaseAgent {
       );
 
       // BUDGET GUARDRAIL - Check if request is allowed
-      const budgetCheck = checkBudget(estimatedCost);
+      const budgetCheck = await checkBudget(estimatedCost);
       
       if (!budgetCheck.allowed) {
         console.error(`🚫 Request blocked by budget guardrail: ${budgetCheck.reason}`);
@@ -190,7 +190,7 @@ export abstract class BaseAgent {
       );
 
       // Record cost for tracking
-      recordCost(totalCost);
+      await recordCost(totalCost);
       
       // Build response with cost tracking
       const agentResponse: AgentResponse = {

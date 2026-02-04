@@ -5,7 +5,17 @@ import { postToYouTube } from './youtube';
 import { postToX } from './x';
 import { postToInstagram } from './instagram';
 
-export async function routePost(platform: string, payload: any): Promise<any> {
+export interface PostingMetadata {
+  jobId?: string;
+  idempotencyKey?: string;
+  ownerId?: string;
+}
+
+export async function routePost(
+  platform: string,
+  payload: any,
+  metadata?: PostingMetadata
+): Promise<any> {
   if (!shouldPost()) {
     return {
       ok: true,
@@ -16,7 +26,7 @@ export async function routePost(platform: string, payload: any): Promise<any> {
     };
   }
 
-  const platformHandlers: Record<string, (payload: any) => Promise<any>> = {
+  const platformHandlers: Record<string, (payload: any, meta?: PostingMetadata) => Promise<any>> = {
     LinkedIn: postToLinkedIn,
     TikTok: postToTikTok,
     YouTube: postToYouTube,
@@ -30,11 +40,11 @@ export async function routePost(platform: string, payload: any): Promise<any> {
   }
 
   try {
-    const result = await handler(payload);
-    console.log(`✅ Posted to ${platform}`, result);
+    const result = await handler(payload, metadata);
+    console.log(`? Posted to ${platform}`, result);
     return { ok: true, platform, result };
   } catch (error: any) {
-    console.error(`❌ Failed to post to ${platform}:`, error.message);
+    console.error(`? Failed to post to ${platform}:`, error.message);
     throw error;
   }
 }

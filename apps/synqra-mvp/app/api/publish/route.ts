@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { enqueue } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
+import { buildPostingIdempotencyKey } from '@/lib/posting/idempotency';
 
 export async function POST(req: Request) {
   try {
@@ -25,17 +26,26 @@ export async function POST(req: Request) {
     for (const platform of platforms) {
       const payload = payloads?.[platform];
       if (!payload) {
-        console.warn(`⚠️  No payload for ${platform}`);
+        console.warn(`??  No payload for ${platform}`);
         continue;
       }
 
-      enqueue({
+      const idempotencyKey = buildPostingIdempotencyKey({
+        jobId,
+        platform,
+        payload,
+      });
+
+      const result = await enqueue({
         platform,
         payload,
         jobId,
+        idempotencyKey,
       });
 
-      enqueued.push(platform);
+      if (result.enqueued) {
+        enqueued.push(platform);
+      }
     }
 
     return NextResponse.json({

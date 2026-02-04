@@ -190,9 +190,6 @@ export default function OnboardPage() {
   return (
     <main className="min-h-screen bg-noid-black text-white">
       <div className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(212,175,55,0.08),transparent_35%),radial-gradient(circle_at_90%_20%,rgba(0,255,198,0.12),transparent_32%)]" />
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/8 to-transparent" />
-
         <div className="relative mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-20 space-y-12">
           <header className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.24em] text-noid-silver">

@@ -87,6 +87,17 @@ export {
 
 export type { Recipe, RecipeExecution } from './recipes';
 
+// Unified router adapters
+export {
+  routeSynqraAiRequest,
+  routeAuraFxAiRequest,
+  routeNoidAiRequest,
+  buildBrandPrompt,
+  AI_ROUTER_ADAPTERS,
+} from './adapters';
+
+export type { AiRouterBrand, AiRouterAdapterConfig } from './adapters';
+
 // Cost Optimizer
 export {
   classifyTask,

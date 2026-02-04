@@ -116,7 +116,7 @@ const OutputPanel = ({
 
           {/* Trust Bar */}
           <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-            <div className="h-[2px] w-full bg-gradient-to-r from-noid-gold/60 via-noid-silver/35 to-transparent" aria-hidden />
+            <div className="h-[2px] w-full bg-noid-gold/40" aria-hidden />
             <div className="px-4 py-3 font-mono text-[0.72rem] tracking-[0.14em] text-noid-silver/50">
               ✓ Ready to publish • Matched to your voice • Generated in {generationLabel}
             </div>

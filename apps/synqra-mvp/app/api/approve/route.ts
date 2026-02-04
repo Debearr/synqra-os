@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { enqueue } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
+import { buildPostingIdempotencyKey } from '@/lib/posting/idempotency';
 
 /**
  * Approve and Publish Content
@@ -20,10 +21,17 @@ import { config } from '@/lib/posting/config';
 export async function POST(req: NextRequest) {
   const supabase = requireSupabaseAdmin();
   try {
+    const expectedToken = process.env.ADMIN_TOKEN;
+    if (!expectedToken) {
+      return NextResponse.json(
+        { ok: false, error: 'ADMIN_TOKEN not configured' },
+        { status: 500 }
+      );
+    }
+
     const { jobId, variantIds, platforms, adminToken } = await req.json();
 
     // Validate admin token
-    const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
     if (!adminToken || adminToken !== expectedToken) {
       return NextResponse.json(
         { ok: false, error: 'Unauthorized - invalid admin token' },
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
       const variant = variants.find(v => v.platform === platform);
 
       if (!variant) {
-        console.warn(`⚠️  No variant found for platform: ${platform}`);
+        console.warn(`??  No variant found for platform: ${platform}`);
         continue;
       }
 
@@ -105,12 +113,25 @@ export async function POST(req: NextRequest) {
         }];
       }
 
+      const idempotencyKey = buildPostingIdempotencyKey({
+        jobId,
+        platform,
+        variantId: variant.id,
+        payload,
+      });
+
       // Enqueue the post
-      enqueue({
+      const result = await enqueue({
         platform,
         payload,
         jobId,
+        variantId: variant.id,
+        idempotencyKey,
       });
+
+      if (!result.enqueued) {
+        continue;
+      }
 
       enqueued.push({
         platform,
@@ -155,10 +176,17 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const supabase = requireSupabaseAdmin();
   try {
+    const expectedToken = process.env.ADMIN_TOKEN;
+    if (!expectedToken) {
+      return NextResponse.json(
+        { ok: false, error: 'ADMIN_TOKEN not configured' },
+        { status: 500 }
+      );
+    }
+
     const adminToken = req.nextUrl.searchParams.get('adminToken');
 
     // Validate admin token
-    const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
     if (!adminToken || adminToken !== expectedToken) {
       return NextResponse.json(
         { ok: false, error: 'Unauthorized' },
