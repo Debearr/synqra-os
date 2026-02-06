@@ -57,5 +57,5 @@ export interface WaitlistEntry {
   email: string;
   full_name: string | null;
   created_at: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }

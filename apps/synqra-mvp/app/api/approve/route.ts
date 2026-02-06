@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Prepare payload
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         text: variant.content,
       };
 
@@ -159,10 +159,11 @@ export async function POST(req: NextRequest) {
         : `Approved and queued ${enqueued.length} posts`,
     });
 
-  } catch (error: any) {
-    console.error('Approve error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Approve error:', message);
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: message },
       { status: 500 }
     );
   }
@@ -214,10 +215,11 @@ export async function GET(req: NextRequest) {
       total: jobs?.length || 0,
     });
 
-  } catch (error: any) {
-    console.error('Get approvals error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Get approvals error:', message);
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: message },
       { status: 500 }
     );
   }

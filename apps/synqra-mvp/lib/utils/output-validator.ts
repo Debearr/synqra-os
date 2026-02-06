@@ -58,7 +58,7 @@ export function validateOutput(
   // If validation fails, throw error
   if (violations.length > 0) {
     const error = new Error(`Output blocked: ${violations.join("; ")}`);
-    (error as any).violations = violations;
+    (error as Error & { violations?: string[] }).violations = violations;
     throw error;
   }
   

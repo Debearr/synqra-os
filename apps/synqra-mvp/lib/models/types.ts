@@ -68,7 +68,7 @@ export interface InferenceRequest {
 /**
  * Inference result
  */
-export interface InferenceResult<T = any> {
+export interface InferenceResult<T = unknown> {
   modelId: string;
   output: T;
   confidence: number;

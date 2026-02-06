@@ -11,16 +11,19 @@ import { Candle, MarketContext } from "./types";
 import { detectTrend, detectStructureEvents, detectStructurePoints } from "./marketStructure";
 import { findLiquidityPools } from "./liquidity";
 import { getKillzone } from "./killzones";
+import { detectRegime } from "./regime";
 
 export function buildMarketContext(candles: Candle[], tzOffsetMinutes = 0): MarketContext {
   const trend = detectTrend(candles);
   const swings = detectStructurePoints(candles, 2);
   const events = detectStructureEvents(swings);
   const liquidityPools = findLiquidityPools(candles, swings);
+  const regime = detectRegime(candles, trend.direction);
   const session = getKillzone(candles[candles.length - 1]?.time ?? Date.now(), tzOffsetMinutes);
 
   return {
     trend,
+    regime,
     structurePoints: swings,
     structureEvents: events,
     liquidityPools,

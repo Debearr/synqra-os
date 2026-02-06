@@ -137,7 +137,7 @@ export function HardStopMessage() {
             Service Temporarily Limited
           </h3>
           <p className="text-sm text-noid-silver/80 mb-4">
-            We've reached our API budget limit for this period. New assessments
+            We&apos;ve reached our API budget limit for this period. New assessments
             are temporarily paused to ensure service stability.
           </p>
           <div className="space-y-2 text-sm text-noid-silver/70">

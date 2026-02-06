@@ -16,7 +16,7 @@ interface LoaderState {
   loadedModels: Set<string>;
   loadingModels: Set<string>;
   failedModels: Set<string>;
-  modelInstances: Map<string, any>;
+  modelInstances: Map<string, Record<string, unknown>>;
   lastUsed: Map<string, number>;
 }
 
@@ -192,7 +192,7 @@ async function loadPythonServiceModel(config: ModelConfig): Promise<void> {
     });
 
     console.log(`   ✅ Python service model registered: ${config.id}`);
-  } catch (error) {
+  } catch {
     console.warn(`   ⚠️  Python service not available for ${config.id}, using fallback`);
     
     // Store placeholder for fallback to API
@@ -207,7 +207,7 @@ async function loadPythonServiceModel(config: ModelConfig): Promise<void> {
 /**
  * Run inference on a model
  */
-export async function runInference<T = any>(
+export async function runInference<T = unknown>(
   request: InferenceRequest
 ): Promise<InferenceResult<T>> {
   const startTime = Date.now();
@@ -271,8 +271,11 @@ async function runONNXInference<T>(
   config: ModelConfig
 ): Promise<T> {
   const instance = state.modelInstances.get(request.modelId);
-  
-  if (!instance || instance.placeholder) {
+  const isPlaceholder =
+    !instance ||
+    (typeof instance.placeholder === "boolean" && instance.placeholder);
+
+  if (isPlaceholder) {
     // Fallback to mock response for now
     console.warn(`⚠️  ONNX inference not implemented, using mock for ${request.modelId}`);
     return mockInference(request, config) as T;
@@ -295,13 +298,17 @@ async function runPythonServiceInference<T>(
   config: ModelConfig
 ): Promise<T> {
   const instance = state.modelInstances.get(request.modelId);
+  const isFallback =
+    !instance ||
+    (typeof instance.fallback === "boolean" && instance.fallback);
 
-  if (!instance || instance.fallback) {
+  if (isFallback) {
     console.warn(`⚠️  Python service not available, using fallback for ${request.modelId}`);
     return mockInference(request, config) as T;
   }
 
-  const { serviceUrl } = instance;
+  const serviceUrl =
+    typeof instance.serviceUrl === "string" ? instance.serviceUrl : "";
 
   try {
     const response = await fetch(`${serviceUrl}/models/infer`, {
@@ -349,7 +356,7 @@ async function runAPIInference<T>(
 /**
  * Mock inference (fallback when models not available)
  */
-function mockInference(request: InferenceRequest, config: ModelConfig): any {
+function mockInference(request: InferenceRequest, config: ModelConfig): unknown {
   console.warn(`🔄 Using mock inference for ${config.id}`);
 
   switch (config.type) {

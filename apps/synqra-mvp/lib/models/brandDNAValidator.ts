@@ -90,7 +90,7 @@ export async function checkBrandConsistency(
   if (brandId === "de-bear") {
     let rprdScore = 0;
     
-    for (const [category, markers] of Object.entries(RPRD_DNA)) {
+    for (const [, markers] of Object.entries(RPRD_DNA)) {
       const categoryMatches = markers.filter(marker =>
         outputLower.includes(marker.toLowerCase())
       ).length;
@@ -103,7 +103,6 @@ export async function checkBrandConsistency(
   
   // Check tone appropriateness (simple heuristics)
   const exclamationCount = (output.match(/!/g) || []).length;
-  const questionCount = (output.match(/\?/g) || []).length;
   const avgSentenceLength = output.split(/[.!?]+/).reduce((sum, s) => sum + s.length, 0) / 
                             Math.max(output.split(/[.!?]+/).length, 1);
   
@@ -162,7 +161,7 @@ export async function checkBrandConsistencyWithVision(
   
   try {
     // Generate style embedding for output
-    const outputEmbedding = await runInference({
+    await runInference({
       modelId: "openclip-vit-b-32",
       input: outputImageOrText,
       options: {},
@@ -185,7 +184,7 @@ export async function checkBrandConsistencyWithVision(
       styleMatch: 0.75,
       recommendation: "Visual style check requires reference library",
     };
-  } catch (error) {
+  } catch {
     console.error("OpenCLIP check failed, falling back to text analysis");
 
     if (typeof outputImageOrText === "string") {

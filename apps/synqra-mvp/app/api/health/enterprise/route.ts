@@ -23,7 +23,7 @@ type HealthCheck = {
   message: string;
   duration: number;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 type HealthReport = {
@@ -43,6 +43,7 @@ type HealthReport = {
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const checks: HealthCheck[] = [];
+  void request;
 
   try {
     // 1. Environment Variables Check
@@ -239,7 +240,7 @@ async function checkMemoryUsage(): Promise<HealthCheck> {
       timestamp: new Date(),
       metadata: { heapUsedMB, heapTotalMB, rssMB, heapUsagePercent },
     };
-  } catch (error) {
+  } catch {
     return {
       name: "memory_usage",
       status: "warn",

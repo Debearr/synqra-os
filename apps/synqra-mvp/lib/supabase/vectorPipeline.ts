@@ -42,7 +42,7 @@ export interface VectorPipelineResult {
   toxicityScore: number;
   cleanInput: string;
   embeddings: number[];
-  similarDocuments: any[];
+  similarDocuments: unknown[];
   enrichedContext: string;
   routingRecommendation: string;
 }
@@ -58,7 +58,7 @@ export async function executeVectorPipeline(
     includeMetadata?: boolean;
   } = {}
 ): Promise<VectorPipelineResult> {
-  const { topK = 5, similarityThreshold = 0.7, includeMetadata = true } = options;
+  const { topK = 5, similarityThreshold = 0.7 } = options;
   
   console.log("🔄 Executing vector pipeline...");
   
@@ -144,7 +144,7 @@ async function vectorSearch(
   embedding: number[],
   topK: number,
   threshold: number
-): Promise<any[]> {
+): Promise<unknown[]> {
   // Return empty if no Supabase client available
   if (!supabase) {
     console.warn("Vector search skipped: Supabase client not available");
@@ -178,17 +178,27 @@ async function vectorSearch(
  */
 async function rerankDocuments(
   query: string,
-  documents: any[]
-): Promise<any[]> {
+  documents: unknown[]
+): Promise<Array<Record<string, unknown>>> {
   if (documents.length === 0) return [];
   
+  const records = documents.filter(
+    (doc): doc is Record<string, unknown> => typeof doc === "object" && doc !== null
+  );
+
   try {
     // Score each document with cross-encoder
     const scored = await Promise.all(
-      documents.map(async (doc) => {
+      records.map(async (doc) => {
+        const content =
+          typeof doc.content === "string"
+            ? doc.content
+            : typeof doc.text === "string"
+              ? doc.text
+              : "";
         const result = await runInference({
           modelId: "minilm-l12-v2",
-          input: `Query: ${query}\n\nDocument: ${doc.content || doc.text}`,
+          input: `Query: ${query}\n\nDocument: ${content}`,
           options: {},
         });
         
@@ -203,16 +213,16 @@ async function rerankDocuments(
     
     // Sort by rerank score
     return scored.sort((a, b) => b.rerankScore - a.rerankScore);
-  } catch (error) {
+  } catch {
     console.error("Reranking failed, returning original order");
-    return documents;
+    return records;
   }
 }
 
 /**
  * Build enriched context from documents
  */
-function buildEnrichedContext(query: string, documents: any[]): string {
+function buildEnrichedContext(query: string, documents: Array<Record<string, unknown>>): string {
   if (documents.length === 0) {
     return `Query: ${query}\n\nNo relevant context found.`;
   }
@@ -220,8 +230,19 @@ function buildEnrichedContext(query: string, documents: any[]): string {
   const contextParts = documents
     .slice(0, 3) // Top 3 most relevant
     .map((doc, i) => {
-      const content = doc.content || doc.text || "";
-      const score = doc.rerankScore || doc.similarity || 0;
+      const record = typeof doc === "object" && doc !== null ? (doc as Record<string, unknown>) : {};
+      const content =
+        typeof record.content === "string"
+          ? record.content
+          : typeof record.text === "string"
+            ? record.text
+            : "";
+      const score =
+        typeof record.rerankScore === "number"
+          ? record.rerankScore
+          : typeof record.similarity === "number"
+            ? record.similarity
+            : 0;
       return `[${i + 1}] (relevance: ${(score * 100).toFixed(0)}%)\n${content.substring(0, 300)}...`;
     });
   
@@ -252,7 +273,7 @@ function determineRouting(input: string, context: string): string {
 /**
  * Log pipeline execution
  */
-async function logPipelineExecution(data: any): Promise<void> {
+async function logPipelineExecution(data: Record<string, unknown>): Promise<void> {
   // Skip if no Supabase client available
   if (!supabase) {
     console.warn("Pipeline logging skipped: Supabase client not available");
@@ -277,7 +298,7 @@ async function logPipelineExecution(data: any): Promise<void> {
 export async function storeEmbedding(
   content: string,
   embedding: number[],
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ): Promise<{ success: boolean; id?: string }> {
   // Return failure if no Supabase client available
   if (!supabase) {

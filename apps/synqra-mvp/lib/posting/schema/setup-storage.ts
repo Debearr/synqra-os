@@ -63,8 +63,9 @@ async function setupStorage() {
     console.log('   • Max size: 50MB');
     console.log('   • Types: image/*, video/*');
 
-  } catch (error: any) {
-    console.error('❌ Storage setup failed:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('❌ Storage setup failed:', message);
     process.exit(1);
   }
 }

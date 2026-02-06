@@ -8,9 +8,9 @@
  */
 
 import { BaseAgent } from '../agents/base/agent';
-import { AgentRequest, AgentResponse, InvocationOptions, createAgentConfirmationGate } from '../agents/base/types';
+import { AgentRequest, AgentResponse, InvocationOptions } from '../agents/base/types';
 import { executeTask } from './router';
-import { AITask, ConfirmationGate, createConfirmationGate } from './types';
+import { AITask, ConfirmationGate } from './types';
 import { getTemplate } from './templates';
 
 /**

@@ -1,4 +1,4 @@
-import { config, shouldPost } from './config';
+import { shouldPost } from './config';
 import { postToLinkedIn } from './linkedin';
 import { postToTikTok } from './tiktok';
 import { postToYouTube } from './youtube';
@@ -13,9 +13,9 @@ export interface PostingMetadata {
 
 export async function routePost(
   platform: string,
-  payload: any,
+  payload: Record<string, unknown>,
   metadata?: PostingMetadata
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   if (!shouldPost()) {
     return {
       ok: true,
@@ -26,12 +26,13 @@ export async function routePost(
     };
   }
 
-  const platformHandlers: Record<string, (payload: any, meta?: PostingMetadata) => Promise<any>> = {
-    LinkedIn: postToLinkedIn,
-    TikTok: postToTikTok,
-    YouTube: postToYouTube,
-    X: postToX,
-    Instagram: postToInstagram,
+  type PostHandler = (payload: unknown, meta?: PostingMetadata) => Promise<unknown>;
+  const platformHandlers: Record<string, PostHandler> = {
+    LinkedIn: postToLinkedIn as PostHandler,
+    TikTok: postToTikTok as PostHandler,
+    YouTube: postToYouTube as PostHandler,
+    X: postToX as PostHandler,
+    Instagram: postToInstagram as PostHandler,
   };
 
   const handler = platformHandlers[platform];
@@ -43,8 +44,9 @@ export async function routePost(
     const result = await handler(payload, metadata);
     console.log(`? Posted to ${platform}`, result);
     return { ok: true, platform, result };
-  } catch (error: any) {
-    console.error(`? Failed to post to ${platform}:`, error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`? Failed to post to ${platform}:`, message);
     throw error;
   }
 }

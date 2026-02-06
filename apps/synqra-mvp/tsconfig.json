@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "ES2017",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2017", "DOM", "DOM.Iterable"],
     "downlevelIteration": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -17,16 +13,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
     "allowJs": true,
+    "paths": {
+      "@/*": ["./*"]
+    },
     "plugins": [
-      {
-        "name": "next"
-      }
+      { "name": "next" }
     ]
   },
   "include": [
@@ -36,6 +28,11 @@
     ".next-build/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "app/_archive/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         status: application.status,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Pilot API] Unexpected error:', error);
     return NextResponse.json(
       {

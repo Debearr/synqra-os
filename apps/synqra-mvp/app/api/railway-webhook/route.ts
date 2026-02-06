@@ -24,7 +24,7 @@ type RailwayWebhookPayload = {
   serviceName: string;
   environment: string;
   deploymentId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export const runtime = "nodejs";

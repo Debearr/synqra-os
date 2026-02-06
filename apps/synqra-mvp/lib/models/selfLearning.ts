@@ -252,7 +252,7 @@ export async function persistLearningData(): Promise<void> {
  */
 export async function runWeeklyOptimization(): Promise<{
   optimizationsApplied: string[];
-  metricsSnapshot: any;
+  metricsSnapshot: Record<string, unknown>;
   recommendations: string[];
 }> {
   console.log("🔄 Running weekly optimization...");
@@ -288,7 +288,7 @@ export async function runWeeklyOptimization(): Promise<{
   }
   
   // Generate metrics snapshot
-  const metricsSnapshot = {
+  const metricsSnapshot: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     totalDataPoints: analysis.totalDataPoints,
     avgQuality: Object.values(analysis.avgQualityByComplexity).reduce((a, b) => a + b, 0) / 

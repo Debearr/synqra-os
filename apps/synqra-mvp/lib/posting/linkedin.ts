@@ -22,7 +22,7 @@ export async function postToLinkedIn(
   payload: LinkedInPayload,
   meta?: PostingMetadata,
   accountId?: string
-): Promise<any> {
+): Promise<unknown> {
   const supabase = getSupabaseClient();
   const jobId = meta?.jobId;
   if (!jobId) {
@@ -39,7 +39,7 @@ export async function postToLinkedIn(
 
   const { data: insertResult, error: insertError } = await supabase
     .from('posting_logs')
-    .insert(
+    .upsert(
       {
         job_id: jobId,
         platform: 'LinkedIn',

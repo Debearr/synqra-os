@@ -15,6 +15,7 @@ export async function compressInput(
   input: string,
   context: string[] = []
 ): Promise<string> {
+  void context;
   // Check if compression needed
   if (input.length < 500) {
     return input;

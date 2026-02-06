@@ -18,12 +18,6 @@ export {
 } from "./assessment-wrapper";
 
 // Helper functions
-export {
-  createAgentIdentity,
-  createPromptSnapshot,
-  createReasoningStep,
-  createContextSnapshot,
-} from "./traceability-service";
 
 // Types
 export type {

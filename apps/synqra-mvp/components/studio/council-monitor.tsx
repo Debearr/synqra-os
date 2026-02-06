@@ -9,7 +9,7 @@ interface CouncilMonitorProps {
   // Support for raw API response structure
   response?: {
     success?: boolean;
-    data?: any;
+    data?: unknown;
     message?: string;
     meta?: {
       discipline?: string;

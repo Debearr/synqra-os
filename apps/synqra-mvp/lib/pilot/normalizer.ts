@@ -2,7 +2,6 @@ import {
   type ExtractedProfile,
   type FieldMetadata,
   type BaseProfile,
-  type ExtractionSource,
 } from './schema';
 import { getHigherPrecedenceSource } from './validator';
 
@@ -54,8 +53,8 @@ export function cleanLinkedInUrl(value: string): string {
 
 export function normalizeFieldValue(
   fieldName: string,
-  value: any
-): any {
+  value: unknown
+): unknown {
   if (value === null || value === undefined) {
     return value;
   }
@@ -141,7 +140,7 @@ export function mergeExtractedProfiles(
   // Resolve conflicts for each field
   for (const field of allFields) {
     const candidates = profiles
-      .map(p => (p as any)[field])
+      .map(p => p[field as keyof ExtractedProfile])
       .filter((metadata): metadata is FieldMetadata => metadata !== undefined);
 
     if (candidates.length === 0) continue;
@@ -152,7 +151,8 @@ export function mergeExtractedProfiles(
       winner = resolveFieldConflict(winner, candidates[i]);
     }
 
-    (merged as any)[field] = winner;
+    const fieldKey = field as keyof ExtractedProfile;
+    merged[fieldKey] = winner;
   }
 
   return merged;
@@ -188,7 +188,8 @@ export function extractBaseProfile(
 
   for (const [fieldName, metadata] of Object.entries(extracted)) {
     if (metadata && metadata.value !== null && metadata.value !== undefined) {
-      (base as any)[fieldName] = metadata.value;
+      const baseRecord = base as Record<string, unknown>;
+      baseRecord[fieldName] = metadata.value;
     }
   }
 

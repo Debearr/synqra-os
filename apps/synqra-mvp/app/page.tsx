@@ -1,9 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { initializationStore } from "@/lib/workspace/initialization-store";
@@ -13,7 +11,6 @@ import StatusQ from "@/components/StatusQ";
 const CODE_REGEX = /^[A-Z0-9]{6,12}$/;
 
 function EntranceInner() {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const [touched, setTouched] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "accepted" | "denied">("idle");

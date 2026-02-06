@@ -7,10 +7,10 @@ import {
   View,
   StyleSheet,
   renderToStream,
-  Font,
 } from "@react-pdf/renderer";
 import { buildExecSummary } from "@/features/executive-summary/execSummary.generator";
 import { execSummaryTokens as t } from "@/features/executive-summary/execSummary.tokens";
+import type { ExecSummaryData } from "@/features/executive-summary/execSummary.types";
 
 // Register fonts (optional, using standard fonts for now to avoid loading issues)
 // Font.register({ family: 'Inter', src: '...' });
@@ -137,8 +137,35 @@ const styles = StyleSheet.create({
   },
 });
 
-const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
-  const doc = buildExecSummary(dataOverride);
+function isExecSummaryData(value: unknown): value is ExecSummaryData {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.brandName === "string" &&
+    typeof record.productName === "string" &&
+    typeof record.tagline === "string" &&
+    typeof record.periodLabel === "string" &&
+    typeof record.overview === "string" &&
+    typeof record.marketProblem === "string" &&
+    Array.isArray(record.solutionArchitecture) &&
+    Array.isArray(record.revenueTiers) &&
+    typeof record.additionalRevenueNotes === "string" &&
+    Array.isArray(record.whySynqraWins) &&
+    typeof record.whyNow === "string" &&
+    Array.isArray(record.useOfFunds) &&
+    Array.isArray(record.roadmap) &&
+    typeof record.founderBlurb === "string" &&
+    typeof record.platformUrl === "string" &&
+    typeof record.location === "string" &&
+    typeof record.status === "string" &&
+    typeof record.footerCta === "string" &&
+    typeof record.footerNote === "string"
+  );
+}
+
+const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: unknown }) => {
+  const safeOverride = isExecSummaryData(dataOverride) ? dataOverride : undefined;
+  const doc = buildExecSummary(safeOverride);
   const { data, meta, metrics } = doc;
 
   return (

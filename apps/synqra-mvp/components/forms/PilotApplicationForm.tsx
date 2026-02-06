@@ -87,10 +87,19 @@ export default function PilotApplicationForm() {
         if (result.error === 'validation_failed' && result.details) {
           // Map server validation errors to form fields
           const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
-          result.details.forEach((err: any) => {
-            const field = err.path[0] as keyof PilotApplicationData;
-            fieldErrors[field] = err.message;
-          });
+          if (Array.isArray(result.details)) {
+            result.details.forEach((err: unknown) => {
+              if (!err || typeof err !== 'object') return;
+              if (!('path' in err) || !('message' in err)) return;
+              const record = err as Record<string, unknown>;
+              const path = record.path;
+              const message = record.message;
+              if (!Array.isArray(path) || typeof path[0] !== 'string') return;
+              if (typeof message !== 'string') return;
+              const field = path[0] as keyof PilotApplicationData;
+              fieldErrors[field] = message;
+            });
+          }
           setErrors(fieldErrors);
           return;
         }
@@ -102,21 +111,34 @@ export default function PilotApplicationForm() {
       console.log('[Pilot Application] Submitted successfully:', result.data.id);
       router.push('/pilot/apply/success');
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Pilot Application] Submit error:', error);
       
-      if (error.errors) {
+      const errorRecord =
+        error && typeof error === 'object' ? (error as Record<string, unknown>) : null;
+      const errorsValue = errorRecord?.errors;
+      if (Array.isArray(errorsValue)) {
         // Parse Zod validation errors (client-side)
         const fieldErrors: Partial<Record<keyof PilotApplicationData, string>> = {};
-        error.errors.forEach((err: any) => {
-          const field = err.path[0] as keyof PilotApplicationData;
-          fieldErrors[field] = err.message;
+        errorsValue.forEach((err: unknown) => {
+          if (!err || typeof err !== 'object') return;
+          if (!('path' in err) || !('message' in err)) return;
+          const record = err as Record<string, unknown>;
+          const path = record.path;
+          const message = record.message;
+          if (!Array.isArray(path) || typeof path[0] !== 'string') return;
+          if (typeof message !== 'string') return;
+          const field = path[0] as keyof PilotApplicationData;
+          fieldErrors[field] = message;
         });
         setErrors(fieldErrors);
       } else {
         // Generic error - show on email field
         setErrors({
-          email: error.message || 'Failed to submit application. Please try again.',
+          email:
+            error instanceof Error
+              ? error.message
+              : 'Failed to submit application. Please try again.',
         });
       }
       

@@ -80,7 +80,7 @@ export default function PilotApplyPage() {
               color: 'rgba(245, 243, 240, 0.7)',
             }}
           >
-            Get early access to Synqra's executive content engine. Shape the product,
+            Get early access to Synqra&apos;s executive content engine. Shape the product,
             enjoy founder perks, and unlock your executive voice in 90 seconds.
           </p>
         </motion.div>

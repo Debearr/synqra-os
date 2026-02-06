@@ -10,7 +10,6 @@ import {
   Candle,
   StructureEvent,
   StructurePoint,
-  StructurePointType,
   TrendDirection,
 } from "./types";
 

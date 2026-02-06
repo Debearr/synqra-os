@@ -1,7 +1,5 @@
 "use client";
 
-import { MultiTimeframeConflictDisplay } from "@/components/studio/MultiTimeframeConflictDisplay";
-
 /**
  * Example: AuraFX assessment view
  * Disclaimer is handled in the studio shell for consistency

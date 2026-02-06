@@ -3,7 +3,6 @@ import {
   CompletedOffer,
   DailyEarningsResult,
   DriverHealthIndexResult,
-  PayoutBreakdown,
 } from "./types";
 
 const payoutSchema = z.object({

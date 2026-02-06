@@ -21,7 +21,7 @@ export const MessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string(),
   timestamp: z.number().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -29,8 +29,8 @@ export type Message = z.infer<typeof MessageSchema>;
 // Tool call schema
 export const ToolCallSchema = z.object({
   name: z.string(),
-  arguments: z.record(z.string(), z.any()),
-  result: z.any().optional(),
+  arguments: z.record(z.string(), z.unknown()),
+  result: z.unknown().optional(),
 });
 
 export type ToolCall = z.infer<typeof ToolCallSchema>;
@@ -42,7 +42,7 @@ export const AgentResponseSchema = z.object({
   sources: z.array(z.string()).optional(),
   toolCalls: z.array(ToolCallSchema).optional(),
   reasoning: z.string().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   tokenUsage: z.object({ // New: Track token usage for cost monitoring
     input: z.number().optional(),
     output: z.number().optional(),
@@ -57,7 +57,7 @@ export type AgentResponse = z.infer<typeof AgentResponseSchema>;
 export const AgentRequestSchema = z.object({
   message: z.string(),
   conversationId: z.string().optional(),
-  context: z.record(z.string(), z.any()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
   history: z.array(MessageSchema).optional(),
 });
 
@@ -80,15 +80,17 @@ export interface AgentConfig {
 export interface ToolDefinition {
   name: string;
   description: string;
-  parameters: z.ZodObject<any>;
-  handler: (args: any) => Promise<any>;
+  parameters: z.ZodObject<Record<string, z.ZodTypeAny>>;
+  handler: {
+    bivarianceHack(args: Record<string, unknown>): Promise<unknown>;
+  }["bivarianceHack"];
 }
 
 // Conversation context
 export interface ConversationContext {
   conversationId: string;
   history: Message[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: number;
   updatedAt: number;
 }
@@ -107,7 +109,7 @@ export interface RAGDocument {
   content: string;
   source: string;
   similarity: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 // Safety check result
@@ -128,7 +130,7 @@ export interface InvocationOptions {
   useSafety?: boolean;
   maxHistory?: number;
   responseTier?: ResponseTier; // New: Control response length for cost optimization
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   
   /**
    * REQUIRED: Human confirmation gate.

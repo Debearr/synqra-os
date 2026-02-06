@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 import type { AdminAlert, ThrottlingState } from "@/app/api/aura-fx/budget/types";
 
 interface BudgetAlertDashboardProps {

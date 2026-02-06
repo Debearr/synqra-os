@@ -35,6 +35,7 @@ export class SalesAgent extends BaseAgent {
     request: AgentRequest,
     history: Message[]
   ): AgentResponse {
+    void history;
     const message = request.message.toLowerCase();
 
     // Detect intent and generate appropriate response

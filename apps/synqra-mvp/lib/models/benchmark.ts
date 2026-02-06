@@ -6,17 +6,13 @@
  */
 
 import { runInference } from "./localModelLoader";
-import { processInput } from "./processingPipeline";
-import { validateOutputQuality } from "./enhancedQualityValidator";
 import { checkBrandConsistency } from "./brandDNAValidator";
-import { verifyFactualGrounding } from "./hallucinationGate";
-import { executeVectorPipeline } from "../supabase/vectorPipeline";
 
 export interface BenchmarkResult {
   testName: string;
   passed: boolean;
   duration: number;
-  metrics: Record<string, any>;
+  metrics: Record<string, unknown>;
   errors: string[];
 }
 

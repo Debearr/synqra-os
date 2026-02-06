@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
     res.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
     return res;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('LinkedIn OAuth callback error:', error);
     const res = NextResponse.redirect('/admin/integrations?error=unexpected');
     res.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });

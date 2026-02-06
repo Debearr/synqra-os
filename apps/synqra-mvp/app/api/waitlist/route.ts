@@ -17,9 +17,15 @@ import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 // RFC 5322 simplified email regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function isSupabaseUnreachable(error: any): boolean {
-  const message = String(error?.message || "");
-  const details = String(error?.details || "");
+function isSupabaseUnreachable(error: unknown): boolean {
+  const message =
+    typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message?: unknown }).message || "")
+      : "";
+  const details =
+    typeof error === "object" && error !== null && "details" in error
+      ? String((error as { details?: unknown }).details || "")
+      : "";
   // Common local failure modes: DNS resolution, network blocked, fetch failing
   return (
     message.includes("fetch failed") ||
@@ -59,7 +65,7 @@ export async function POST(req: Request) {
     let supabaseAdmin;
     try {
       supabaseAdmin = requireSupabaseAdmin();
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Configuration / env issue (most common in local dev)
       const message =
         process.env.NODE_ENV === "production"
@@ -132,7 +138,7 @@ export async function POST(req: Request) {
       message: 'Successfully joined waitlist' 
     });
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[Waitlist API] Unexpected error:', e);
     return NextResponse.json(
       { ok: false, error: 'Invalid request' },

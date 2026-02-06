@@ -180,7 +180,7 @@ export function detectBatchableTasks(tasks: AITask[]): AITask[][] {
   }
   
   // Convert to array of batches
-  for (const [_, batch] of batchMap.entries()) {
+  for (const [, batch] of batchMap.entries()) {
     if (batch.length > 1) {
       batches.push(batch);
     }

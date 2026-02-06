@@ -13,7 +13,7 @@ export default function ExecSummaryStudio() {
   const [showLoadMenu, setShowLoadMenu] = useState(false);
 
   // Generic update helper
-  const update = (key: keyof ExecSummaryData, value: any) => {
+  const update = (key: keyof ExecSummaryData, value: string) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -204,7 +204,7 @@ export default function ExecSummaryStudio() {
             <FieldInput
                 key={field}
                 label={label}
-                value={data[field] as any}
+                value={data[field] as string}
                 onChange={(v) => update(field, v)}
             />
             ))}

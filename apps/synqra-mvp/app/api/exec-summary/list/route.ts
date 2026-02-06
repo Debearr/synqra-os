@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSupabase } from "@/lib/supabaseClient";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  void request;
   // In a real app, you'd get the user from the session/auth header
   // For MVP/Demo, we might assume a test user or get it from header
   // const userId = ... 

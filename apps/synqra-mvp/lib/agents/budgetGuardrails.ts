@@ -33,18 +33,11 @@ const DEFAULT_BUDGET: BudgetConfig = {
   },
 };
 
-let lastAlertSent: { [key: string]: number } = {}; // Prevent alert spam
+const lastAlertSent: { [key: string]: number } = {}; // Prevent alert spam
 
 function getCurrentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function getCurrentDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-    now.getDate()
-  ).padStart(2, "0")}`;
 }
 
 async function getBudgetUsageRecord(): Promise<{
@@ -390,6 +383,7 @@ export function estimateRequestCost(
   outputTokens: number,
   model: string = "claude-3-5-sonnet-20241022"
 ): number {
+  void model;
   // Claude 3.5 Sonnet pricing
   const inputCostPer1M = 3; // $3 per 1M input tokens
   const outputCostPer1M = 15; // $15 per 1M output tokens

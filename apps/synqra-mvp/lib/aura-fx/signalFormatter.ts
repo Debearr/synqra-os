@@ -14,11 +14,14 @@ import {
   PublicSignal,
   Timeframe,
 } from "./types";
+import { computeRiskSizing } from "./risk";
 
 interface BuildSignalOptions {
   symbol: string;
   timeframe: Timeframe | string;
   riskProfile?: "conservative" | "balanced" | "aggressive";
+  accountBalance?: number;
+  riskPercent?: number; // 0-1
 }
 
 export function buildSignalPayload(
@@ -34,6 +37,14 @@ export function buildSignalPayload(
 
   const rationaleShort = buildRationaleShort(bias, confidence, engine);
   const educationBlocks = buildEducationBlocks(engine, bias);
+  const risk = computeRiskSizing({
+    direction: bias,
+    entryZone,
+    stopZone,
+    targetZone,
+    accountBalance: options.accountBalance,
+    riskPercent: options.riskPercent,
+  }) ?? undefined;
 
   return {
     id: uuid(),
@@ -45,6 +56,7 @@ export function buildSignalPayload(
     stopZone,
     targetZone,
     killzone: engine.session.killzone,
+    risk: risk ?? undefined,
     rationaleShort,
     educationBlocks,
     generatedAt: new Date().toISOString(),
@@ -79,6 +91,7 @@ export function toPublicSignal(signal: AuraFxSignalPayload): PublicSignal {
     stopZone,
     targetZone,
     killzone,
+    risk,
     rationaleShort,
     educationBlocks,
     generatedAt,
@@ -94,6 +107,7 @@ export function toPublicSignal(signal: AuraFxSignalPayload): PublicSignal {
     stopZone,
     targetZone,
     killzone,
+    risk,
     rationaleShort,
     educationBlocks,
     generatedAt,

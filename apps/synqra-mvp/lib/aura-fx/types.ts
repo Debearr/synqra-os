@@ -79,12 +79,35 @@ export interface FairValueGap {
   isFilled: boolean;
 }
 
+export type RegimeStateType = "EXPANSION" | "MEAN_REVERSION";
+
+export interface RegimeState {
+  state: RegimeStateType;
+  confidence: number; // 0-1
+  reason: string;
+  metrics?: {
+    slopePct?: number;
+    avgRange?: number;
+    lastRange?: number;
+    volatilityRatio?: number;
+  };
+}
+
 export type Bias = "LONG" | "SHORT" | "NO_TRADE";
+
+export type SetupState = "FORMING" | "VALID" | "INVALID";
+
+export interface SetupEvaluation {
+  state: SetupState;
+  confidence: number; // 0-1
+  reason: string;
+}
 
 export interface ConfluenceBreakdown {
   trendScore: number;
   liquidityScore: number;
   structureScore: number;
+  regimeScore: number;
   timeScore: number;
   overallScore: number; // 0-1
   primaryBias: Bias;
@@ -95,6 +118,7 @@ export interface AuraFxEngineResult extends MarketContext {
   orderBlocks: OrderBlock[];
   fairValueGaps: FairValueGap[];
   confluence: ConfluenceBreakdown;
+  setup: SetupEvaluation;
 }
 
 export interface AuraFxSignalPayload {
@@ -107,6 +131,15 @@ export interface AuraFxSignalPayload {
   stopZone: PriceRange | string;
   targetZone: PriceRange | string;
   killzone: Killzone | "NONE";
+  risk?: {
+    rMultiple: number;
+    riskAmount?: number;
+    positionSize?: number;
+    stopDistance: number;
+    entryPrice: number;
+    stopPrice: number;
+    targetPrice: number;
+  };
   rationaleShort: string;
   educationBlocks: {
     what: string;
@@ -126,6 +159,7 @@ export interface PublicSignal {
   stopZone: PriceRange | string;
   targetZone: PriceRange | string;
   killzone: Killzone | "NONE";
+  risk?: AuraFxSignalPayload["risk"];
   rationaleShort: string;
   educationBlocks: AuraFxSignalPayload["educationBlocks"];
   generatedAt: string;
@@ -145,6 +179,7 @@ export interface SessionState {
 
 export interface MarketContext {
   trend: { direction: TrendDirection; reason: string };
+  regime: RegimeState;
   structurePoints: StructurePoint[];
   structureEvents: StructureEvent[];
   liquidityPools: LiquidityPool[];

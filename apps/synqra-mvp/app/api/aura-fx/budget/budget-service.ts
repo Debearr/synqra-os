@@ -22,9 +22,10 @@ export class BudgetService {
   private supabase;
 
   constructor(authToken?: string) {
-    const headers = authToken ? { Authorization: authToken } : {};
+    const headers: Record<string, string> | undefined =
+      authToken ? { Authorization: `Bearer ${authToken}` } : undefined;
     this.supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-      global: { headers },
+      global: { headers: headers as Record<string, string> | undefined },
     });
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryCouncil } from "@/src/lib/aiCouncil";
-import type { CouncilRequest } from "@/src/lib/aiCouncil";
+import type { CouncilRequest, CouncilResponse } from "@/src/lib/aiCouncil";
 import { enforceSynqraLiteDraftSecurity, PublicGatekeeperError, type SynqraTier } from "@/lib/security/gatekeeper";
 import { logCouncilUsage } from "@/src/lib/aiCouncil/logging";
 
@@ -187,8 +187,8 @@ export async function POST(request: NextRequest) {
 async function processBatch(
   prompts: string[],
   options: Partial<CouncilRequest>
-): Promise<Array<{ prompt: string; responses: any[]; consensus?: string; timestamp: string }>> {
-  const results: Array<{ prompt: string; responses: any[]; consensus?: string; timestamp: string }> = [];
+): Promise<Array<{ prompt: string; responses: CouncilResponse["responses"]; consensus?: string; timestamp: string }>> {
+  const results: Array<{ prompt: string; responses: CouncilResponse["responses"]; consensus?: string; timestamp: string }> = [];
 
   // Process in chunks to limit concurrency
   for (let i = 0; i < prompts.length; i += MAX_CONCURRENT) {

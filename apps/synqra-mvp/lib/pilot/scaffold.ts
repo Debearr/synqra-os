@@ -8,7 +8,6 @@ import {
 import {
   calculateOverallConfidence,
   shouldTriggerManualFallback,
-  validateExtractedProfile,
 } from './validator';
 import {
   normalizeExtractedProfile,
@@ -32,15 +31,12 @@ import {
 
 export function buildProfileScaffold(
   extracted: ExtractedProfile,
-  industryExtension?: Record<string, any>
+  industryExtension?: Record<string, unknown>
 ): ProfileScaffold {
   // Step 1: Normalize extracted data
   const normalized = normalizeExtractedProfile(extracted);
 
-  // Step 2: Validate
-  const validation = validateExtractedProfile(normalized);
-
-  // Step 3: Calculate confidence
+  // Step 2: Calculate confidence
   const { score: overallConfidence, fieldScores } = calculateOverallConfidence(normalized);
 
   // Step 4: Check fallback requirements
@@ -74,7 +70,7 @@ export function buildProfileScaffold(
 
 export function buildProfileScaffoldFromMultipleSources(
   extractedProfiles: ExtractedProfile[],
-  industryExtension?: Record<string, any>
+  industryExtension?: Record<string, unknown>
 ): ProfileScaffold {
   // Merge profiles using conflict resolution
   const merged = mergeExtractedProfiles(extractedProfiles);
@@ -153,12 +149,7 @@ export function enrichScaffoldWithManualData(
   };
 
   // Recalculate confidence (manual data has perfect confidence)
-  const manualFields = Object.keys(manualData);
   const updatedFieldConfidences = { ...scaffold.fieldConfidences };
-
-  for (const field of manualFields) {
-    
-  }
 
   // Recalculate overall confidence
   const totalFields = Object.keys(updatedFieldConfidences).length;
@@ -213,8 +204,9 @@ export function getScaffoldSummary(scaffold: ProfileScaffold): {
     'whyPilot',
   ];
 
+  const profileRecord = scaffold.profile as Record<string, unknown>;
   const presentFields = Object.keys(scaffold.profile).filter(
-    key => (scaffold.profile as any)[key] !== undefined && (scaffold.profile as any)[key] !== null
+    key => profileRecord[key] !== undefined && profileRecord[key] !== null
   );
 
   const missingFields = allPossibleFields.filter(

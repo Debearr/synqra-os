@@ -74,7 +74,13 @@ export function compareCosts(
   tokens: { input: number; output: number }
 ): Record<ModelProvider, { cost: number; savings?: number }> {
   const models: ModelProvider[] = ['mistral', 'deepseek', 'claude', 'gpt-5'];
-  const costs: any = {};
+  const costs: Record<ModelProvider, { cost: number; savings?: number }> = {
+    mistral: { cost: 0 },
+    deepseek: { cost: 0 },
+    claude: { cost: 0 },
+    'gpt-5': { cost: 0 },
+    cached: { cost: 0 },
+  };
   
   const selectedCost = estimateCost(selectedModel, tokens);
   

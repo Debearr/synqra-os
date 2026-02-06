@@ -1,6 +1,8 @@
 // Force dynamic rendering for 404 page
 export const dynamic = 'force-dynamic';
 
+import Link from 'next/link';
+
 export default function NotFound() {
   return (
     <div style={{ 
@@ -15,7 +17,7 @@ export default function NotFound() {
       <div style={{ textAlign: 'center' }}>
         <h1 style={{ fontSize: '4rem', marginBottom: '1rem' }}>404</h1>
         <p style={{ fontSize: '1.25rem', opacity: 0.7 }}>Page not found</p>
-        <a 
+        <Link 
           href="/" 
           style={{ 
             display: 'inline-block',
@@ -29,7 +31,7 @@ export default function NotFound() {
           }}
         >
           Go Home
-        </a>
+        </Link>
       </div>
     </div>
   );

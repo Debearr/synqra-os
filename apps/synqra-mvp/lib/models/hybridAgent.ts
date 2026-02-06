@@ -14,7 +14,6 @@ import { routeToModel, trackRouting, shouldEscalate } from "./intelligentRouter"
 import { runInference } from "./localModelLoader";
 import { validateQuality } from "./qualityValidator";
 import { logLearningData } from "./selfLearning";
-import { getModelConfig } from "./modelRegistry";
 import { checkBudget, recordCost } from "../agents/budgetGuardrails";
 
 /**
@@ -31,16 +30,24 @@ export async function processHybridRequest(
     options.confirmation,
     `Hybrid AI request: ${request.message.substring(0, 50)}...`
   );
-  const startTime = Date.now();
   
   console.log(`🔄 Processing hybrid request: "${request.message.substring(0, 50)}..."`);
   
   // Step 1: Route to optimal model
+  const requiresBrandRaw =
+    options.metadata &&
+    typeof options.metadata === "object" &&
+    "requiresBrand" in options.metadata
+      ? (options.metadata as Record<string, unknown>).requiresBrand
+      : false;
+  const requiresBrand =
+    typeof requiresBrandRaw === "boolean" ? requiresBrandRaw : false;
+
   const routing = routeToModel(request.message, {
     preferLocal: true,
     maxCostPerRequest: 0.02,
     maxLatencyMs: 3000,
-    brandConsistencyRequired: options.metadata?.requiresBrand || false,
+    brandConsistencyRequired: requiresBrand,
   });
   
   console.log(`   📍 Routed to: ${routing.selectedModel} (${routing.complexity})`);
@@ -117,7 +124,7 @@ export async function processHybridRequest(
         response.answer,
         currentModel,
         {
-          requiresBrand: options.metadata?.requiresBrand,
+          requiresBrand,
         }
       );
       

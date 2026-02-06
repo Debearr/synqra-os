@@ -121,33 +121,36 @@ function createMinimalDraft(): ExtractedProfile {
   };
 }
 
-function normalizeExtractedProfile(raw: any): ExtractedProfile {
-  const safeString = (val: any): string =>
+function normalizeExtractedProfile(raw: unknown): ExtractedProfile {
+  const rawObj: Record<string, unknown> =
+    typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+
+  const safeString = (val: unknown): string =>
     typeof val === 'string' ? val.trim() : '';
 
-  const safeArray = (val: any): string[] =>
+  const safeArray = (val: unknown): string[] =>
     Array.isArray(val) ? val.map(String).filter(Boolean) : [];
 
-  const safeNumber = (val: any, fallback: number): number => {
-    const num = parseFloat(val);
+  const safeNumber = (val: unknown, fallback: number): number => {
+    const num = typeof val === 'number' ? val : parseFloat(String(val));
     return isNaN(num) ? fallback : Math.max(0, Math.min(1, num));
   };
 
   return {
-    name: safeString(raw.name),
-    title: safeString(raw.title),
-    company: safeString(raw.company),
-    location: safeString(raw.location),
-    headline: safeString(raw.headline),
-    summary: safeString(raw.summary),
-    website: safeString(raw.website),
-    linkedin: safeString(raw.linkedin),
-    twitter: safeString(raw.twitter),
-    newsletter: safeString(raw.newsletter),
-    tone: safeString(raw.tone),
-    contentPillars: safeArray(raw.contentPillars || raw.pillars),
-    proofPoints: safeArray(raw.proofPoints || raw.highlights),
-    confidence: safeNumber(raw.confidence, 0.0),
+    name: safeString(rawObj.name),
+    title: safeString(rawObj.title),
+    company: safeString(rawObj.company),
+    location: safeString(rawObj.location),
+    headline: safeString(rawObj.headline),
+    summary: safeString(rawObj.summary),
+    website: safeString(rawObj.website),
+    linkedin: safeString(rawObj.linkedin),
+    twitter: safeString(rawObj.twitter),
+    newsletter: safeString(rawObj.newsletter),
+    tone: safeString(rawObj.tone),
+    contentPillars: safeArray(rawObj.contentPillars || rawObj.pillars),
+    proofPoints: safeArray(rawObj.proofPoints || rawObj.highlights),
+    confidence: safeNumber(rawObj.confidence, 0.0),
   };
 }
 

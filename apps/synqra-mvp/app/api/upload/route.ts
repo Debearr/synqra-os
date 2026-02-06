@@ -51,7 +51,12 @@ export async function POST(req: NextRequest) {
 
     if (uploadError) {
       const message = uploadError.message || '';
-      const statusCode = (uploadError as any).statusCode;
+      const statusCode =
+        typeof uploadError === 'object' &&
+        uploadError !== null &&
+        'statusCode' in uploadError
+          ? (uploadError as { statusCode?: number }).statusCode
+          : undefined;
       const isDuplicate = statusCode === 409 || message.toLowerCase().includes('already exists');
 
       if (!isDuplicate) {
@@ -80,10 +85,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  } catch (error: any) {
-    console.error('Upload error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Upload error:', message);
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: message },
       { status: 500 }
     );
   }

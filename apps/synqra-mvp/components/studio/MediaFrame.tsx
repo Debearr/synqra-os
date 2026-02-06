@@ -48,6 +48,7 @@ import type { MediaFrameProps } from '@/lib/core/mediaFrame.types';
  * @returns null - Renders nothing until implementation
  */
 export function MediaFrame(_props: MediaFrameProps): null {
+  void _props;
   // TODO: Implementation deferred
   // This component intentionally renders nothing.
   // Do not add playback logic, embeds, SDKs, or side effects.

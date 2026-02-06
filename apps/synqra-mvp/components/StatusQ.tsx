@@ -23,6 +23,7 @@ export function StatusQ({
   placement = "bottom-right",
   size = 24,
 }: StatusQProps) {
+  void status;
   const containerClasses = useMemo(() => {
     const pos = fixed
       ? {

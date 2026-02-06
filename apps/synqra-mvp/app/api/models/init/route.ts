@@ -10,6 +10,7 @@ import { initializeModels } from "@/lib/models/localModelLoader";
  */
 
 export async function POST(request: NextRequest) {
+  void request;
   try {
     console.log("🚀 Initializing local models...");
     
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
  * Check if models are initialized
  */
 export async function GET(request: NextRequest) {
+  void request;
   const { getLoaderStatus } = await import("@/lib/models/localModelLoader");
   const status = getLoaderStatus();
   

@@ -52,6 +52,7 @@ export async function route(
   task: AITask,
   options?: { brand?: AiRouterBrand }
 ): Promise<RoutingDecision> {
+  void options;
   const routing = resolveRouting(task.type);
   const mapped = PROVIDER_TO_MODEL[routing.provider] ?? "mistral";
 

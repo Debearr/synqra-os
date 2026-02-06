@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
     optimizePackageImports: ["framer-motion"],
   },
+  eslint: {
+    dirs: ["app", "components", "lib"],
+  },
   reactStrictMode: true,
   // Skip static generation to avoid styled-jsx + React 18 issue
   skipTrailingSlashRedirect: true,

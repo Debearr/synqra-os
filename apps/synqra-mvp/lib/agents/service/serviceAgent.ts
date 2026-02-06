@@ -35,6 +35,7 @@ export class ServiceAgent extends BaseAgent {
     request: AgentRequest,
     history: Message[]
   ): AgentResponse {
+    void history;
     const message = request.message.toLowerCase();
 
     let answer = "";

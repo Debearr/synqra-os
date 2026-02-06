@@ -76,21 +76,27 @@ export default function WaitlistPage() {
         submitTimeoutRef.current = null;
       }
 
-      let data: any = null;
+      let data: unknown = null;
       try {
         data = await res.json();
       } catch {
         data = null;
       }
+      const dataRecord =
+        data && typeof data === "object" ? (data as Record<string, unknown>) : null;
 
       if (!res.ok) {
         // Handle specific error cases
-        if (data?.error === 'already_registered') {
+        if (dataRecord?.error === 'already_registered') {
           setError('You\'re already on the list! Check your email for updates.');
           return;
         }
         // Prefer server-provided message when available (keeps UX human-friendly)
-        throw new Error(data?.message || data?.error || 'Something went wrong');
+        const errorMessage =
+          (typeof dataRecord?.message === "string" && dataRecord.message) ||
+          (typeof dataRecord?.error === "string" && dataRecord.error) ||
+          'Something went wrong';
+        throw new Error(errorMessage);
       }
 
       // Success - redirect to success page
@@ -106,7 +112,7 @@ export default function WaitlistPage() {
         }
       }, 1200);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (submitTimeoutRef.current) {
         window.clearTimeout(submitTimeoutRef.current);
         submitTimeoutRef.current = null;
@@ -119,7 +125,8 @@ export default function WaitlistPage() {
       if (process.env.NODE_ENV !== "production") {
         console.warn('[Waitlist] Submit error:', err);
       }
-      setError(err.message || 'Unable to join waitlist. Please try again.');
+      const message = err instanceof Error ? err.message : 'Unable to join waitlist. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -38,6 +38,7 @@ export async function validateOutputQuality(
     brandId = "de-bear",
     checkHallucinations = true,
   } = options;
+  void modelId;
   
   // Step 1: Relevance scoring using cross-encoder (MiniLM-L12-v2)
   const relevanceScore = await scoreRelevanceWithCrossEncoder(input, output);
@@ -45,7 +46,7 @@ export async function validateOutputQuality(
   
   // Step 2: Brand DNA check
   let brandScore = 0.75; // Default neutral
-  let brandIssues: string[] = [];
+  const brandIssues: string[] = [];
   
   if (requiresBrand) {
     const brandCheck = await checkBrandConsistency(output, brandId);
@@ -60,7 +61,7 @@ export async function validateOutputQuality(
   
   // Step 3: Hallucination detection
   let hallucinationScore = 1.0; // 1.0 = no hallucinations
-  let hallucinationIssues: string[] = [];
+  const hallucinationIssues: string[] = [];
   
   if (checkHallucinations && context) {
     // Check for hallucination patterns
@@ -171,7 +172,7 @@ async function scoreRelevanceWithCrossEncoder(
       : 0.75; // Default fallback
     
     return Math.max(0, Math.min(1, score));
-  } catch (error) {
+  } catch {
     console.error("Cross-encoder scoring failed, using heuristic");
     
     // Fallback to simple heuristic

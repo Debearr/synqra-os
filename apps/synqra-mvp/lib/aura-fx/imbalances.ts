@@ -23,7 +23,6 @@ export function findOrderBlocks(
   const blocks: OrderBlock[] = [];
 
   for (let i = 1; i < candles.length - 2; i++) {
-    const prev = candles[i - 1];
     const curr = candles[i];
     const next = candles[i + 1];
 

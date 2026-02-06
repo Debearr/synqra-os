@@ -5,7 +5,7 @@
  * Caches AI responses to avoid redundant API calls
  */
 
-import { CachedResponse, ModelProvider } from './types';
+import { CachedResponse } from './types';
 
 /**
  * IN-MEMORY CACHE
@@ -87,7 +87,7 @@ export function getCacheStats(): {
   newestEntry: number;
 } {
   const entries = Array.from(cache.entries());
-  const timestamps = entries.map(([_, v]) => v.timestamp);
+  const timestamps = entries.map(([, v]) => v.timestamp);
   
   return {
     size: cache.size,

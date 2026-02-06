@@ -20,7 +20,7 @@ export class ConversationMemory {
    */
   getOrCreateContext(
     conversationId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): ConversationContext {
     let context = this.store.get(conversationId);
 
@@ -46,7 +46,7 @@ export class ConversationMemory {
     conversationId: string,
     role: "user" | "assistant" | "system",
     content: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): void {
     const context = this.getOrCreateContext(conversationId);
 
@@ -75,7 +75,7 @@ export class ConversationMemory {
     conversationId: string,
     role: "user" | "assistant" | "system",
     content: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): void {
     const context = this.getOrCreateContext(conversationId);
     const recentMessages = context.history.slice(-5);
@@ -133,7 +133,7 @@ export class ConversationMemory {
   /**
    * Get conversation metadata
    */
-  getMetadata(conversationId: string): Record<string, any> {
+  getMetadata(conversationId: string): Record<string, unknown> {
     const context = this.store.get(conversationId);
     return context?.metadata || {};
   }
@@ -143,7 +143,7 @@ export class ConversationMemory {
    */
   updateMetadata(
     conversationId: string,
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): void {
     const context = this.getOrCreateContext(conversationId);
     context.metadata = { ...context.metadata, ...metadata };
@@ -179,7 +179,7 @@ export class ConversationMemory {
     messageCount: number;
     createdAt: number;
     updatedAt: number;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   } | null {
     const context = this.store.get(conversationId);
     if (!context) return null;
@@ -251,4 +251,3 @@ export class ConversationMemory {
 
 // Global conversation memory instance
 export const conversationMemory = new ConversationMemory();
-

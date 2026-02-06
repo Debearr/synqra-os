@@ -13,6 +13,7 @@ import { getHybridSystemStatus } from "@/lib/models/hybridAgent";
  */
 
 export async function GET(request: NextRequest) {
+  void request;
   try {
     // Gather all status information
     const [

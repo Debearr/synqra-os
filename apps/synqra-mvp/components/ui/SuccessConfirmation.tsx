@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 /**
  * ============================================================
@@ -163,7 +164,7 @@ export default function SuccessConfirmation({
           transition={{ delay: 0.9 }}
           className="mt-8 text-center"
         >
-          <a
+          <Link
             href="/"
             className="inline-block px-8 rounded-lg transition-all duration-200 hover:opacity-90 active:scale-98"
             style={{
@@ -179,7 +180,7 @@ export default function SuccessConfirmation({
             }}
           >
             Back to Home
-          </a>
+          </Link>
         </motion.div>
 
         {/* Footer */}
@@ -195,7 +196,7 @@ export default function SuccessConfirmation({
           }}
         >
           <p>NØID × Synqra</p>
-          <p className="mt-1 italic">"Drive Unseen. Earn Smart."</p>
+          <p className="mt-1 italic">&quot;Drive Unseen. Earn Smart.&quot;</p>
         </motion.div>
       </motion.div>
     </div>

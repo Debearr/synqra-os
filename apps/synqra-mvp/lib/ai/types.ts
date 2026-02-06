@@ -58,7 +58,7 @@ export interface RoutingDecision {
   tokenBudget?: number;
   requiresValidation?: boolean;
   pipeline?: string[];
-  response?: any;
+  response?: unknown;
   fallbackChain?: ModelProvider[];
   metadata?: {
     cacheHit?: boolean;
@@ -80,7 +80,7 @@ export interface ModelUsageLog {
 }
 
 export interface CachedResponse {
-  response: any;
+  response: unknown;
   model: ModelProvider;
   timestamp: number;
   ttl?: number;

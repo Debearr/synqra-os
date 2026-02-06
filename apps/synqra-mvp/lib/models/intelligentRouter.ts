@@ -9,7 +9,7 @@
  */
 
 import { RoutingDecision } from "./types";
-import { MODEL_REGISTRY, getModelConfig } from "./modelRegistry";
+import { getModelConfig } from "./modelRegistry";
 
 export interface RouterConfig {
   preferLocal: boolean; // Prefer local models when possible

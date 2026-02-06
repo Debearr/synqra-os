@@ -270,6 +270,7 @@ async function checkToxicity(output: string): Promise<number> {
  * Check factual accuracy (basic checks)
  */
 async function checkAccuracy(output: string, modelId: string): Promise<number> {
+  void modelId;
   let score = 0.8; // Assume mostly accurate
   
   // Check for hallucination markers

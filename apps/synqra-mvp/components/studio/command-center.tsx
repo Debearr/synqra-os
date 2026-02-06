@@ -56,7 +56,6 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
     } catch (err) {
       // Explicit error handling - no silent failures
       console.error("Failed to initialize protocol:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       // Error state is managed by the hook, but we log it explicitly
     }
   };

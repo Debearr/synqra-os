@@ -222,7 +222,7 @@ export const SUPPORT_KNOWLEDGE = {
  * Get static knowledge by topic (zero cost lookup)
  */
 export function getStaticKnowledge(topic: string): string {
-  const topicMap: Record<string, any> = {
+  const topicMap: Record<string, unknown> = {
     pricing: SYNQRA_KNOWLEDGE.product.pricing,
     features: SYNQRA_KNOWLEDGE.product.features,
     faq: SYNQRA_KNOWLEDGE.faq,

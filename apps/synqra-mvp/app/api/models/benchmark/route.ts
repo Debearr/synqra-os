@@ -10,6 +10,7 @@ import { runFullBenchmark } from "@/lib/models/benchmark";
  */
 
 export async function POST(request: NextRequest) {
+  void request;
   try {
     console.log("🚀 Starting benchmark suite...");
     
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
  * Get benchmark history (placeholder)
  */
 export async function GET(request: NextRequest) {
+  void request;
   return NextResponse.json({
     message: "Benchmark history not yet implemented",
     endpoint: "POST /api/models/benchmark to run new benchmark",

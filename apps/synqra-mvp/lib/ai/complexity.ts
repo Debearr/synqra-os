@@ -77,7 +77,7 @@ function scoreLengthComplexity(input: string): number {
  */
 function generateReasoning(
   score: number,
-  factors: any,
+  factors: { length: number; structure: number; reasoning: number; clientFacing: number },
   hints: ComplexityHints
 ): string {
   const reasons: string[] = [];

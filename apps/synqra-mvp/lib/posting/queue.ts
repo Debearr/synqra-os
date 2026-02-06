@@ -6,7 +6,7 @@ import { buildPostingIdempotencyKey } from "./idempotency";
 
 interface QueueJobInput {
   platform: string;
-  payload: any;
+  payload: Record<string, unknown>;
   jobId: string;
   variantId?: string;
   ownerId?: string | null;
@@ -17,7 +17,7 @@ interface PostingJobPayload {
   platform: string;
   jobId: string;
   variantId?: string | null;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 interface PostingJobRecord {
@@ -65,7 +65,7 @@ export async function enqueue(job: QueueJobInput): Promise<{ enqueued: boolean; 
 
   const { data, error } = await supabase
     .from("posting_jobs")
-    .insert(
+    .upsert(
       {
         job_id: crypto.randomUUID(),
         status: "pending",

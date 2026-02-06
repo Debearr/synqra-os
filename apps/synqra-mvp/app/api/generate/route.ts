@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // Insert variants into Supabase
     const variantsToInsert = Object.entries(allVariants).flatMap(
-      ([platform, variants]) =>
+      ([, variants]) =>
         variants.map((variant) => ({
           job_id: job.id,
           hook: variant.hook,

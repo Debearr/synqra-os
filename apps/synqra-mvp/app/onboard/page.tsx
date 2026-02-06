@@ -90,10 +90,12 @@ export default function OnboardPage() {
       }
 
       setProfile(normalized);
+      const payloadObj =
+        payload && typeof payload === "object"
+          ? (payload as Record<string, unknown>)
+          : {};
       const confidence =
-        payload && typeof payload === "object" && typeof (payload as any).confidence === "number"
-          ? (payload as any).confidence
-          : null;
+        typeof payloadObj.confidence === "number" ? payloadObj.confidence : null;
       if (confidence !== null && confidence < 0.5) {
         setStatusNote("Limited signal extracted. Please review.");
       } else {
@@ -239,10 +241,15 @@ export default function OnboardPage() {
 
 function normalizeProfile(payload: unknown): ExtractedProfile | null {
   if (!payload || typeof payload !== "object") return null;
-  const source = (payload as any).profile ?? payload;
+  const payloadObj = payload as Record<string, unknown>;
+  const source =
+    typeof payloadObj.profile === "object" && payloadObj.profile !== null
+      ? (payloadObj.profile as Record<string, unknown>)
+      : payloadObj;
 
-  const safeString = (value: any) => (typeof value === "string" ? value.trim() : "");
-  const safeArray = (value: any) => {
+  const safeString = (value: unknown) =>
+    typeof value === "string" ? value.trim() : "";
+  const safeArray = (value: unknown) => {
     if (Array.isArray(value)) {
       return value.map((item) => String(item)).filter(Boolean);
     }
@@ -251,19 +258,19 @@ function normalizeProfile(payload: unknown): ExtractedProfile | null {
 
   const normalized: ExtractedProfile = {
     ...emptyProfile,
-    name: safeString((source as any).name),
-    title: safeString((source as any).title),
-    company: safeString((source as any).company),
-    location: safeString((source as any).location),
-    headline: safeString((source as any).headline),
-    summary: safeString((source as any).summary),
-    website: safeString((source as any).website),
-    linkedin: safeString((source as any).linkedin),
-    twitter: safeString((source as any).twitter),
-    newsletter: safeString((source as any).newsletter),
-    tone: safeString((source as any).tone),
-    contentPillars: safeArray((source as any).contentPillars ?? (source as any).pillars),
-    proofPoints: safeArray((source as any).proofPoints ?? (source as any).highlights),
+    name: safeString(source.name),
+    title: safeString(source.title),
+    company: safeString(source.company),
+    location: safeString(source.location),
+    headline: safeString(source.headline),
+    summary: safeString(source.summary),
+    website: safeString(source.website),
+    linkedin: safeString(source.linkedin),
+    twitter: safeString(source.twitter),
+    newsletter: safeString(source.newsletter),
+    tone: safeString(source.tone),
+    contentPillars: safeArray(source.contentPillars ?? source.pillars),
+    proofPoints: safeArray(source.proofPoints ?? source.highlights),
   };
 
   const hasSignal =
@@ -282,7 +289,10 @@ async function safeErrorMessage(response: Response) {
   try {
     const data = await response.json();
     if (data && typeof data === "object") {
-      return (data as any).error || (data as any).message || null;
+      const record = data as Record<string, unknown>;
+      if (typeof record.error === "string") return record.error;
+      if (typeof record.message === "string") return record.message;
+      return null;
     }
   } catch {
     // ignore

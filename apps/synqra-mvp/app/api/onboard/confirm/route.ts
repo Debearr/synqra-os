@@ -18,8 +18,6 @@ const pilotAgentSchema = z.object({
   proofPoints: z.array(z.string()).default([]),
 });
 
-type PilotAgentInput = z.infer<typeof pilotAgentSchema>;
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -133,7 +131,7 @@ export async function POST(req: Request) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Onboard Confirm] Unexpected error:', error);
     return NextResponse.json(
       {

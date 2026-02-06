@@ -34,19 +34,21 @@ export async function logModelUsage(log: ModelUsageLog): Promise<void> {
   // Store in Supabase if available
   if (supabase) {
     try {
-      const { error } = await supabase
-        .from('ai_model_usage')
-        .insert({
-          task_id: log.taskId,
-          model: log.model,
-          input_tokens: log.inputTokens,
-          output_tokens: log.outputTokens,
-          estimated_cost: log.estimatedCost,
-          actual_cost: log.actualCost,
-          complexity: log.complexity,
-          cache_hit: log.cacheHit,
-          created_at: new Date(timestamp).toISOString(),
-        } as any);
+      const table = supabase.from('ai_model_usage');
+      const payload = {
+        task_id: log.taskId,
+        model: log.model,
+        input_tokens: log.inputTokens,
+        output_tokens: log.outputTokens,
+        estimated_cost: log.estimatedCost,
+        actual_cost: log.actualCost,
+        complexity: log.complexity,
+        cache_hit: log.cacheHit,
+        created_at: new Date(timestamp).toISOString(),
+      };
+      const { error } = await table.insert(
+        payload as unknown as Parameters<typeof table.insert>[0]
+      );
       
       if (error) {
         console.error('❌ Failed to log model usage to Supabase:', error);
@@ -94,7 +96,7 @@ export async function getUsageStats(options: {
     return {
       totalCost: 0,
       totalTasks: 0,
-      byModel: {} as any,
+      byModel: {} as Record<ModelProvider, { count: number; cost: number }>,
       cacheHitRate: 0,
     };
   }
@@ -123,26 +125,30 @@ export async function getUsageStats(options: {
       return {
         totalCost: 0,
         totalTasks: 0,
-        byModel: {} as any,
+        byModel: {} as Record<ModelProvider, { count: number; cost: number }>,
         cacheHitRate: 0,
       };
     }
     
     // Calculate statistics
-    const totalCost = (data as any[]).reduce((sum: number, log: any) => sum + (log.actual_cost || 0), 0);
-    const totalTasks = data.length;
-    const cacheHits = (data as any[]).filter((log: any) => log.cache_hit).length;
+    const rows = Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
+    const totalCost = rows.reduce(
+      (sum, log) => sum + (typeof log.actual_cost === "number" ? log.actual_cost : 0),
+      0
+    );
+    const totalTasks = rows.length;
+    const cacheHits = rows.filter((log) => Boolean(log.cache_hit)).length;
     const cacheHitRate = totalTasks > 0 ? cacheHits / totalTasks : 0;
 
     // Group by model
     const byModel: Record<string, { count: number; cost: number }> = {};
-    for (const log of data as any[]) {
-      const model = log.model;
+    for (const log of rows) {
+      const model = typeof log.model === "string" ? log.model : "unknown";
       if (!byModel[model]) {
         byModel[model] = { count: 0, cost: 0 };
       }
       byModel[model].count++;
-      byModel[model].cost += log.actual_cost || 0;
+      byModel[model].cost += typeof log.actual_cost === "number" ? log.actual_cost : 0;
     }
     
     return {
@@ -156,7 +162,7 @@ export async function getUsageStats(options: {
     return {
       totalCost: 0,
       totalTasks: 0,
-      byModel: {} as any,
+      byModel: {} as Record<ModelProvider, { count: number; cost: number }>,
       cacheHitRate: 0,
     };
   }

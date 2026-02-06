@@ -27,7 +27,7 @@ export interface Recipe {
 export interface RecipeExecution {
   recipe: Recipe;
   variables: Record<string, string>;
-  result: any;
+  result: unknown;
   actualCost: number;
   generationTime: number;
   qualityScore?: number;
@@ -74,7 +74,7 @@ function parseRecipe(id: string, markdown: string): Recipe {
   
   // Extract AI Router config if present
   const configMatch = markdown.match(/```typescript\n\{[\s\S]*?\}/);
-  let complexity = 0.5;
+  const complexity = 0.5;
   let recommendedModel: ModelProvider = 'mistral';
   let estimatedCost = 0.001;
   
@@ -206,6 +206,7 @@ export function listRecipes(): Recipe[] {
   
   // Scan directories
   const scanDir = (dir: string, category: string) => {
+    void category;
     if (!fs.existsSync(dir)) return;
     
     const files = fs.readdirSync(dir);
@@ -260,6 +261,8 @@ export async function getRecipeStats(
   cacheHitRate: number;
   avgQualityScore: number;
 }> {
+  void recipeId;
+  void options;
   // This would query Supabase ai_model_usage table
   // For now, return mock data
   return {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryCouncil, queryMember, DEFAULT_COUNCIL_MEMBERS } from "@/src/lib/aiCouncil";
-import type { CouncilRequest, CouncilMember } from "@/src/lib/aiCouncil";
+import { queryCouncil, DEFAULT_COUNCIL_MEMBERS } from "@/src/lib/aiCouncil";
+import type { CouncilRequest } from "@/src/lib/aiCouncil";
 import { enforceSynqraLiteDraftSecurity, PublicGatekeeperError, type SynqraTier } from "@/lib/security/gatekeeper";
 import { logCouncilUsage } from "@/src/lib/aiCouncil/logging";
 

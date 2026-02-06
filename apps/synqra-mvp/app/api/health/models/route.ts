@@ -11,6 +11,7 @@ import { getRoutingStats } from "@/lib/models/intelligentRouter";
  */
 
 export async function GET(request: NextRequest) {
+  void request;
   try {
     const loaderStatus = getLoaderStatus();
     const routingStats = getRoutingStats();

@@ -22,14 +22,6 @@ function summaryMessage(id: string, status: string, note?: string) {
   return lines.join("\n");
 }
 
-function lessonFromReason(reason?: string) {
-  if (!reason) return ["Review assessment methodology vs. historical outcome.", "Track calibration accuracy over time."];
-  return [
-    `Reason: ${reason}`,
-    "Document directional assessment factors for future calibration analysis.",
-  ];
-}
-
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();

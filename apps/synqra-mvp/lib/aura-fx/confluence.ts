@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Confluence Scorer
  * - Combines trend, structure, liquidity, imbalances, and time-of-day into a weighted probability score.
  * - Returns a ConfluenceBreakdown with bias and human-readable notes for downstream consumers.
@@ -11,6 +11,8 @@ import {
   Killzone,
   LiquidityPool,
   OrderBlock,
+  RegimeState,
+  SetupEvaluation,
   StructureEvent,
   TrendDirection,
 } from "./types";
@@ -23,13 +25,15 @@ interface ConfluenceInputs {
   fairValueGaps: FairValueGap[];
   killzone: { killzone: Killzone; isActive: boolean };
   multiTimeframeBias?: TrendDirection;
+  regime?: RegimeState;
 }
 
 const weights = {
-  alignment: 0.35,
-  liquidity: 0.3,
-  timeframe: 0.2,
-  time: 0.15,
+  alignment: 0.32,
+  liquidity: 0.28,
+  timeframe: 0.18,
+  time: 0.12,
+  regime: 0.1,
 };
 
 export function scoreConfluence(inputs: ConfluenceInputs): ConfluenceBreakdown {
@@ -39,12 +43,14 @@ export function scoreConfluence(inputs: ConfluenceInputs): ConfluenceBreakdown {
   const liquidityScore = scoreLiquidity(inputs, notes);
   const timeframeScore = scoreTimeframe(inputs, notes);
   const timeScore = scoreTime(inputs, notes);
+  const regimeScore = scoreRegime(inputs, notes);
 
   const overallScore =
     alignmentScore * weights.alignment +
     liquidityScore * weights.liquidity +
     timeframeScore * weights.timeframe +
-    timeScore * weights.time;
+    timeScore * weights.time +
+    regimeScore * weights.regime;
 
   const primaryBias = resolveBias(inputs, alignmentScore, liquidityScore, timeframeScore);
 
@@ -52,6 +58,7 @@ export function scoreConfluence(inputs: ConfluenceInputs): ConfluenceBreakdown {
     trendScore: alignmentScore,
     liquidityScore,
     structureScore: alignmentScore, // reuse alignment for structure weight placeholder
+    regimeScore,
     timeScore,
     overallScore: clamp01(overallScore),
     primaryBias,
@@ -132,7 +139,7 @@ function scoreTimeframe(inputs: ConfluenceInputs, notes: string[]): number {
     notes.push("Multi-timeframe agreement");
     return 0.8;
   }
-  notes.push("Timeframe conflict – stand aside.");
+  notes.push("Timeframe conflict - stand aside.");
   return 0.2;
 }
 
@@ -144,13 +151,23 @@ function scoreTime(inputs: ConfluenceInputs, notes: string[]): number {
   return 0.4;
 }
 
+function scoreRegime(inputs: ConfluenceInputs, notes: string[]): number {
+  if (!inputs.regime) return 0.5;
+  if (inputs.regime.state === "EXPANSION") {
+    notes.push("Expansion regime");
+    return 0.8;
+  }
+  notes.push("Mean reversion regime");
+  return 0.55;
+}
+
 function resolveBias(
   inputs: ConfluenceInputs,
   alignmentScore: number,
   liquidityScore: number,
   timeframeScore: number
 ): Bias {
-  // Strong conflict between HTF and multi-timeframe → no trade
+  // Strong conflict between HTF and multi-timeframe -> no trade
   if (
     inputs.multiTimeframeBias &&
     inputs.multiTimeframeBias !== inputs.trendDirection &&
@@ -170,3 +187,30 @@ function resolveBias(
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+export function applySetupStateToConfluence(
+  confluence: ConfluenceBreakdown,
+  setup: SetupEvaluation
+): ConfluenceBreakdown {
+  if (setup.state === "VALID") {
+    return {
+      ...confluence,
+      notes: [...confluence.notes, "Setup validated"],
+    };
+  }
+
+  if (setup.state === "FORMING") {
+    return {
+      ...confluence,
+      primaryBias: "NO_TRADE",
+      notes: [...confluence.notes, "Setup forming - stand aside"],
+    };
+  }
+
+  return {
+    ...confluence,
+    primaryBias: "NO_TRADE",
+    overallScore: Math.min(confluence.overallScore, 0.4),
+    notes: [...confluence.notes, "Setup invalid - no trade"],
+  };
+}

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   baseProfileSchema,
-  extractedProfileSchema,
   type ExtractedProfile,
   type FieldMetadata,
   type ExtractionSource,
@@ -92,7 +91,7 @@ export function calculateOverallConfidence(
 // FIELD VALIDATION
 // ============================================================
 
-function validateFieldValue(value: any): boolean {
+function validateFieldValue(value: unknown): boolean {
   if (value === null || value === undefined || value === '') {
     return false;
   }
@@ -118,7 +117,7 @@ export function validateExtractedField(
 
   // Field-specific validation
   try {
-    const fieldSchema = (baseProfileSchema.shape as any)[fieldName];
+    const fieldSchema = (baseProfileSchema.shape as Record<string, z.ZodTypeAny>)[fieldName as string];
     if (fieldSchema) {
       fieldSchema.parse(metadata.value);
     }

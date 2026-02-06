@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type OutputPanelProps = {
@@ -123,14 +124,14 @@ const OutputPanel = ({
           </div>
 
           {/* Output-only Synqra watermark (no third-party attribution) */}
-          <a
+          <Link
             href="/"
             className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-noid-silver/70 hover:border-noid-silver/30 hover:text-white/75"
             aria-label="SYNQRA"
           >
             <img src="/assets/synqra-q.svg" width={14} height={14} alt="" aria-hidden className="opacity-85" />
             SYNQRA
-          </a>
+          </Link>
 
           <AnimatePresence>
             {flash && (

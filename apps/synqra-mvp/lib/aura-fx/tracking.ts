@@ -1,6 +1,18 @@
 import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-type SignalStatus = "open" | "tp1" | "tp2" | "tp3" | "closed" | "stopped";
+type SignalStatus =
+  | "open"
+  | "tp1"
+  | "tp2"
+  | "tp3"
+  | "closed"
+  | "stopped"
+  | "UNRESOLVED"
+  | "PARTIAL_RESOLUTION_1"
+  | "PARTIAL_RESOLUTION_2"
+  | "PARTIAL_RESOLUTION_3"
+  | "RESOLVED_AS_ASSESSED"
+  | "RESOLVED_CONTRARY";
 
 export interface AuraSignalInput {
   pair: string;

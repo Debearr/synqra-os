@@ -6,11 +6,9 @@
 
 import { buildMarketContext } from "./examples";
 import { findFairValueGaps, findOrderBlocks } from "./imbalances";
-import { scoreConfluence } from "./confluence";
+import { applySetupStateToConfluence, scoreConfluence } from "./confluence";
 import { AuraFxEngineResult, Candle, TrendDirection } from "./types";
-import { detectStructureEvents } from "./marketStructure";
-import { findLiquidityPools } from "./liquidity";
-import { getKillzone } from "./killzones";
+import { evaluateSetupState } from "./setupState";
 
 interface BuildEngineParams {
   candles: Candle[];
@@ -36,12 +34,26 @@ export function buildAuraFxContext(params: BuildEngineParams): AuraFxEngineResul
     orderBlocks,
     fairValueGaps,
     killzone: base.session,
+    regime: base.regime,
   });
+
+  const setup = evaluateSetupState({
+    confluence,
+    trendDirection: base.trend.direction,
+    regime: base.regime,
+    session: base.session,
+    structureEvents: base.structureEvents.length,
+    orderBlocks,
+    fairValueGaps,
+  });
+
+  const enforcedConfluence = applySetupStateToConfluence(confluence, setup);
 
   return {
     ...base,
     orderBlocks,
     fairValueGaps,
-    confluence,
+    confluence: enforcedConfluence,
+    setup,
   };
 }

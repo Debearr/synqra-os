@@ -8,10 +8,17 @@ import CalibrationModal from "@/components/portal/calibration-modal";
 import StatusQ from "@/components/StatusQ";
 import StudioCommandCenter from "@/components/studio/command-center";
 
+type CouncilResponse = {
+  consensus?: string;
+  responses?: Array<{ content?: string; response?: string }>;
+  metadata?: { requestId?: string };
+  request_id?: string;
+};
+
 export default function StudioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCalibration, setShowCalibration] = useState(false);
-  const [councilResponse, setCouncilResponse] = useState<any>(null);
+  const [councilResponse, setCouncilResponse] = useState<CouncilResponse | null>(null);
   const [councilStatus, setCouncilStatus] = useState<
     "idle" | "loading" | "ready" | "error" | "timeout" | "empty"
   >("idle");
@@ -76,6 +83,7 @@ export default function StudioPage() {
     prompt: string,
     existingRequestId?: string
   ) => {
+    void existingRequestId;
     try {
       setCouncilStatus("loading");
       setCouncilError(null);

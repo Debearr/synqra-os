@@ -57,10 +57,11 @@ export async function POST(req: Request) {
         ? 'Jobs enqueued in DRY_RUN mode - no actual posts will be made'
         : `${enqueued.length} jobs enqueued for posting`,
     });
-  } catch (error: any) {
-    console.error('Publish error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Publish error:', message);
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: message },
       { status: 500 }
     );
   }

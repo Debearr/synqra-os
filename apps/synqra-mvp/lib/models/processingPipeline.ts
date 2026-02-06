@@ -6,7 +6,6 @@
  * Text → Image → Audio → Document pathways
  */
 
-import { InferenceRequest, InferenceResult } from "./types";
 import { runInference } from "./localModelLoader";
 
 export type InputType = "text" | "image" | "audio" | "document";
@@ -146,7 +145,7 @@ export async function processImage(input: Buffer | string): Promise<{
     
     extractedText = String(ocrResult.output);
     console.log(`   📄 OCR extracted: ${extractedText.substring(0, 50)}...`);
-  } catch (error) {
+  } catch {
     console.log(`   ⚠️  OCR skipped (no text detected)`);
   }
   
@@ -217,62 +216,70 @@ export async function processDocument(input: Buffer | string): Promise<{
  */
 export async function processInput(input: string | Buffer): Promise<{
   type: InputType;
-  processed: any;
+  processed: unknown;
   embeddings: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }> {
-  console.log("🔄 Starting input processing pipeline...");
+  console.log("???? Starting input processing pipeline...");
   
   // Detect input type
   const type = await detectInputType(input);
-  console.log(`   📍 Detected type: ${type}`);
+  console.log(`   ???? Detected type: ${type}`);
   
-  let processed: any;
+  let processed: unknown;
   let embeddings: number[] = [];
-  let metadata: Record<string, any> = {};
+  let metadata: Record<string, unknown> = {};
   
   // Route to appropriate processor
   switch (type) {
-    case "text":
-      processed = await processText(input.toString());
-      embeddings = processed.embeddings;
+    case "text": {
+      const textResult = await processText(input.toString());
+      processed = textResult;
+      embeddings = textResult.embeddings;
       metadata = {
-        toxicity: processed.toxicity,
-        sentiment: processed.sentiment,
+        toxicity: textResult.toxicity,
+        sentiment: textResult.sentiment,
       };
       break;
+    }
       
-    case "image":
-      processed = await processImage(input);
-      embeddings = processed.styleEmbedding;
+    case "image": {
+      const imageResult = await processImage(input);
+      processed = imageResult;
+      embeddings = imageResult.styleEmbedding;
       metadata = {
-        hasText: !!processed.extractedText,
-        textLength: processed.extractedText?.length || 0,
+        hasText: !!imageResult.extractedText,
+        textLength: imageResult.extractedText?.length || 0,
       };
       break;
+    }
       
-    case "audio":
-      processed = await processAudio(input);
-      embeddings = processed.textProcessing.embeddings;
+    case "audio": {
+      const audioResult = await processAudio(input);
+      processed = audioResult;
+      embeddings = audioResult.textProcessing.embeddings;
       metadata = {
-        transcriptionLength: processed.transcription.length,
-        toxicity: processed.textProcessing.toxicity,
-        sentiment: processed.textProcessing.sentiment,
+        transcriptionLength: audioResult.transcription.length,
+        toxicity: audioResult.textProcessing.toxicity,
+        sentiment: audioResult.textProcessing.sentiment,
       };
       break;
+    }
       
-    case "document":
-      processed = await processDocument(input);
-      embeddings = processed.textProcessing.embeddings;
+    case "document": {
+      const documentResult = await processDocument(input);
+      processed = documentResult;
+      embeddings = documentResult.textProcessing.embeddings;
       metadata = {
-        structuredLength: processed.structuredText.length,
-        toxicity: processed.textProcessing.toxicity,
-        sentiment: processed.textProcessing.sentiment,
+        structuredLength: documentResult.structuredText.length,
+        toxicity: documentResult.textProcessing.toxicity,
+        sentiment: documentResult.textProcessing.sentiment,
       };
       break;
+    }
   }
   
-  console.log("✅ Processing pipeline complete");
+  console.log("??? Processing pipeline complete");
   
   return {
     type,

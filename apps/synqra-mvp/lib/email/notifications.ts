@@ -78,9 +78,10 @@ export async function sendApplicantConfirmation(
     // await sendEmail(config, emailContent);
 
     return { success: true };
-  } catch (error: any) {
-    console.error('[Email] Failed to send applicant email:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error('[Email] Failed to send applicant email:', message);
+    return { success: false, error: message };
   }
 }
 
@@ -114,9 +115,10 @@ export async function sendAdminNotification(
     // await sendEmail(config, emailContent);
 
     return { success: true };
-  } catch (error: any) {
-    console.error('[Email] Failed to send admin email:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error('[Email] Failed to send admin email:', message);
+    return { success: false, error: message };
   }
 }
 
