@@ -32,12 +32,12 @@ export function useDisclaimerState({
 }: UseDisclaimerStateOptions) {
   const [state, setState] = useState<DisclaimerState>({
     isLoading: true,
-    requiresAcknowledgment: false,
-    trigger: null,
-    version: "",
+    requiresAcknowledgment: true,
+    trigger: "initial",
+    version: "local",
     content: "",
     methodologyContent: "",
-    triggerMessage: "",
+    triggerMessage: "Please acknowledge the disclaimer to continue.",
     error: null,
   });
 
@@ -49,7 +49,17 @@ export function useDisclaimerState({
    */
   const checkDisclaimerState = useCallback(async () => {
     if (!userId) {
-      setState((prev) => ({ ...prev, isLoading: false }));
+      const fallback = getDisclaimerContent("assessment");
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        requiresAcknowledgment: true,
+        trigger: "initial",
+        version: "local",
+        content: fallback.short,
+        methodologyContent: fallback.methodology,
+        triggerMessage: "Please acknowledge the disclaimer to continue.",
+      }));
       return;
     }
 
@@ -109,12 +119,12 @@ export function useDisclaimerState({
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        requiresAcknowledgment: false,
-        trigger: null,
+        requiresAcknowledgment: true,
+        trigger: "initial",
         version: "local",
         content: fallback.short,
         methodologyContent: fallback.methodology,
-        triggerMessage: "",
+        triggerMessage: "Please acknowledge the disclaimer to continue.",
         error: message,
       }));
     }

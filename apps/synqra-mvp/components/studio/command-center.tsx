@@ -6,7 +6,7 @@ import { useCouncilDispatch } from "@/hooks/use-council-dispatch";
 import CouncilMonitor from "@/components/studio/council-monitor";
 
 type StudioCommandCenterProps = {
-  onInitialized?: (requestId: string, input: string) => void;
+  onInitialized?: (payload: { requestId: string | null; input: string; consensus: string }) => void;
 };
 
 export default function StudioCommandCenter({ onInitialized }: StudioCommandCenterProps) {
@@ -51,7 +51,11 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
           localStorage.setItem("synqra_request_id", result.requestId);
         }
         localStorage.setItem("synqra_input", code.trim());
-        onInitialized?.(result.requestId || "", code.trim());
+        onInitialized?.({
+          requestId: result.requestId || null,
+          input: code.trim(),
+          consensus: result.verdict?.consensus || "",
+        });
       }
     } catch (err) {
       // Explicit error handling - no silent failures

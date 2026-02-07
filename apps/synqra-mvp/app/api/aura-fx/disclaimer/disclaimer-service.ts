@@ -35,7 +35,7 @@ export class DisclaimerService {
 
   private getFallbackCheckResult(): DisclaimerCheckResult {
     return {
-      required: false,
+      required: true,
       reason: "initial",
       last_acknowledgment: null,
       current_version: "local",

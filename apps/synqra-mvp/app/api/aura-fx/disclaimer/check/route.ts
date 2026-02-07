@@ -55,12 +55,12 @@ export async function POST(req: NextRequest) {
     const fallback = getDisclaimerContent("assessment");
     console.info("[demo] disclaimer check fallback");
     return NextResponse.json({
-      requiresAcknowledgment: false,
-      trigger: null,
+      requiresAcknowledgment: true,
+      trigger: "initial",
       version: "local",
       content: fallback.short,
       methodologyContent: fallback.methodology,
-      triggerMessage: "",
+      triggerMessage: getTriggerMessage("initial"),
       lastAcknowledgment: null,
       error: LUXURY_ERROR_MESSAGE,
       detail: error instanceof Error ? error.message : "Unknown error",

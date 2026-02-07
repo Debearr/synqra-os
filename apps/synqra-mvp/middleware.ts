@@ -21,11 +21,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/studio", request.url));
   }
 
-  // === DEV MODE: DO NOT BLOCK ANYTHING ===
-  if (process.env.NODE_ENV !== "production") {
-    return NextResponse.next();
-  }
-
   // === PROD BLOCKLIST ===
   if (
     pathname.startsWith("/q-preview") ||
@@ -37,13 +32,7 @@ export function middleware(request: NextRequest) {
 
   // === PROTECTED ROUTES ===
   if (pathname.startsWith("/studio") || pathname.startsWith("/admin")) {
-    // Allow identity-code cookie for /studio
-    if (pathname.startsWith("/studio")) {
-      const synqraAuth = request.cookies.get("synqra_auth")?.value;
-      if (synqraAuth) return NextResponse.next();
-    }
-
-    // Allow Supabase OAuth cookie
+    // Require Supabase auth cookie for protected routes.
     const authCookie = request.cookies
       .getAll()
       .find(c => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))

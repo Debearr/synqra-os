@@ -3,6 +3,19 @@ import { consultCouncil } from "@/lib/council/council-orchestrator";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
 
+type GovernanceVerdictResponse = {
+  verdict: {
+    allowed: boolean;
+    riskLevel: number;
+    reason: string;
+  };
+  metadata: {
+    decision: string;
+    confidence: number;
+    recommendations: string[];
+  };
+};
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -42,7 +55,24 @@ export async function POST(request: NextRequest) {
       product,
     });
 
-    return NextResponse.json(response, { status: 200 });
+    const normalizedDecision = response.decision.toUpperCase();
+    const allowed = normalizedDecision === "PROCEED";
+    const riskLevel = Math.max(0, Math.min(100, Math.round((1 - response.confidence) * 100)));
+
+    const payload: GovernanceVerdictResponse = {
+      verdict: {
+        allowed,
+        riskLevel,
+        reason: response.reasoning,
+      },
+      metadata: {
+        decision: response.decision,
+        confidence: response.confidence,
+        recommendations: response.recommendations ?? [],
+      },
+    };
+
+    return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     console.error("Council governance error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
