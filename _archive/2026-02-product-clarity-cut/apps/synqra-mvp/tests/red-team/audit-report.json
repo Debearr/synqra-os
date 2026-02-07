@@ -1,0 +1,11 @@
+{
+  "verdict": "SOVEREIGN",
+  "timestamp": "2025-12-29T21:00:27.727Z",
+  "greed_attacks_blocked": 3,
+  "greed_attacks_total": 3,
+  "hype_phrases_blocked": 104,
+  "hype_phrases_total": 104,
+  "unauthorized_access_blocked": 3,
+  "unauthorized_access_total": 3,
+  "failures": []
+}
