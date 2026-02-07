@@ -12,7 +12,8 @@ type CommandCenterProps = {
 };
 
 export default function CommandCenter({ initialCode = "" }: CommandCenterProps) {
-  const [code, setCode] = useState(initialCode);
+  void initialCode;
+  const [code, setCode] = useState("");
   const [touched, setTouched] = useState(false);
   const [showSystemUnreachable, setShowSystemUnreachable] = useState(false);
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function CommandCenter({ initialCode = "" }: CommandCenterProps) 
 
   const isValid = code.trim().length > 0;
 
-  // Show toast for SYSTEM_UNREACHABLE
+  // Show restricted access toast for any error
   useEffect(() => {
-    if (status === "error" && error === "SYSTEM UNREACHABLE") {
+    if (status === "error" && error) {
       setShowSystemUnreachable(true);
       const timer = setTimeout(() => setShowSystemUnreachable(false), 5000);
       return () => clearTimeout(timer);
@@ -56,7 +57,7 @@ export default function CommandCenter({ initialCode = "" }: CommandCenterProps) 
       case "done":
         return "VERDICT RECEIVED";
       case "error":
-        return error === "SYSTEM UNREACHABLE" ? "SYSTEM UNREACHABLE" : "RETRY";
+        return error === "Request Access" ? "Request Access" : "Restricted";
       default:
         return "Initialize";
     }
@@ -100,8 +101,11 @@ export default function CommandCenter({ initialCode = "" }: CommandCenterProps) 
           exit={{ opacity: 0, y: -20 }}
           className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4"
         >
-          <div className="font-mono text-sm uppercase tracking-wider text-red-500">SYSTEM UNREACHABLE</div>
-          <div className="mt-1 text-xs text-red-400/80">{error || "Unable to reach council system"}</div>
+          <div className="font-mono text-sm uppercase tracking-wider text-red-400">
+            {error === "Request Access"
+              ? "Request Access"
+              : "Component restricted. Internal validation in progress."}
+          </div>
         </motion.div>
       )}
 

@@ -40,6 +40,18 @@ export default function CreatePage() {
     return data;
   }, [data]);
 
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-noid-black text-white">
+        <div className="text-center">
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-noid-silver/70">
+            Component restricted. Internal validation in progress.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 text-white">
       {/* Header */}
@@ -92,11 +104,6 @@ export default function CreatePage() {
               onChange={(e) => setInput(e.target.value)}
             />
 
-            {error && (
-              <p className="mt-2 text-sm text-rose-400">
-                Error: {String(error)}
-              </p>
-            )}
           </div>
         </div>
 

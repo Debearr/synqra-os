@@ -1,9 +1,1 @@
-const config = {
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-};
-
-export default config;
+export default { schema: "prisma/schema.prisma" };

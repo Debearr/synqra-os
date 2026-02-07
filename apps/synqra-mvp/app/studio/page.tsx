@@ -22,17 +22,21 @@ export default function StudioPage() {
   const [councilStatus, setCouncilStatus] = useState<
     "idle" | "loading" | "ready" | "error" | "timeout" | "empty"
   >("idle");
-  const [councilError, setCouncilError] = useState<string | null>(null);
+  const [, setCouncilError] = useState<string | null>(null);
   const [frameFile, setFrameFile] = useState<File | null>(null);
   const [frameUploadStatus, setFrameUploadStatus] = useState<
     "idle" | "uploading" | "ready" | "error"
   >("idle");
-  const [frameUploadError, setFrameUploadError] = useState<string | null>(null);
+  const [, setFrameUploadError] = useState<string | null>(null);
   const [frameImageUrl, setFrameImageUrl] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [input, setInput] = useState<string | null>(null);
   const councilTimeoutRef = useRef<number | null>(null);
   const router = useRouter();
+  const isStudioHold =
+    frameUploadStatus === "error" ||
+    councilStatus === "error" ||
+    councilStatus === "timeout";
 
   useEffect(() => {
     return () => {
@@ -221,6 +225,18 @@ export default function StudioPage() {
     );
   }
 
+  if (isStudioHold) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-noid-black text-white">
+        <div className="text-center">
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-noid-silver/70">
+            UPLINK CALIBRATION IN PROGRESS. STUDIO OFFLINE FOR VALIDATION.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-noid-black text-white">
       <StatusQ
@@ -300,34 +316,12 @@ export default function StudioPage() {
               Stored media URL: {frameImageUrl}
             </div>
           )}
-          {frameUploadError && (
-            <div className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
-              {frameUploadError}
-            </div>
-          )}
         </div>
-
-        {(councilStatus === "error" || councilStatus === "timeout") && (
-          <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
-            <div className="font-mono text-xs uppercase tracking-[0.16em] text-red-400">
-              {councilError || "SYSTEM UNREACHABLE"}
-            </div>
-            {input && (
-              <button
-                type="button"
-                onClick={() => loadCouncilResponse(input, requestId || undefined)}
-                className="mt-3 rounded-full border border-red-400/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-red-200 transition-opacity hover:opacity-90"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        )}
 
         {councilStatus === "empty" && !councilResponse && (
           <div className="mb-6 rounded-xl border border-noid-silver/20 bg-noid-black/40 p-4">
             <div className="font-mono text-xs uppercase tracking-[0.16em] text-noid-silver/70">
-              No response
+              Component restricted. Internal validation in progress.
             </div>
           </div>
         )}

@@ -17,7 +17,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
 
   const isValid = code.trim().length > 0;
 
-  // Show error toast for any error (including RLS/auth errors)
+  // Show restricted access toast for any error
   useEffect(() => {
     if (status === "error" && error) {
       setShowError(true);
@@ -69,11 +69,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
       case "done":
         return "VERDICT RECEIVED";
       case "error":
-        return error?.includes("RLS") || error?.includes("Authentication") || error?.includes("Unauthorized")
-          ? "AUTH ERROR"
-          : error?.includes("Network") || error?.includes("SYSTEM UNREACHABLE")
-          ? "NETWORK ERROR"
-          : "RETRY";
+        return error === "Request Access" ? "Request Access" : "Restricted";
       default:
         return "ENTER";
     }
@@ -90,14 +86,11 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
           exit={{ opacity: 0, y: -20 }}
           className="rounded-lg border border-red-500/50 bg-red-500/10 p-4"
         >
-          <div className="font-mono text-sm uppercase tracking-wider text-red-500">
-            {error.includes("RLS") || error.includes("Authentication") || error.includes("Unauthorized")
-              ? "AUTHENTICATION ERROR"
-              : error.includes("Network") || error.includes("SYSTEM UNREACHABLE")
-              ? "NETWORK ERROR"
-              : "ERROR"}
+          <div className="font-mono text-sm uppercase tracking-wider text-red-400">
+            {error === "Request Access"
+              ? "Request Access"
+              : "Component restricted. Internal validation in progress."}
           </div>
-          <div className="mt-1 text-xs text-red-400/80">{error}</div>
         </motion.div>
       )}
 

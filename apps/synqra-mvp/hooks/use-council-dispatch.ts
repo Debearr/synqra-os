@@ -59,7 +59,7 @@ export function useCouncilDispatch() {
         const invalidState: CouncilDispatchState = {
           status: "error",
           verdict: null,
-          error: "SYSTEM UNREACHABLE",
+          error: "Component restricted. Internal validation in progress.",
           requestId: null,
         };
         setStatus("error");
@@ -74,7 +74,7 @@ export function useCouncilDispatch() {
         const deniedState: CouncilDispatchState = {
           status: "error",
           verdict: null,
-          error: "INVALID IDENTITY CODE - Access denied",
+          error: "Request Access",
           requestId: null,
         };
         setStatus("error");
@@ -96,7 +96,7 @@ export function useCouncilDispatch() {
           const unreachable: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: "SYSTEM UNREACHABLE",
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setStatus("error");
@@ -113,7 +113,7 @@ export function useCouncilDispatch() {
           const authError: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: "Authentication required - RLS policy blocked access",
+            error: "Request Access",
             requestId: null,
           };
           setStatus("error");
@@ -136,7 +136,7 @@ export function useCouncilDispatch() {
           const networkError: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: `Network error: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setStatus("error");
@@ -148,7 +148,7 @@ export function useCouncilDispatch() {
           const unreachable: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: "SYSTEM UNREACHABLE",
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setStatus("error");
@@ -164,9 +164,10 @@ export function useCouncilDispatch() {
 
         if (!governanceResponse.ok) {
           // Handle RLS/auth errors explicitly
-          const errorMessage = governanceResponse.status === 401 || governanceResponse.status === 403
-            ? `RLS policy blocked access: ${governanceBody?.error || "Unauthorized"}`
-            : governanceBody?.error || `Governance check failed (${governanceResponse.status})`;
+          const errorMessage =
+            governanceResponse.status === 401 || governanceResponse.status === 403
+              ? "Request Access"
+              : "Component restricted. Internal validation in progress.";
           
           const rejected: CouncilDispatchState = {
             status: "error",
@@ -192,7 +193,7 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: governanceBody?.verdict?.reason || "Action blocked by governance",
             },
-            error: governanceBody?.error || "Governance check rejected the action",
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setVerdict(rejected.verdict);
@@ -222,7 +223,7 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: "Network error prevented council analysis",
             },
-            error: `Network error: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setVerdict(networkError.verdict);
@@ -240,7 +241,7 @@ export function useCouncilDispatch() {
               risk: governanceRisk,
               consensus: "Council unavailable",
             },
-            error: "Network error prevented council access",
+            error: "Component restricted. Internal validation in progress.",
             requestId: null,
           };
           setVerdict(unreachable.verdict);
@@ -285,9 +286,10 @@ export function useCouncilDispatch() {
           let errorMessage: string;
           if (councilResponse.status === 401 || councilResponse.status === 403) {
             const errorBody = await councilResponse.json().catch(() => ({ error: "Unauthorized" }));
-            errorMessage = `RLS policy blocked access: ${errorBody?.error || "Unauthorized"}`;
+            void errorBody;
+            errorMessage = "Request Access";
           } else {
-            errorMessage = `Council analysis failed (${councilResponse.status})`;
+            errorMessage = "Component restricted. Internal validation in progress.";
           }
           
           const failed: CouncilDispatchState = {
@@ -323,9 +325,7 @@ export function useCouncilDispatch() {
         return finalVerdict;
       } catch (err) {
         console.error("Protocol initialization failed:", err);
-        const errorMessage = err instanceof Error 
-          ? `Initialization error: ${err.message}`
-          : "Unknown error during protocol initialization";
+        const errorMessage = "Component restricted. Internal validation in progress.";
         const unreachable: CouncilDispatchState = {
           status: "error",
           verdict,

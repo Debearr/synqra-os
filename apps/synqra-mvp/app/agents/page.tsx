@@ -76,6 +76,18 @@ export default function AgentDashboard() {
     service: "I want to upgrade my plan",
   };
 
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-noid-black text-white">
+        <div className="text-center">
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-noid-silver/70">
+            Component restricted. Internal validation in progress.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-noid-black p-8">
       <div className="mx-auto max-w-5xl">
@@ -161,12 +173,6 @@ export default function AgentDashboard() {
           </div>
         </form>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
 
         {/* Response Display */}
         {response && (

@@ -4,6 +4,23 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // === ROUTE CANONICALIZATION ===
+  const lowerPath = pathname.toLowerCase();
+  if (lowerPath === "/synqra") {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+  if (lowerPath === "/studio" && pathname !== "/studio") {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+
+  // === PRODUCT AIR-GAP ENFORCEMENT ===
+  if (
+    pathname.startsWith("/studio/aurafx") ||
+    pathname.startsWith("/studio/signals-hub")
+  ) {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+
   // === DEV MODE: DO NOT BLOCK ANYTHING ===
   if (process.env.NODE_ENV !== "production") {
     return NextResponse.next();

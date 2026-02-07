@@ -5,6 +5,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
+import { getDisclaimerContent } from "@/lib/compliance/disclaimer-manager";
 import type {
   DisclaimerCheckResult,
   AcknowledgmentTrigger,
@@ -14,13 +15,45 @@ import type {
 
 export class DisclaimerService {
   private supabase;
+  private supabaseReady: boolean;
 
   constructor(authToken?: string) {
     const headers: Record<string, string> | undefined =
       authToken ? { Authorization: `Bearer ${authToken}` } : undefined;
-    this.supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-      global: { headers },
-    });
+    try {
+      this.supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+        global: { headers },
+      });
+      this.supabaseReady = true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn("[disclaimer] Supabase unavailable, using fallback:", message);
+      this.supabase = null;
+      this.supabaseReady = false;
+    }
+  }
+
+  private getFallbackCheckResult(): DisclaimerCheckResult {
+    return {
+      required: false,
+      reason: "initial",
+      last_acknowledgment: null,
+      current_version: "local",
+    };
+  }
+
+  private getFallbackVersion(): DisclaimerVersion {
+    const fallback = getDisclaimerContent("assessment");
+    const now = new Date().toISOString();
+    return {
+      id: "local",
+      version: "local",
+      content: fallback.short,
+      methodology_content: fallback.methodology,
+      effective_date: now,
+      is_active: true,
+      created_at: now,
+    };
   }
 
   /**
@@ -29,17 +62,24 @@ export class DisclaimerService {
   async checkAcknowledgmentRequired(
     userId: string
   ): Promise<DisclaimerCheckResult> {
+    if (!this.supabaseReady || !this.supabase) {
+      console.warn("[disclaimer] Supabase not ready, skipping check");
+      return this.getFallbackCheckResult();
+    }
+
     const { data, error } = await this.supabase.rpc(
       "check_disclaimer_acknowledgment_required",
       { p_user_id: userId }
     );
 
     if (error) {
-      throw new Error(`Failed to check disclaimer: ${error.message}`);
+      console.warn("[disclaimer] Failed to check disclaimer:", error.message);
+      return this.getFallbackCheckResult();
     }
 
     if (!data || data.length === 0) {
-      throw new Error("No disclaimer check result returned");
+      console.warn("[disclaimer] No disclaimer check result returned");
+      return this.getFallbackCheckResult();
     }
 
     return data[0];
@@ -52,6 +92,11 @@ export class DisclaimerService {
     userId: string,
     assessmentType: AssessmentType
   ): Promise<void> {
+    if (!this.supabaseReady || !this.supabase) {
+      console.warn("[disclaimer] Supabase not ready, skipping assessment view");
+      return;
+    }
+
     const { error } = await this.supabase.rpc("record_assessment_view", {
       p_user_id: userId,
       p_assessment_type: assessmentType,
@@ -71,6 +116,10 @@ export class DisclaimerService {
     version: string,
     trigger: AcknowledgmentTrigger
   ): Promise<string> {
+    if (!this.supabaseReady || !this.supabase) {
+      throw new Error("Supabase unavailable");
+    }
+
     const { data, error } = await this.supabase.rpc(
       "record_disclaimer_acknowledgment",
       {
@@ -91,6 +140,11 @@ export class DisclaimerService {
    * Get active disclaimer version
    */
   async getActiveDisclaimerVersion(): Promise<DisclaimerVersion> {
+    if (!this.supabaseReady || !this.supabase) {
+      console.warn("[disclaimer] Supabase not ready, using fallback version");
+      return this.getFallbackVersion();
+    }
+
     const { data, error } = await this.supabase
       .from("disclaimer_versions")
       .select("*")
@@ -99,8 +153,12 @@ export class DisclaimerService {
       .limit(1)
       .single();
 
-    if (error) {
-      throw new Error(`Failed to get disclaimer version: ${error.message}`);
+    if (error || !data) {
+      console.warn(
+        "[disclaimer] Failed to get disclaimer version:",
+        error?.message || "No data returned"
+      );
+      return this.getFallbackVersion();
     }
 
     return data;
@@ -110,6 +168,11 @@ export class DisclaimerService {
    * Get user's acknowledgment history
    */
   async getUserAcknowledgmentHistory(userId: string) {
+    if (!this.supabaseReady || !this.supabase) {
+      console.warn("[disclaimer] Supabase not ready, skipping history");
+      return [];
+    }
+
     const { data, error } = await this.supabase
       .from("user_disclaimer_acknowledgments")
       .select("*")
@@ -129,6 +192,11 @@ export class DisclaimerService {
    * Get user's recent assessment views
    */
   async getUserRecentViews(userId: string, hours: number = 24) {
+    if (!this.supabaseReady || !this.supabase) {
+      console.warn("[disclaimer] Supabase not ready, skipping recent views");
+      return [];
+    }
+
     const cutoffTime = new Date();
     cutoffTime.setHours(cutoffTime.getHours() - hours);
 
