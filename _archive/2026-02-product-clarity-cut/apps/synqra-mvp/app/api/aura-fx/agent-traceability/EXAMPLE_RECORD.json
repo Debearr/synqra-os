@@ -1,0 +1,152 @@
+{
+  "agent_traceability_record": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "assessment_id": "aura-fx-signal-2026-01-27-12345",
+    "assessment_schema_version": "1.0.0",
+    "agents": [
+      {
+        "name": "aura-fx-analyzer",
+        "version": "1.0.0",
+        "role": "analyzer"
+      },
+      {
+        "name": "signal-generator",
+        "version": "1.0.0",
+        "role": "signal_generator"
+      }
+    ],
+    "primary_agent": {
+      "name": "aura-fx-analyzer",
+      "version": "1.0.0",
+      "role": "analyzer"
+    },
+    "prompt": {
+      "version_hash": "a3f5c8d2e1b4f6a9",
+      "template_name": "aura-fx-confluence-analysis",
+      "parameters": {
+        "symbol": "BTCUSDT",
+        "timeframe": "H4",
+        "indicators": ["EMA", "RSI", "MACD", "Support/Resistance"],
+        "lookback_periods": 100
+      }
+    },
+    "reasoning_snapshot_id": "660e8400-e29b-41d4-a716-446655440001",
+    "created_at": "2026-01-27T14:30:00.000Z",
+    "immutable": true
+  },
+  "reasoning_snapshot": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "assessment_id": "aura-fx-signal-2026-01-27-12345",
+    "reasoning_chain": [
+      {
+        "step_number": 1,
+        "agent_name": "aura-fx-analyzer",
+        "action": "analyze_market_structure",
+        "input": {
+          "candles_count": 100,
+          "symbol": "BTCUSDT",
+          "timeframe": "H4"
+        },
+        "output": {
+          "trend": "BULLISH",
+          "confluence_score": 0.85,
+          "support_level": 42500,
+          "resistance_level": 44200
+        },
+        "reasoning": "Analyzed 100 H4 candles for BTCUSDT. Identified clear bullish trend with price above EMA(20) and EMA(50). RSI at 62 indicates healthy momentum without overbought conditions. MACD histogram showing positive divergence. Strong support established at 42500 with multiple touch points.",
+        "timestamp": "2026-01-27T14:30:01.234Z"
+      },
+      {
+        "step_number": 2,
+        "agent_name": "aura-fx-analyzer",
+        "action": "calculate_confluence",
+        "input": {
+          "indicators": {
+            "ema_alignment": true,
+            "rsi_value": 62,
+            "macd_signal": "bullish",
+            "support_resistance": "near_support"
+          }
+        },
+        "output": {
+          "confluence_score": 0.85,
+          "confidence_level": "high",
+          "contributing_factors": [
+            "EMA alignment (bullish)",
+            "RSI in healthy range",
+            "MACD positive divergence",
+            "Price near support level"
+          ]
+        },
+        "reasoning": "Calculated confluence score of 0.85 based on alignment of multiple technical indicators. All primary indicators (EMA, RSI, MACD) showing bullish signals. Price action near established support level provides favorable risk/reward setup.",
+        "timestamp": "2026-01-27T14:30:02.456Z"
+      },
+      {
+        "step_number": 3,
+        "agent_name": "signal-generator",
+        "action": "generate_directional_assessment",
+        "input": {
+          "direction": "BULLISH",
+          "confluence_score": 0.85,
+          "entry_level": 42800,
+          "stop_level": 42200,
+          "target_levels": [43500, 44000, 44500]
+        },
+        "output": {
+          "signal_id": "aura-fx-signal-2026-01-27-12345",
+          "direction": "BULLISH",
+          "probability": 85,
+          "entry": 42800,
+          "stop": 42200,
+          "calibration_points": [43500, 44000, 44500],
+          "risk_reward_ratio": 3.5
+        },
+        "reasoning": "Generated bullish directional assessment based on high confluence score (0.85). Entry level set at 42800 (current price near support). Invalidation level at 42200 (below support). Three calibration points established at key resistance levels. Risk/reward ratio of 3.5:1 meets minimum threshold.",
+        "timestamp": "2026-01-27T14:30:03.789Z"
+      }
+    ],
+    "context_used": {
+      "market_data": {
+        "symbol": "BTCUSDT",
+        "timeframe": "H4",
+        "data_points": 100,
+        "timestamp_range": {
+          "start": "2026-01-10T00:00:00.000Z",
+          "end": "2026-01-27T14:00:00.000Z"
+        }
+      },
+      "indicators_used": [
+        "EMA(20)",
+        "EMA(50)",
+        "RSI(14)",
+        "MACD(12,26,9)",
+        "Support/Resistance Levels"
+      ],
+      "external_data_sources": [
+        "Binance Market Data API"
+      ]
+    },
+    "total_tokens": 0,
+    "model_used": "rule-based-v1",
+    "temperature": 0,
+    "size_bytes": 2847,
+    "created_at": "2026-01-27T14:30:04.000Z",
+    "immutable": true
+  },
+  "user_facing_attribution": {
+    "agent_count": 2,
+    "primary_agent_name": "aura-fx-analyzer",
+    "version": "1.0.0",
+    "generated_at": "2026-01-27T14:30:00.000Z"
+  },
+  "metadata": {
+    "note": "This is an example of a complete agent traceability record",
+    "rules": [
+      "Logs are for human audit only",
+      "No algorithmic feedback or self-optimization",
+      "No user-facing exposure beyond minimal attribution",
+      "Records are immutable and cannot be updated or deleted"
+    ],
+    "schema_version": "1.0.0"
+  }
+}

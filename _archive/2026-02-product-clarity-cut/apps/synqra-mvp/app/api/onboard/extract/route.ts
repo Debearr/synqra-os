@@ -1,0 +1,170 @@
+import { NextResponse } from 'next/server';
+import { routeSynqraAiRequest } from '@/lib/ai/adapters';
+
+type ExtractedProfile = {
+  name: string;
+  title: string;
+  company: string;
+  location: string;
+  headline: string;
+  summary: string;
+  website: string;
+  linkedin: string;
+  twitter: string;
+  newsletter: string;
+  tone: string;
+  contentPillars: string[];
+  proofPoints: string[];
+  confidence: number;
+};
+
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+    const link = formData.get('link') as string | null;
+    const file = formData.get('file') as File | null;
+
+    let extractionInput = '';
+
+    if (link) {
+      extractionInput = `Extract professional profile data from this LinkedIn URL or profile link: ${link}`;
+    } else if (file) {
+      const buffer = await file.arrayBuffer();
+      const text = Buffer.from(buffer).toString('utf-8');
+      extractionInput = `Extract professional profile data from this uploaded content:\n\n${text}`;
+    } else {
+      return NextResponse.json(
+        {
+          profile: createMinimalDraft(),
+          confidence: 0.0,
+        },
+        { status: 200 }
+      );
+    }
+
+    // Build structured prompt for profile extraction
+    const prompt = `${extractionInput}
+
+Extract and return ONLY a valid JSON object with these exact fields:
+{
+  "name": "Full Name",
+  "title": "Professional Title",
+  "company": "Company Name",
+  "location": "City, State/Country",
+  "headline": "One-line positioning statement",
+  "summary": "Professional bio (2-3 sentences)",
+  "website": "https://website.com",
+  "linkedin": "https://linkedin.com/in/username",
+  "twitter": "https://x.com/username",
+  "newsletter": "Newsletter or CTA text",
+  "tone": "Description of writing tone/voice",
+  "contentPillars": ["Topic 1", "Topic 2", "Topic 3"],
+  "proofPoints": ["Achievement 1", "Achievement 2", "Achievement 3"],
+  "confidence": 0.85
+}
+
+Rules:
+- Return ONLY the JSON object, no other text
+- Use empty strings "" for missing fields
+- Use empty arrays [] for missing lists
+- Set confidence 0.0-1.0 based on data quality
+- Extract real data when available`;
+
+    // Route through AI router (enforces budget, rate limits, logging)
+    const response = await routeSynqraAiRequest({
+      task: 'profile_extraction',
+      prompt,
+      metadata: {
+        source: link ? 'link' : 'file',
+        endpoint: '/api/onboard/extract',
+      },
+    });
+
+    // Parse AI response
+    const extracted = JSON.parse(response.text);
+    const normalized = normalizeExtractedProfile(extracted);
+    const validated = validateProfile(normalized);
+
+    return NextResponse.json({
+      profile: validated,
+      confidence: validated.confidence,
+    });
+
+  } catch (error) {
+    console.error('[Onboard Extract] Error:', error);
+    return NextResponse.json(
+      {
+        profile: createMinimalDraft(),
+        confidence: 0.0,
+      },
+      { status: 200 }
+    );
+  }
+}
+
+function createMinimalDraft(): ExtractedProfile {
+  return {
+    name: '',
+    title: '',
+    company: '',
+    location: '',
+    headline: '',
+    summary: '',
+    website: '',
+    linkedin: '',
+    twitter: '',
+    newsletter: '',
+    tone: '',
+    contentPillars: [],
+    proofPoints: [],
+    confidence: 0.0,
+  };
+}
+
+function normalizeExtractedProfile(raw: unknown): ExtractedProfile {
+  const rawObj: Record<string, unknown> =
+    typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+
+  const safeString = (val: unknown): string =>
+    typeof val === 'string' ? val.trim() : '';
+
+  const safeArray = (val: unknown): string[] =>
+    Array.isArray(val) ? val.map(String).filter(Boolean) : [];
+
+  const safeNumber = (val: unknown, fallback: number): number => {
+    const num = typeof val === 'number' ? val : parseFloat(String(val));
+    return isNaN(num) ? fallback : Math.max(0, Math.min(1, num));
+  };
+
+  return {
+    name: safeString(rawObj.name),
+    title: safeString(rawObj.title),
+    company: safeString(rawObj.company),
+    location: safeString(rawObj.location),
+    headline: safeString(rawObj.headline),
+    summary: safeString(rawObj.summary),
+    website: safeString(rawObj.website),
+    linkedin: safeString(rawObj.linkedin),
+    twitter: safeString(rawObj.twitter),
+    newsletter: safeString(rawObj.newsletter),
+    tone: safeString(rawObj.tone),
+    contentPillars: safeArray(rawObj.contentPillars || rawObj.pillars),
+    proofPoints: safeArray(rawObj.proofPoints || rawObj.highlights),
+    confidence: safeNumber(rawObj.confidence, 0.0),
+  };
+}
+
+function validateProfile(profile: ExtractedProfile): ExtractedProfile {
+  let adjustedConfidence = profile.confidence;
+
+  if (!profile.name) adjustedConfidence *= 0.5;
+  if (!profile.title) adjustedConfidence *= 0.8;
+  if (!profile.company) adjustedConfidence *= 0.8;
+  if (profile.contentPillars.length === 0) adjustedConfidence *= 0.7;
+  if (profile.proofPoints.length === 0) adjustedConfidence *= 0.7;
+
+  return {
+    ...profile,
+    confidence: Math.max(0, Math.min(1, adjustedConfidence)),
+  };
+}
