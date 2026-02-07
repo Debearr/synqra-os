@@ -1,0 +1,47 @@
+{
+  "brandVoice": {
+    "tone": "Luxury minimalism with precision-grade clarity.",
+    "signature": [
+      "Ultra-present tense",
+      "Short, declarative microcopy",
+      "Confident but understated"
+    ],
+    "lexicon": {
+      "preferred": [
+        "architect",
+        "calibrate",
+        "luxe",
+        "modular",
+        "signal"
+      ],
+      "avoid": ["cheap", "basic", "template", "generic"]
+    }
+  },
+  "sections": {
+    "hero": {
+      "maxCharacters": 38,
+      "structure": ["Name", "Title", "Location"],
+      "punctuation": "none"
+    },
+    "credential": {
+      "maxBullets": 4,
+      "style": "sentence fragments",
+      "prefix": "•"
+    },
+    "callToAction": {
+      "copy": [
+        "Tap to connect",
+        "Request portfolio",
+        "Book strategy track"
+      ],
+      "linkStyle": "monoCaps"
+    }
+  },
+  "microcopy": {
+    "email": "Direct channel",
+    "phone": "Encrypted line",
+    "calendar": "Schedule precision",
+    "linkedin": "LinkedIn",
+    "x": "Signal"
+  }
+}
