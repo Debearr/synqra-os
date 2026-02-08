@@ -66,10 +66,8 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
 
   const getButtonText = () => {
     switch (status) {
-      case "governance":
-        return "ANALYZING...";
       case "analysis":
-        return "CONVENING COUNCIL...";
+        return "ANALYZING...";
       case "done":
         return "VERDICT RECEIVED";
       case "error":
@@ -79,7 +77,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
     }
   };
 
-  const isProcessing = status === "governance" || status === "analysis";
+  const isProcessing = status === "analysis";
 
   return (
     <div className="space-y-6">
@@ -93,7 +91,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
           <div className="font-mono text-sm uppercase tracking-wider text-red-400">
             {error === "Request Access"
               ? "Request Access"
-              : "Component restricted. Internal validation in progress."}
+              : "Restricted by governance."}
           </div>
         </motion.div>
       )}
@@ -152,7 +150,7 @@ export default function StudioCommandCenter({ onInitialized }: StudioCommandCent
               <div className="mt-4 flex items-center gap-3 text-sm text-noid-silver/70">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-noid-gold"></div>
                 <span className="font-mono text-xs uppercase tracking-wider">
-                  {status === "governance" ? "Analyzing safety..." : "Convening council..."}
+                  Analyzing request...
                 </span>
               </div>
             )}

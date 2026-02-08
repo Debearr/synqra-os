@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-export type CouncilStatus = "idle" | "governance" | "analysis" | "done" | "error";
+export type CouncilStatus = "idle" | "analysis" | "done" | "error";
 
 export type CouncilVerdict = {
   approved: boolean;
@@ -17,61 +17,19 @@ export interface CouncilDispatchState {
   requestId?: string | null;
 }
 
-type GovernanceVerdict = {
-  allowed: boolean;
-  riskLevel: number;
-  reason: string;
+type CouncilResponse = {
+  consensus?: string;
+  responses?: Array<{ response?: string; content?: string }>;
+  metadata?: {
+    requestId?: string;
+    risk?: string;
+  };
+  error?: string;
+  message?: string;
+  request_id?: string;
 };
 
-type GovernanceResponse = {
-  verdict: GovernanceVerdict;
-};
-
-const deriveRiskLabel = (riskLevel?: number): string => {
-  if (typeof riskLevel !== "number") return "UNKNOWN";
-  if (riskLevel >= 80) return "CRITICAL";
-  if (riskLevel >= 50) return "ELEVATED";
-  if (riskLevel > 0) return "SAFE";
-  return "BASELINE";
-};
-
-const isGovernanceVerdict = (value: unknown): value is GovernanceVerdict => {
-  if (!value || typeof value !== "object") return false;
-  const verdict = value as Record<string, unknown>;
-  return (
-    typeof verdict.allowed === "boolean" &&
-    typeof verdict.riskLevel === "number" &&
-    typeof verdict.reason === "string"
-  );
-};
-
-const isGovernanceResponse = (value: unknown): value is GovernanceResponse => {
-  if (!value || typeof value !== "object") return false;
-  const payload = value as Record<string, unknown>;
-  return isGovernanceVerdict(payload.verdict);
-};
-
-const buildGovernancePayload = (input: string) => ({
-  action: {
-    type: "content_generation",
-    metadata: { input: input.slice(0, 120) },
-  },
-  accountState: {
-    balance: 0,
-    currentDailyPnL: 0,
-    currentWeeklyPnL: 0,
-    tradesToday: 0,
-    consecutiveLosses: 0,
-    isLocked: false,
-  },
-  recentTrades: [],
-  sessionData: {
-    startTime: Date.now() - 30 * 60 * 1000,
-    errors: 0,
-    totalActions: 0,
-  },
-  product: "synqra",
-});
+const RESTRICTED_MESSAGE = "Restricted by governance.";
 
 export function useCouncilDispatch() {
   const [status, setStatus] = useState<CouncilStatus>("idle");
@@ -85,7 +43,7 @@ export function useCouncilDispatch() {
         const invalidState: CouncilDispatchState = {
           status: "error",
           verdict: null,
-          error: "Component restricted. Internal validation in progress.",
+          error: RESTRICTED_MESSAGE,
           requestId: null,
         };
         setStatus("error");
@@ -94,7 +52,7 @@ export function useCouncilDispatch() {
         return invalidState;
       }
 
-      setStatus("governance");
+      setStatus("analysis");
       setVerdict(null);
       setError(null);
 
@@ -107,7 +65,7 @@ export function useCouncilDispatch() {
           const unreachable: CouncilDispatchState = {
             status: "error",
             verdict: null,
-            error: "Component restricted. Internal validation in progress.",
+            error: RESTRICTED_MESSAGE,
             requestId: null,
           };
           setStatus("error");
@@ -134,97 +92,6 @@ export function useCouncilDispatch() {
 
         const authHeader = `Bearer ${session.access_token}`;
 
-        // Step 1: Governance check
-        const governanceResponse = await fetch("/api/council/governance", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: authHeader,
-          },
-          body: JSON.stringify(buildGovernancePayload(normalizedInput)),
-        }).catch((fetchError) => {
-          console.error("Governance request failed:", fetchError);
-          const networkError: CouncilDispatchState = {
-            status: "error",
-            verdict: null,
-            error: "Component restricted. Internal validation in progress.",
-            requestId: null,
-          };
-          setStatus("error");
-          setError(networkError.error);
-          return null;
-        });
-
-        if (!governanceResponse) {
-          const unreachable: CouncilDispatchState = {
-            status: "error",
-            verdict: null,
-            error: "Component restricted. Internal validation in progress.",
-            requestId: null,
-          };
-          setStatus("error");
-          setError(unreachable.error);
-          return unreachable;
-        }
-
-        if (!governanceResponse.ok) {
-          // Handle RLS/auth errors explicitly
-          const errorMessage =
-            governanceResponse.status === 401 || governanceResponse.status === 403
-              ? "Request Access"
-              : "Component restricted. Internal validation in progress.";
-
-          setVerdict(null);
-          setStatus("error");
-          setError(errorMessage);
-          return {
-            status: "error",
-            verdict: null,
-            error: errorMessage,
-            requestId: null,
-          };
-        }
-
-        const governanceBody = await governanceResponse.json().catch((parseError) => {
-          console.error("Failed to parse governance response:", parseError);
-          return null;
-        });
-        if (!isGovernanceResponse(governanceBody)) {
-          const contractMismatch: CouncilDispatchState = {
-            status: "error",
-            verdict: null,
-            error: "Component restricted. Internal validation in progress.",
-            requestId: null,
-          };
-          setStatus("error");
-          setError(contractMismatch.error);
-          setVerdict(null);
-          return contractMismatch;
-        }
-        const governanceRisk = deriveRiskLabel(governanceBody.verdict.riskLevel);
-
-        if (!governanceBody.verdict.allowed) {
-          const rejected: CouncilDispatchState = {
-            status: "error",
-            verdict: {
-              approved: false,
-              risk: governanceRisk,
-              consensus: governanceBody.verdict.reason || "Action blocked by governance",
-            },
-            error: "Component restricted. Internal validation in progress.",
-            requestId: null,
-          };
-          setVerdict(rejected.verdict);
-          setStatus("error");
-          setError(rejected.error);
-          return rejected;
-        }
-
-        // Step 2: Council analysis (stream-aware)
-        setStatus("analysis");
-        let consensusText = "";
-        let requestId: string | null = null;
-
         const councilResponse = await fetch("/api/council", {
           method: "POST",
           headers: {
@@ -238,10 +105,10 @@ export function useCouncilDispatch() {
             status: "error",
             verdict: {
               approved: false,
-              risk: governanceRisk,
+              risk: "CRITICAL",
               consensus: "Network error prevented council analysis",
             },
-            error: "Component restricted. Internal validation in progress.",
+            error: RESTRICTED_MESSAGE,
             requestId: null,
           };
           setVerdict(networkError.verdict);
@@ -256,10 +123,10 @@ export function useCouncilDispatch() {
             status: "error",
             verdict: {
               approved: false,
-              risk: governanceRisk,
+              risk: "CRITICAL",
               consensus: "Council unavailable",
             },
-            error: "Component restricted. Internal validation in progress.",
+            error: RESTRICTED_MESSAGE,
             requestId: null,
           };
           setVerdict(unreachable.verdict);
@@ -268,54 +135,28 @@ export function useCouncilDispatch() {
           return unreachable;
         }
 
-        const contentType = councilResponse.headers.get("content-type") || "";
-        const responseClone = contentType.includes("application/json") ? councilResponse.clone() : null;
+        const councilBody = (await councilResponse.json().catch((parseError) => {
+          console.error("Failed to parse council response:", parseError);
+          return null;
+        })) as CouncilResponse | null;
 
-        if (contentType.includes("text/event-stream") && councilResponse.body?.getReader) {
-          const reader = councilResponse.body.getReader();
-          const decoder = new TextDecoder();
-          setVerdict({ approved: true, risk: governanceRisk, consensus: "" });
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            consensusText += decoder.decode(value, { stream: true });
-            setVerdict({ approved: true, risk: governanceRisk, consensus: consensusText });
-          }
-
-          consensusText += decoder.decode();
-        }
-
-        if (!consensusText) {
-          const councilBody = responseClone !== null ? await responseClone.json().catch((parseError) => {
-            console.error("Failed to parse council response:", parseError);
-            return null;
-          }) : null;
-          consensusText =
-            councilBody?.consensus ||
-            councilBody?.responses?.[0]?.response ||
-            councilBody?.responses?.[0]?.content ||
-            "";
-          requestId = councilBody?.metadata?.requestId || councilBody?.request_id || null;
-        }
+        const governanceRisk = councilBody?.metadata?.risk || "BASELINE";
+        const consensusText =
+          councilBody?.consensus ||
+          councilBody?.responses?.[0]?.response ||
+          councilBody?.responses?.[0]?.content ||
+          "";
+        const requestId = councilBody?.metadata?.requestId || councilBody?.request_id || null;
 
         if (!councilResponse.ok) {
-          // Handle RLS/auth errors explicitly
-          let errorMessage: string;
-          if (councilResponse.status === 401 || councilResponse.status === 403) {
-            const errorBody = await councilResponse.json().catch(() => ({ error: "Unauthorized" }));
-            void errorBody;
-            errorMessage = "Request Access";
-          } else {
-            errorMessage = "Component restricted. Internal validation in progress.";
-          }
-          
+          const errorMessage = councilResponse.status === 401 ? "Request Access" : RESTRICTED_MESSAGE;
+
           const failed: CouncilDispatchState = {
             status: "error",
             verdict: {
               approved: false,
               risk: governanceRisk,
-              consensus: consensusText || "Council analysis failed",
+              consensus: consensusText || councilBody?.message || councilBody?.error || "Council analysis failed",
             },
             error: errorMessage,
             requestId,
@@ -324,6 +165,19 @@ export function useCouncilDispatch() {
           setStatus("error");
           setError(failed.error);
           return failed;
+        }
+
+        if (!consensusText) {
+          const contractMismatch: CouncilDispatchState = {
+            status: "error",
+            verdict: null,
+            error: RESTRICTED_MESSAGE,
+            requestId: null,
+          };
+          setStatus("error");
+          setError(contractMismatch.error);
+          setVerdict(null);
+          return contractMismatch;
         }
 
         const finalVerdict: CouncilDispatchState = {
@@ -350,7 +204,7 @@ export function useCouncilDispatch() {
         return finalVerdict;
       } catch (err) {
         console.error("Protocol initialization failed:", err);
-        const errorMessage = "Component restricted. Internal validation in progress.";
+        const errorMessage = RESTRICTED_MESSAGE;
         const unreachable: CouncilDispatchState = {
           status: "error",
           verdict,

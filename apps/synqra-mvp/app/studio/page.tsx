@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import CalibrationModal from "@/components/portal/calibration-modal";
 import StatusQ from "@/components/StatusQ";
 import StudioCommandCenter from "@/components/studio/command-center";
 
@@ -17,7 +16,6 @@ type CouncilResponse = {
 
 export default function StudioPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [showCalibration, setShowCalibration] = useState(false);
   const [councilResponse, setCouncilResponse] = useState<CouncilResponse | null>(null);
   const [councilStatus, setCouncilStatus] = useState<"idle" | "ready" | "error">("idle");
   const [frameFile, setFrameFile] = useState<File | null>(null);
@@ -65,10 +63,6 @@ export default function StudioPage() {
       router.replace("/");
     });
   }, [router]);
-
-  const handleCalibrationComplete = () => {
-    setShowCalibration(false);
-  };
 
   const handleFrameUpload = async () => {
     if (!frameFile) {
@@ -192,6 +186,7 @@ export default function StudioPage() {
             </h2>
             <div className="font-mono text-sm leading-relaxed text-white/90">
               {councilResponse.consensus ||
+                councilResponse.responses?.[0]?.response ||
                 councilResponse.responses?.[0]?.content ||
                 "No response"}
             </div>
@@ -213,10 +208,6 @@ export default function StudioPage() {
         )}
       </div>
 
-      <CalibrationModal
-        isOpen={showCalibration}
-        onComplete={handleCalibrationComplete}
-      />
     </main>
   );
 }
