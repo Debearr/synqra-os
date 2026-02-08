@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
 
 type RiskLevel = "BASELINE" | "ELEVATED" | "CRITICAL";
@@ -15,6 +16,9 @@ const RESTRICTED_PATTERNS = [
   /\bprivate\s+key\b/i,
   /\bseed\s+phrase\b/i,
 ];
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 
 const toRole = (user: { app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> }) => {
   const appRole = user.app_metadata?.role;
@@ -45,6 +49,120 @@ const evaluateCompliance = (prompt: string): { allowed: boolean; risk: RiskLevel
   }
 
   return { allowed: true, risk: "BASELINE", reason: "Allowed" };
+};
+
+const isConfiguredKey = (value: string | undefined): value is string => {
+  if (!value) return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (trimmed.includes("your_") || trimmed.endsWith("_here")) return false;
+  return true;
+};
+
+const parseOpenRouterContent = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const message = (payload as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message;
+  const content = message?.content;
+  if (typeof content === "string" && content.trim()) {
+    return content.trim();
+  }
+  if (Array.isArray(content)) {
+    const flattened = content
+      .map((item) => {
+        if (!item || typeof item !== "object") return "";
+        const text = (item as { text?: unknown }).text;
+        return typeof text === "string" ? text : "";
+      })
+      .join("")
+      .trim();
+    return flattened || null;
+  }
+  return null;
+};
+
+const buildFallbackContent = (prompt: string): string => {
+  return [
+    `Goal: ${prompt}`,
+    "",
+    "1) Problem validation",
+    "Interview 10-15 target users and capture exact pain language before building more scope.",
+    "",
+    "2) Fast MVP test",
+    "Ship one narrow workflow that solves one painful job-to-be-done and measure completion rate.",
+    "",
+    "3) Success criteria",
+    "Track activation, week-1 retention, and willingness-to-pay signals from real users.",
+    "",
+    "4) Next action",
+    "Run a 7-day test plan with one hypothesis, one metric, and one stop/continue decision."
+  ].join("\n");
+};
+
+const generateCouncilContent = async (prompt: string): Promise<{ content: string; provider: string }> => {
+  const providerErrors: string[] = [];
+  const systemInstruction =
+    "You are Synqra Council. Provide practical, concise guidance with clear next steps and measurable checks.";
+
+  const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+  if (isConfiguredKey(openRouterApiKey)) {
+    try {
+      const response = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openRouterApiKey}`,
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL,
+          temperature: 0.3,
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const reason =
+          (payload as { error?: { message?: string } })?.error?.message || `OpenRouter status ${response.status}`;
+        throw new Error(reason);
+      }
+
+      const content = parseOpenRouterContent(payload);
+      if (content) {
+        return { content, provider: "openrouter" };
+      }
+      throw new Error("OpenRouter returned empty content");
+    } catch (error) {
+      providerErrors.push(error instanceof Error ? error.message : "OpenRouter call failed");
+    }
+  }
+
+  const geminiApiKey = [process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2].find(
+    isConfiguredKey
+  );
+  if (geminiApiKey) {
+    try {
+      const client = new GoogleGenerativeAI(geminiApiKey);
+      const model = client.getGenerativeModel({ model: GEMINI_MODEL });
+      const result = await model.generateContent([
+        systemInstruction,
+        "",
+        `Prompt: ${prompt}`,
+      ]);
+      const content = result.response.text().trim();
+      if (content) {
+        return { content, provider: "gemini" };
+      }
+      throw new Error("Gemini returned empty content");
+    } catch (error) {
+      providerErrors.push(error instanceof Error ? error.message : "Gemini call failed");
+    }
+  }
+
+  console.warn("Council provider fallback active.", providerErrors);
+  return { content: buildFallbackContent(prompt), provider: "fallback" };
 };
 
 /**
@@ -117,19 +235,20 @@ export async function POST(request: NextRequest) {
     }
 
     const requestId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    const consensus = `Council review complete for: ${prompt.slice(0, 240)}`;
+    const { content, provider } = await generateCouncilContent(prompt);
 
     return NextResponse.json(
       {
-        consensus,
+        content,
+        consensus: content,
         responses: [
           {
             member: {
-              model: "synqra-council",
+              model: provider,
               name: "Synqra Council",
               role: "Decision Advisor",
             },
-            response: consensus,
+            response: content,
             tokens: {
               total: 0,
               prompt: 0,
@@ -142,6 +261,7 @@ export async function POST(request: NextRequest) {
           requestId,
           risk: compliance.risk,
           role,
+          provider,
         },
       },
       { status: 200 }

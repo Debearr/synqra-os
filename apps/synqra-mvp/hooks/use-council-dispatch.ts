@@ -18,6 +18,7 @@ export interface CouncilDispatchState {
 }
 
 type CouncilResponse = {
+  content?: string;
   consensus?: string;
   responses?: Array<{ response?: string; content?: string }>;
   metadata?: {
@@ -141,7 +142,8 @@ export function useCouncilDispatch() {
         })) as CouncilResponse | null;
 
         const governanceRisk = councilBody?.metadata?.risk || "BASELINE";
-        const consensusText =
+        const responseContent =
+          councilBody?.content ||
           councilBody?.consensus ||
           councilBody?.responses?.[0]?.response ||
           councilBody?.responses?.[0]?.content ||
@@ -156,7 +158,7 @@ export function useCouncilDispatch() {
             verdict: {
               approved: false,
               risk: governanceRisk,
-              consensus: consensusText || councilBody?.message || councilBody?.error || "Council analysis failed",
+              consensus: responseContent || councilBody?.message || councilBody?.error || "Council analysis failed",
             },
             error: errorMessage,
             requestId,
@@ -167,7 +169,7 @@ export function useCouncilDispatch() {
           return failed;
         }
 
-        if (!consensusText) {
+        if (!responseContent) {
           const contractMismatch: CouncilDispatchState = {
             status: "error",
             verdict: null,
@@ -185,7 +187,7 @@ export function useCouncilDispatch() {
           verdict: {
             approved: true,
             risk: governanceRisk,
-            consensus: consensusText || "Council analysis complete",
+            consensus: responseContent || "Council analysis complete",
           },
           error: null,
           requestId,

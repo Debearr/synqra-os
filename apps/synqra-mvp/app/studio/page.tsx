@@ -8,6 +8,7 @@ import StatusQ from "@/components/StatusQ";
 import StudioCommandCenter from "@/components/studio/command-center";
 
 type CouncilResponse = {
+  content?: string;
   consensus?: string;
   responses?: Array<{ content?: string; response?: string }>;
   metadata?: { requestId?: string };
@@ -185,7 +186,8 @@ export default function StudioPage() {
               Response
             </h2>
             <div className="font-mono text-sm leading-relaxed text-white/90">
-              {councilResponse.consensus ||
+              {councilResponse.content ||
+                councilResponse.consensus ||
                 councilResponse.responses?.[0]?.response ||
                 councilResponse.responses?.[0]?.content ||
                 "No response"}
@@ -199,6 +201,7 @@ export default function StudioPage() {
               }
               localStorage.setItem("synqra_input", payload.input);
               setCouncilResponse({
+                content: payload.consensus,
                 consensus: payload.consensus,
                 metadata: { requestId: payload.requestId || undefined },
               });
