@@ -5,7 +5,7 @@ import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
 
 type RiskLevel = "BASELINE" | "ELEVATED" | "CRITICAL";
 
-const ALLOWED_ROLES = new Set(["authenticated", "demo", "member", "admin", "owner"]);
+const ALLOWED_ROLES = new Set(["guest", "authenticated", "demo", "member", "admin", "owner"]);
 const RESTRICTED_MESSAGE = "Restricted by governance.";
 const RESTRICTED_PATTERNS = [
   /\bwire\s+transfer\b/i,
@@ -173,24 +173,27 @@ const generateCouncilContent = async (prompt: string): Promise<{ content: string
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    let role = "guest";
+    if (authHeader) {
+      try {
+        const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+          global: {
+            headers: {
+              Authorization: authHeader,
+            },
+          },
+        });
 
-    const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (user) {
+          role = toRole(user);
+        }
+      } catch (authError) {
+        console.warn("Council auth resolution failed; continuing as guest.", authError);
+      }
     }
 
     const body = await request.json().catch(() => null);
@@ -206,7 +209,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const role = toRole(user);
     if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json(
         {

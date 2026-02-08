@@ -58,46 +58,33 @@ export function useCouncilDispatch() {
       setError(null);
 
       try {
-        const { createClient } = await import("@supabase/supabase-js");
+        let authHeader: string | null = null;
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-          const unreachable: CouncilDispatchState = {
-            status: "error",
-            verdict: null,
-            error: RESTRICTED_MESSAGE,
-            requestId: null,
-          };
-          setStatus("error");
-          setError(unreachable.error);
-          return unreachable;
+        if (supabaseUrl && supabaseAnonKey) {
+          try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabase = createClient(supabaseUrl, supabaseAnonKey);
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session?.access_token) {
+              authHeader = `Bearer ${session.access_token}`;
+            }
+          } catch (sessionError) {
+            console.warn("Session lookup failed, continuing as guest:", sessionError);
+          }
         }
-
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          const authError: CouncilDispatchState = {
-            status: "error",
-            verdict: null,
-            error: "Request Access",
-            requestId: null,
-          };
-          setStatus("error");
-          setError(authError.error);
-          return authError;
-        }
-
-        const authHeader = `Bearer ${session.access_token}`;
 
         const councilResponse = await fetch("/api/council", {
           method: "POST",
-          headers: {
+          headers: authHeader
+            ? {
+                "Content-Type": "application/json",
+                Authorization: authHeader,
+              }
+            : {
             "Content-Type": "application/json",
-            Authorization: authHeader,
           },
           body: JSON.stringify({ prompt: normalizedInput }),
         }).catch((fetchError) => {
@@ -151,7 +138,7 @@ export function useCouncilDispatch() {
         const requestId = councilBody?.metadata?.requestId || councilBody?.request_id || null;
 
         if (!councilResponse.ok) {
-          const errorMessage = councilResponse.status === 401 ? "Request Access" : RESTRICTED_MESSAGE;
+          const errorMessage = RESTRICTED_MESSAGE;
 
           const failed: CouncilDispatchState = {
             status: "error",

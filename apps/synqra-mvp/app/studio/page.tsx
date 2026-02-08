@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import StatusQ from "@/components/StatusQ";
 import StudioCommandCenter from "@/components/studio/command-center";
 
@@ -25,45 +23,13 @@ export default function StudioPage() {
   >("idle");
   const [, setFrameUploadError] = useState<string | null>(null);
   const [frameImageUrl, setFrameImageUrl] = useState<string | null>(null);
-  const router = useRouter();
   const isStudioHold = frameUploadStatus === "error" || councilStatus === "error";
 
   useEffect(() => {
-    const checkUserAndLoad = async () => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        setCouncilStatus("error");
-        setIsLoading(false);
-        router.replace("/");
-        return;
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        setIsLoading(false);
-        router.replace("/");
-        return;
-      }
-
-      setCouncilResponse(null);
-      setCouncilStatus("idle");
-
-      setIsLoading(false);
-    };
-
-    checkUserAndLoad().catch((error) => {
-      console.error("Studio bootstrap failed:", error);
-      setCouncilStatus("error");
-      setIsLoading(false);
-      router.replace("/");
-    });
-  }, [router]);
+    setCouncilResponse(null);
+    setCouncilStatus("idle");
+    setIsLoading(false);
+  }, []);
 
   const handleFrameUpload = async () => {
     if (!frameFile) {
