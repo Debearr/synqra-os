@@ -105,6 +105,7 @@ export default function HomePage() {
             onChange={setPrompt}
             onSubmitIntent={handleGenerate}
             placeholder={currentPlaceholder}
+            ariaLabel="Content request prompt"
             disabled={isProcessing}
           />
 
