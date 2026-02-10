@@ -1,0 +1,194 @@
+name: Synqra MVP - Unified CI Guardrail
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: synqra-mvp-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synqra-mvp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRO_PRICE_ID: ${{ secrets.STRIPE_PRO_PRICE_ID }}
+      INTERNAL_JOB_SIGNING_SECRET: ${{ secrets.INTERNAL_JOB_SIGNING_SECRET }}
+      PILOT_ALLOWLIST_EMAILS: ${{ secrets.PILOT_ALLOWLIST_EMAILS }}
+      VERTICAL_ALLOWLIST: ${{ secrets.VERTICAL_ALLOWLIST }}
+      REALTOR_E2E_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies (lockfile enforced)
+        run: pnpm install --frozen-lockfile
+
+      - name: Type safety (global, no emit)
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit
+          else
+            npx tsc --noEmit -p apps/synqra-mvp/tsconfig.json
+          fi
+
+      - name: Guard - required CI secrets present
+        run: |
+          missing=0
+          required_vars=(
+            NEXT_PUBLIC_SUPABASE_URL
+            NEXT_PUBLIC_SUPABASE_ANON_KEY
+            SUPABASE_SERVICE_ROLE_KEY
+            STRIPE_SECRET_KEY
+            STRIPE_WEBHOOK_SECRET
+            STRIPE_PRO_PRICE_ID
+            INTERNAL_JOB_SIGNING_SECRET
+            PILOT_ALLOWLIST_EMAILS
+            VERTICAL_ALLOWLIST
+          )
+          for v in "${required_vars[@]}"; do
+            if [ -z "${!v}" ]; then
+              echo "Missing required secret: $v"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Guard - forbid placeholder/test values
+        run: |
+          blocked_patterns='placeholder|_here$|your_|changeme|example'
+          check_vars=(
+            NEXT_PUBLIC_SUPABASE_URL
+            NEXT_PUBLIC_SUPABASE_ANON_KEY
+            SUPABASE_URL
+            SUPABASE_ANON_KEY
+            SUPABASE_SERVICE_ROLE_KEY
+            STRIPE_SECRET_KEY
+            STRIPE_WEBHOOK_SECRET
+            STRIPE_PRO_PRICE_ID
+            INTERNAL_JOB_SIGNING_SECRET
+            PILOT_ALLOWLIST_EMAILS
+            VERTICAL_ALLOWLIST
+          )
+          for v in "${check_vars[@]}"; do
+            value="${!v}"
+            lower="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+            if printf '%s' "$lower" | grep -Eq "$blocked_patterns"; then
+              echo "Blocked placeholder-like value in $v"
+              exit 1
+            fi
+          done
+          if printf '%s' "$STRIPE_SECRET_KEY" | grep -Eq '^sk_test_'; then
+            echo "Blocked test Stripe secret key"
+            exit 1
+          fi
+
+      - name: App-scoped type check
+        run: pnpm -w --filter synqra-mvp run type-check
+
+      - name: Preflight - Realtor
+        run: pnpm -w --filter synqra-mvp run test:realtor-preflight
+
+      - name: Preflight - Billing
+        run: pnpm -w --filter synqra-mvp run test:billing-preflight
+
+      - name: Start app server for E2E
+        run: |
+          pnpm -w --filter synqra-mvp run dev -- -p 3000 > /tmp/synqra-mvp-dev.log 2>&1 &
+          echo $! > /tmp/synqra-mvp-dev.pid
+
+      - name: Wait for app server
+        run: |
+          for i in $(seq 1 120); do
+            if curl -fsS "http://127.0.0.1:3000" > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"
+          tail -n 200 /tmp/synqra-mvp-dev.log || true
+          exit 1
+
+      - name: E2E - Realtor
+        run: pnpm -w --filter synqra-mvp run test:realtor-e2e
+
+      - name: E2E - Vertical Isolation (HARD GATE)
+        run: pnpm -w --filter synqra-mvp run test:vertical-isolation-e2e
+
+      - name: Stop app server
+        if: always()
+        run: |
+          if [ -f /tmp/synqra-mvp-dev.pid ]; then
+            kill "$(cat /tmp/synqra-mvp-dev.pid)" || true
+          fi
+          pkill -f "next dev" || true
+          tail -n 200 /tmp/synqra-mvp-dev.log || true
+
+  deploy-vercel:
+    name: Deploy to Vercel (main only)
+    needs: synqra-mvp
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      secrets.VERCEL_TOKEN != '' &&
+      secrets.VERCEL_ORG_ID != '' &&
+      secrets.VERCEL_PROJECT_ID != ''
+    permissions:
+      contents: read
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies (lockfile enforced)
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel project settings
+        run: pnpm dlx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        working-directory: apps/synqra-mvp
+
+      - name: Build with Vercel
+        run: pnpm dlx vercel build --prod --token="$VERCEL_TOKEN"
+        working-directory: apps/synqra-mvp
+
+      - name: Deploy prebuilt output to Vercel
+        run: pnpm dlx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        working-directory: apps/synqra-mvp
