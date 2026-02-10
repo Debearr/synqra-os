@@ -11,12 +11,12 @@ export default function PilotApplicationSuccessPage() {
   return (
     <SuccessConfirmation
       title="Application Received"
-      message="We're reviewing your application. If approved, you'll receive a secure payment link within 24 hours."
+      message="Your pilot application is in review. We will email approved applicants with secure next steps within 24 hours."
       nextSteps={[
         "Our team will review your application within 24 hours",
-        "Check your email for approval notification and payment link",
-        "Once approved, complete payment to secure your founder spot",
-        "You'll receive onboarding instructions immediately after payment",
+        "Check your inbox and spam folder for the approval email",
+        "If approved, follow the secure instructions in that email",
+        "Reply to the email if you need help with onboarding",
       ]}
     />
   );
