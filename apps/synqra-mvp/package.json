@@ -22,6 +22,7 @@
     "test:vertical-isolation-e2e": "ts-node -r tsconfig-paths/register --project tests/tsconfig.json tests/realtor/vertical-isolation-e2e.test.ts",
     "test:red-team": "ts-node --project tests/tsconfig.json tests/red-team/audit-report.ts",
     "test:ai-router": "ts-node --project tests/tsconfig.json tests/smoke-test-ai-router.ts",
+    "test:routing": "playwright test tests/routing",
     "verify:db": "ts-node --project tests/tsconfig.json scripts/verify-db.ts"
   },
   "dependencies": {
@@ -44,6 +45,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@types/node": "22.9.0",
     "@types/react": "18.3.5",
     "autoprefixer": "10.4.20",
