@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  typedRoutes: true,
   experimental: {
-    typedRoutes: true,
     optimizePackageImports: ["framer-motion"],
   },
   reactStrictMode: true,

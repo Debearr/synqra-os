@@ -1,0 +1,51 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // === ROUTE CANONICALIZATION ===
+  const lowerPath = pathname.toLowerCase();
+  if (lowerPath === "/synqra") {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+  if (lowerPath === "/studio" && pathname !== "/studio") {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+
+  // === PRODUCT AIR-GAP ENFORCEMENT ===
+  if (
+    pathname.startsWith("/studio/aurafx") ||
+    pathname.startsWith("/studio/signals-hub")
+  ) {
+    return NextResponse.redirect(new URL("/studio", request.url));
+  }
+
+  // === PROD BLOCKLIST ===
+  if (
+    pathname.startsWith("/q-preview") ||
+    pathname.startsWith("/statusq-preview") ||
+    pathname.startsWith("/luxgrid")
+  ) {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  // === PROTECTED ROUTES ===
+  if (pathname.startsWith("/admin")) {
+    // Require Supabase auth cookie for protected routes.
+    const authCookie = request.cookies
+      .getAll()
+      .find(c => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))
+      ?.value;
+
+    if (!authCookie) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
