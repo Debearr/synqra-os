@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import GenerateButton from "../components/GenerateButton";
 import OutputPanel from "../components/OutputPanel";
 import PromptBox from "../components/PromptBox";
-import { generatePerfectDraft } from "../lib/draftEngine";
+import { requestHomepageCouncilDrafts, type HomepagePlatformDrafts } from "../lib/homepage/council-request";
 
 const PROMPT_SUGGESTIONS = [
   "Write a LinkedIn post about launching our new product…",
@@ -18,8 +18,8 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentDraft, setCurrentDraft] = useState<string | null>(null);
-  const [previousDraft, setPreviousDraft] = useState<string | null>(null);
+  const [currentDrafts, setCurrentDrafts] = useState<HomepagePlatformDrafts | null>(null);
+  const [previousDrafts, setPreviousDrafts] = useState<HomepagePlatformDrafts | null>(null);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -33,11 +33,11 @@ export default function HomePage() {
     setError(null);
 
     try {
-      if (currentDraft) {
-        setPreviousDraft(currentDraft);
+      if (currentDrafts) {
+        setPreviousDrafts(currentDrafts);
       }
-      const draft = await generatePerfectDraft(prompt.trim());
-      setCurrentDraft(draft);
+      const drafts = await requestHomepageCouncilDrafts(prompt.trim());
+      setCurrentDrafts(drafts);
     } catch (err) {
       setError(
         err instanceof Error
@@ -47,7 +47,7 @@ export default function HomePage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [currentDraft, isProcessing, prompt]);
+  }, [currentDrafts, isProcessing, prompt]);
 
   const handleNewRequest = useCallback(() => {
     setPrompt("");
@@ -129,25 +129,38 @@ export default function HomePage() {
         </motion.div>
 
         {/* Output Panel */}
-        {currentDraft && (
+        {currentDrafts && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-8"
+            className="mt-8 space-y-6"
           >
-            <OutputPanel
-              draft={currentDraft}
-              isVisible={Boolean(currentDraft)}
-              onNewRequest={handleNewRequest}
-              previousDraft={previousDraft}
-              dimmed={false}
-            />
+            <section>
+              <p className="mb-3 text-[0.65rem] uppercase tracking-[0.3em] text-white/35">LinkedIn Output</p>
+              <OutputPanel
+                draft={currentDrafts.linkedin}
+                isVisible={Boolean(currentDrafts.linkedin)}
+                onNewRequest={handleNewRequest}
+                previousDraft={previousDrafts?.linkedin ?? null}
+                dimmed={false}
+              />
+            </section>
+            <section>
+              <p className="mb-3 text-[0.65rem] uppercase tracking-[0.3em] text-white/35">Instagram Output</p>
+              <OutputPanel
+                draft={currentDrafts.instagram}
+                isVisible={Boolean(currentDrafts.instagram)}
+                onNewRequest={handleNewRequest}
+                previousDraft={previousDrafts?.instagram ?? null}
+                dimmed={false}
+              />
+            </section>
           </motion.div>
         )}
 
         {/* Feature Highlights */}
-        {!currentDraft && (
+        {!currentDrafts && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -184,7 +197,7 @@ export default function HomePage() {
         )}
 
         {/* CTA Section */}
-        {!currentDraft && (
+        {!currentDrafts && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

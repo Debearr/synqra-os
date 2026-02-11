@@ -32,12 +32,10 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-<<<<<<< Updated upstream
-    "node_modules"
-=======
     "node_modules",
     "app/_archive/**",
     "services/cloud-run-worker/**",
@@ -45,6 +43,5 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx"
->>>>>>> Stashed changes
   ]
 }

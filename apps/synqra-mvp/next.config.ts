@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+const standaloneOutput = process.env.NEXT_STANDALONE === "true";
+
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  ...(standaloneOutput ? { output: "standalone" } : {}),
   typedRoutes: true,
   experimental: {
     optimizePackageImports: ["framer-motion"],

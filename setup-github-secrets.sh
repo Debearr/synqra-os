@@ -112,11 +112,9 @@ echo "  - N8N_WEBHOOK_URL"
 echo "  - TELEGRAM_BOT_TOKEN"
 echo "  - TELEGRAM_CHANNEL_ID"
 echo ""
-read -p "Continue? (y/N): " -n 1 -r
-echo ""
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Aborted."
+if [ "${CONFIRM_GITHUB_SECRETS_SETUP:-}" != "true" ]; then
+    echo "Refusing interactive execution."
+    echo "Set CONFIRM_GITHUB_SECRETS_SETUP=true and rerun to continue."
     exit 1
 fi
 

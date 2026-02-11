@@ -90,6 +90,8 @@ n8n-data/
 .turbo
 .vercel
 .contentlayer
+!apps/synqra-mvp/.vercel/
+!apps/synqra-mvp/.vercel/project.json
 
 # Railway cache
 .railway/

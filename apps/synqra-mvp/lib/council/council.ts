@@ -95,7 +95,7 @@ export async function queryCouncil(
     sessionId = await createCouncilSession({
       token,
       userId,
-      title: typeof context.title === "string" ? context.title : null,
+      title: typeof context.title === "string" ? context.title : undefined,
       metadata: safeContext,
     });
 

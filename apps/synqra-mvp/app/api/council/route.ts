@@ -16,6 +16,10 @@ import {
   resolveIdentityProfile,
   type IdentityProfile,
 } from "@/lib/identity/resolver";
+import { applyComplianceRules, type PlatformName } from "@/lib/platforms/compliance";
+import { formatLinkedInContent, validateLinkedInContent } from "@/lib/platforms/linkedin";
+import { buildInstagramCarousel, validateInstagramCarousel } from "@/lib/platforms/instagram";
+import { logTelemetryEvent } from "@/lib/telemetry/firebase-events";
 
 type RiskLevel = "BASELINE" | "ELEVATED" | "CRITICAL";
 type SynqraTier = "studio" | "studio_plus";
@@ -34,6 +38,11 @@ type TierPolicy = {
 
 type CouncilRequestBody = {
   prompt?: string;
+  intent?: string;
+  channel?: string;
+  tone?: string;
+  platform?: PlatformName;
+  vertical?: TenantVertical;
   identityProfile?: string;
   creatorStampEnabled?: boolean | string;
   tenant?: {
@@ -58,8 +67,11 @@ const FX_SIGNAL_PATTERNS = [/\bfx\b/i, /\bforex\b/i, /\bsignal\s*hub\b/i, /\btel
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const SUPPORTED_PLATFORMS = new Set<PlatformName>(["linkedin", "instagram"]);
 const RATE_WINDOW_MS = 60_000;
 const usageWindows = new Map<string, UsageWindow>();
+const SUPPORT_EMAIL = "support@synqra.com";
+const DEFAULT_RETRY_AFTER_SECONDS = 60;
 const STUDIO_PLUS_TOKENS = new Set([
   "studio_plus",
   "studio-plus",
@@ -82,6 +94,21 @@ const TIER_POLICIES: Record<SynqraTier, TierPolicy> = {
     priority: "priority",
     fxSignalHubEnabled: true,
   },
+};
+
+type PromptLengthBucket = "vague" | "moderate" | "detailed";
+
+type PlatformProcessingResult = {
+  content: string;
+  criticalViolations: string[];
+  complianceMetadata: ReturnType<typeof applyComplianceRules>;
+};
+
+type UserErrorPayload = {
+  message: string;
+  action: string;
+  retryAfter?: number;
+  supportEmail: string;
 };
 
 class PublicGatekeeperError extends Error {
@@ -227,6 +254,95 @@ const parseOpenRouterContent = (payload: unknown): string | null => {
   return null;
 };
 
+const normalizeText = (value: string): string => value.replace(/\s+/g, " ").trim().toLowerCase();
+
+const isEchoOutput = (prompt: string, content: string): boolean => normalizeText(prompt) === normalizeText(content);
+
+const resolvePlatform = (value: unknown): PlatformName | null => {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (!SUPPORTED_PLATFORMS.has(normalized as PlatformName)) return null;
+  return normalized as PlatformName;
+};
+
+const resolvePromptLengthBucket = (prompt: string): PromptLengthBucket => {
+  const length = prompt.trim().length;
+  if (length <= 40) return "vague";
+  if (length <= 140) return "moderate";
+  return "detailed";
+};
+
+const buildPlatformInstruction = (platform: PlatformName, vertical: TenantVertical): string => {
+  const baseRules =
+    platform === "linkedin"
+      ? [
+          "Platform: LinkedIn.",
+          "Length must be between 900 and 1200 characters.",
+          "Structure must be Hook -> Insight -> Question CTA.",
+          "No hype language.",
+          "No emojis.",
+          "At most 2 hashtags.",
+          "Use CamelCase hashtags.",
+          "End with a question.",
+        ]
+      : [
+          "Platform: Instagram carousel.",
+          "Output must support a 5-10 slide carousel.",
+          "Slide 1 must be a visual hook.",
+          "Middle slides must focus on features and benefits.",
+          "Final slide must include a CTA.",
+          "Caption must stay under 300 characters.",
+          "Use at most 3 hashtags.",
+        ];
+
+  const verticalRule =
+    vertical === "travel_advisor"
+      ? "Travel advisor compliance: include travel advisory disclaimer."
+      : "Realtor compliance: remove fair housing risk phrases.";
+
+  return [...baseRules, verticalRule].join("\n");
+};
+
+const processPlatformOutput = (input: {
+  platform: PlatformName;
+  vertical: TenantVertical;
+  content: string;
+  prompt: string;
+}): PlatformProcessingResult => {
+  const compliance = applyComplianceRules(input.content, {
+    platform: input.platform,
+    vertical: input.vertical,
+  });
+  const criticalViolations: string[] = [];
+
+  if (input.platform === "linkedin") {
+    const formatted = formatLinkedInContent(compliance.content);
+    const validation = validateLinkedInContent(formatted);
+    criticalViolations.push(...validation.violations.filter((item) => item.severity === "critical").map((item) => item.code));
+    if (isEchoOutput(input.prompt, formatted)) {
+      criticalViolations.push("echo_output");
+    }
+    return {
+      content: formatted,
+      criticalViolations,
+      complianceMetadata: compliance,
+    };
+  }
+
+  const carousel = buildInstagramCarousel(compliance.content);
+  const validation = validateInstagramCarousel(carousel);
+  criticalViolations.push(...validation.violations.filter((item) => item.severity === "critical").map((item) => item.code));
+  if (isEchoOutput(input.prompt, carousel.text)) {
+    criticalViolations.push("echo_output");
+  }
+
+  return {
+    content: carousel.text,
+    criticalViolations,
+    complianceMetadata: compliance,
+  };
+};
+
 const resolveActorKey = (request: NextRequest, userId: string | null): string => {
   if (userId) {
     return `user:${userId}`;
@@ -239,6 +355,38 @@ const resolveActorKey = (request: NextRequest, userId: string | null): string =>
   }
   return `ua:${request.headers.get("user-agent") || "unknown"}`;
 };
+
+const emitCouncilTelemetry = async (input: {
+  platform: PlatformName;
+  vertical: TenantVertical;
+  promptLengthBucket: PromptLengthBucket;
+  validationFailureCount: number;
+  status: "success" | "validation_failed" | "provider_unavailable";
+}): Promise<void> => {
+  try {
+    await logTelemetryEvent("content_created", {
+      source: "api/council",
+      platform: input.platform,
+      vertical: input.vertical,
+      promptLengthBucket: input.promptLengthBucket,
+      validationFailureCount: input.validationFailureCount,
+      status: input.status,
+    });
+  } catch (error) {
+    console.warn("Council telemetry emit failed.", error);
+  }
+};
+
+const createUserError = (input: {
+  message: string;
+  action: string;
+  retryAfter?: number;
+}): UserErrorPayload => ({
+  message: input.message,
+  action: input.action,
+  retryAfter: input.retryAfter,
+  supportEmail: SUPPORT_EMAIL,
+});
 
 const generateContent = async (input: {
   prompt: string;
@@ -367,8 +515,39 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => null)) as CouncilRequestBody | null;
     const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
+    const requestedPlatform = resolvePlatform(body?.platform);
+    if (body?.platform && !requestedPlatform) {
+      return NextResponse.json(
+        {
+          error: "Invalid request",
+          message: "The 'platform' field must be 'linkedin' or 'instagram'.",
+          userError: createUserError({
+            message: "Request format is invalid.",
+            action: "Update the platform value to linkedin or instagram, then submit again.",
+          }),
+        },
+        { status: 400 }
+      );
+    }
+    const platform: PlatformName = requestedPlatform ?? "linkedin";
+
     const requestedTenantId = typeof body?.tenant?.id === "string" ? body.tenant.id.trim() : "";
-    const requestedVertical = normalizeVertical(body?.tenant?.vertical);
+    const nestedVertical = normalizeVertical(body?.tenant?.vertical);
+    const topLevelVertical = normalizeVertical(body?.vertical);
+    if (body?.vertical && !topLevelVertical) {
+      return NextResponse.json(
+        {
+          error: "Invalid request",
+          message: "The 'vertical' field must be 'realtor' or 'travel_advisor'.",
+          userError: createUserError({
+            message: "Request format is invalid.",
+            action: "Update the vertical value to realtor or travel_advisor, then submit again.",
+          }),
+        },
+        { status: 400 }
+      );
+    }
+    const requestedVertical = topLevelVertical ?? nestedVertical;
     let tenantVertical: TenantVertical = requestedVertical ?? resolveVerticalFromTenantId(requestedTenantId || "realtor");
     if (requestedTenantId) {
       const inferred = resolveVerticalFromTenantId(requestedTenantId);
@@ -382,6 +561,10 @@ export async function POST(request: NextRequest) {
           {
             error: "Invalid tenant vertical context",
             message: error instanceof Error ? error.message : "Vertical mismatch",
+            userError: createUserError({
+              message: "Request context is inconsistent.",
+              action: "Align tenant and vertical values, then submit again.",
+            }),
           },
           { status: 400 }
         );
@@ -391,10 +574,12 @@ export async function POST(request: NextRequest) {
     const identityProfile: IdentityProfile = resolveIdentityProfile(body?.identityProfile ?? null);
     const creatorStampEnabled = resolveCreatorStampEnabled(body?.creatorStampEnabled);
     const creatorStamp = resolveCreatorStampRuntime(creatorStampEnabled);
-    const systemInstruction = buildCouncilSystemInstruction({
+    const promptLengthBucket = resolvePromptLengthBucket(prompt);
+    const baseSystemInstruction = buildCouncilSystemInstruction({
       identityProfile,
       creatorStampEnabled,
     });
+    const systemInstruction = `${baseSystemInstruction}\n\n${buildPlatformInstruction(platform, tenantVertical)}`;
     const actorKey = resolveActorKey(request, userId);
 
     if (!prompt) {
@@ -402,6 +587,10 @@ export async function POST(request: NextRequest) {
         {
           error: "Invalid request",
           message: "The 'prompt' field is required and must be a string",
+          userError: createUserError({
+            message: "Prompt is required.",
+            action: "Add a prompt and submit again.",
+          }),
         },
         { status: 400 }
       );
@@ -411,6 +600,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: RESTRICTED_MESSAGE,
+          userError: createUserError({
+            message: "Access is restricted for this request.",
+            action: `Contact ${SUPPORT_EMAIL} to verify workspace access.`,
+          }),
             metadata: {
               risk: "CRITICAL" as RiskLevel,
               role,
@@ -441,6 +634,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: gateError.message,
+            userError: createUserError({
+              message: "Request is temporarily restricted.",
+              action: `Retry with a shorter prompt or wait before retrying. If this continues, contact ${SUPPORT_EMAIL}.`,
+            }),
             metadata: {
               risk: "ELEVATED" as RiskLevel,
               role,
@@ -464,6 +661,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: compliance.reason,
+          userError: createUserError({
+            message: "Prompt failed compliance checks.",
+            action: "Remove restricted or sensitive instructions, then submit again.",
+          }),
           metadata: {
             risk: compliance.risk,
             role,
@@ -490,10 +691,22 @@ export async function POST(request: NextRequest) {
       });
     } catch (generationError) {
       const tierPolicy = getTierPolicy(tier);
+      await emitCouncilTelemetry({
+        platform,
+        vertical: tenantVertical,
+        promptLengthBucket,
+        validationFailureCount: 0,
+        status: "provider_unavailable",
+      });
       return NextResponse.json(
         {
           error: "Creation provider unavailable",
           message: generationError instanceof Error ? generationError.message : "Provider error",
+          userError: createUserError({
+            message: "AI provider temporarily unavailable.",
+            action: `Retry in ${DEFAULT_RETRY_AFTER_SECONDS} seconds or contact ${SUPPORT_EMAIL}.`,
+            retryAfter: DEFAULT_RETRY_AFTER_SECONDS,
+          }),
           metadata: {
             risk: "CRITICAL" as RiskLevel,
             role,
@@ -506,11 +719,114 @@ export async function POST(request: NextRequest) {
             creatorStamp,
           },
         },
-        { status: 503 }
+        { status: 503, headers: { "Retry-After": String(DEFAULT_RETRY_AFTER_SECONDS) } }
       );
     }
-    const { content, provider } = generated;
+    let provider = generated.provider;
+    let processed = processPlatformOutput({
+      platform,
+      vertical: tenantVertical,
+      content: generated.content,
+      prompt,
+    });
+
+    if (processed.criticalViolations.length > 0) {
+      try {
+        const repairInstruction = `${systemInstruction}\n\nRepair pass: Resolve these critical violations exactly: ${processed.criticalViolations.join(
+          ", "
+        )}.`;
+        generated = await generateContent({
+          prompt,
+          tier,
+          systemInstruction: repairInstruction,
+        });
+        provider = generated.provider;
+        processed = processPlatformOutput({
+          platform,
+          vertical: tenantVertical,
+          content: generated.content,
+          prompt,
+        });
+      } catch (generationError) {
+        const tierPolicy = getTierPolicy(tier);
+        await emitCouncilTelemetry({
+          platform,
+          vertical: tenantVertical,
+          promptLengthBucket,
+          validationFailureCount: processed.criticalViolations.length,
+          status: "provider_unavailable",
+        });
+        return NextResponse.json(
+          {
+            error: "Creation provider unavailable",
+            message: generationError instanceof Error ? generationError.message : "Provider error",
+            userError: createUserError({
+              message: "AI provider temporarily unavailable.",
+              action: `Retry in ${DEFAULT_RETRY_AFTER_SECONDS} seconds or contact ${SUPPORT_EMAIL}.`,
+              retryAfter: DEFAULT_RETRY_AFTER_SECONDS,
+            }),
+            metadata: {
+              risk: "CRITICAL" as RiskLevel,
+              role,
+              tier,
+              vertical: tenantVertical,
+              verticalTag: verticalTag(tenantVertical),
+              processingPriority: tierPolicy.priority,
+              fxSignalHubEnabled: tierPolicy.fxSignalHubEnabled,
+              identityProfile,
+              creatorStamp,
+              platform,
+            },
+          },
+          { status: 503, headers: { "Retry-After": String(DEFAULT_RETRY_AFTER_SECONDS) } }
+        );
+      }
+    }
+
+    if (processed.criticalViolations.length > 0) {
+      await emitCouncilTelemetry({
+        platform,
+        vertical: tenantVertical,
+        promptLengthBucket,
+        validationFailureCount: processed.criticalViolations.length,
+        status: "validation_failed",
+      });
+      return NextResponse.json(
+        {
+          error: "Platform validation failed",
+          message: `Critical platform rules were not satisfied: ${processed.criticalViolations.join(", ")}`,
+          userError: createUserError({
+            message: "Generated output failed platform validation.",
+            action: `Refine the prompt and retry. If this persists, contact ${SUPPORT_EMAIL}.`,
+          }),
+          metadata: {
+            requestId,
+            risk: "CRITICAL" as RiskLevel,
+            role,
+            tier,
+            vertical: tenantVertical,
+            verticalTag: verticalTag(tenantVertical),
+            processingPriority: getTierPolicy(tier).priority,
+            fxSignalHubEnabled: getTierPolicy(tier).fxSignalHubEnabled,
+            identityProfile,
+            creatorStamp,
+            platform,
+            validationFailures: processed.criticalViolations,
+          },
+        },
+        { status: 422 }
+      );
+    }
+
+    const content = processed.content;
     const tierPolicy = getTierPolicy(tier);
+    await emitCouncilTelemetry({
+      platform,
+      vertical: tenantVertical,
+      promptLengthBucket,
+      validationFailureCount: 0,
+      status: "success",
+    });
 
     return NextResponse.json(
       {
@@ -542,8 +858,14 @@ export async function POST(request: NextRequest) {
           processingPriority: tierPolicy.priority,
           fxSignalHubEnabled: tierPolicy.fxSignalHubEnabled,
           provider,
+          platform,
           identityProfile,
           creatorStamp,
+          compliance: {
+            replacementsApplied: processed.complianceMetadata.replacementsApplied,
+            disclaimersApplied: processed.complianceMetadata.disclaimersApplied,
+            accessibilityReminders: processed.complianceMetadata.accessibilityReminders,
+          },
         },
       },
       { status: 200 }
@@ -554,8 +876,13 @@ export async function POST(request: NextRequest) {
       {
         error: "Creation request failed",
         message: error instanceof Error ? error.message : "Unknown error",
+        userError: createUserError({
+          message: "Generation is temporarily unavailable.",
+          action: `Retry in ${DEFAULT_RETRY_AFTER_SECONDS} seconds or contact ${SUPPORT_EMAIL}.`,
+          retryAfter: DEFAULT_RETRY_AFTER_SECONDS,
+        }),
       },
-      { status: 500 }
+      { status: 500, headers: { "Retry-After": String(DEFAULT_RETRY_AFTER_SECONDS) } }
     );
   }
 }
@@ -571,6 +898,8 @@ export async function GET() {
     description: "Single creation-engine endpoint for studio demo flow",
     requestSchema: {
       prompt: "string (required) - The prompt for generation",
+      platform: "string (optional) - linkedin | instagram",
+      vertical: "string (optional) - realtor | travel_advisor",
       identityProfile: "string (optional) - one of synqra | noid | aurafx",
       creatorStampEnabled: "boolean (optional, default false)",
     },

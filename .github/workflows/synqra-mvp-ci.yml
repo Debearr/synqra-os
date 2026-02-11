@@ -110,6 +110,9 @@ jobs:
       - name: App-scoped type check
         run: pnpm -w --filter synqra-mvp run type-check
 
+      - name: Compliance regression
+        run: pnpm -w --filter synqra-mvp run test:compliance
+
       - name: Preflight - Realtor
         run: pnpm -w --filter synqra-mvp run test:realtor-preflight
 
@@ -154,16 +157,14 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      secrets.VERCEL_TOKEN != '' &&
-      secrets.VERCEL_ORG_ID != '' &&
-      secrets.VERCEL_PROJECT_ID != ''
+      github.ref == 'refs/heads/main'
     permissions:
       contents: read
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_PROJECT_NAME: synqra
 
     steps:
       - name: Checkout
@@ -181,6 +182,21 @@ jobs:
       - name: Install dependencies (lockfile enforced)
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Required Secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "ERROR: Missing VERCEL_TOKEN"
+            exit 1
+          fi
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "ERROR: Missing VERCEL_ORG_ID"
+            exit 1
+          fi
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "ERROR: Missing VERCEL_PROJECT_ID"
+            exit 1
+          fi
+
       - name: Pull Vercel project settings
         run: pnpm dlx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
         working-directory: apps/synqra-mvp
@@ -190,5 +206,28 @@ jobs:
         working-directory: apps/synqra-mvp
 
       - name: Deploy prebuilt output to Vercel
-        run: pnpm dlx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        id: deploy
+        run: |
+          set -euo pipefail
+          DEPLOY_OUTPUT="$(pnpm dlx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          echo "$DEPLOY_OUTPUT"
+
+          DEPLOYMENT_URL="$(printf '%s\n' "$DEPLOY_OUTPUT" | grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' | tail -n 1 || true)"
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "ERROR: Could not determine deployment URL from Vercel output."
+            exit 1
+          fi
+
+          echo "deployment_url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
         working-directory: apps/synqra-mvp
+
+      - name: Health Check
+        run: |
+          set -euo pipefail
+          TARGET_URL="${{ steps.deploy.outputs.deployment_url }}"
+          if [ -z "$TARGET_URL" ]; then
+            TARGET_URL="https://${VERCEL_PROJECT_NAME}.vercel.app"
+          fi
+          sleep 10
+          curl -fsS "${TARGET_URL%/}/api/health" > /dev/null
+          echo "Health check passed: ${TARGET_URL%/}/api/health"

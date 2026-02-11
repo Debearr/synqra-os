@@ -32,6 +32,8 @@ env_config_temp.txt
 
 # vercel
 .vercel
+!.vercel/
+!.vercel/project.json
 
 # typescript
 *.tsbuildinfo

@@ -34,14 +34,15 @@ if [ ! -f ".env.local" ]; then
   echo ""
   echo "Get these from: https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api"
   echo ""
-  read -p "Press Enter after you've updated .env.local..."
+  echo "Update .env.local and rerun this script."
+  exit 1
 fi
 
 # Check if variables are set
 if grep -q "your-project-id" .env.local; then
   echo "⚠️  Warning: .env.local still contains placeholder values"
   echo "Please update it with real credentials before continuing"
-  read -p "Press Enter when ready..."
+  exit 1
 fi
 
 echo "✅ Environment variables configured"
@@ -65,7 +66,10 @@ echo "3. Copy and paste the contents of:"
 echo "   lib/posting/schema/waitlist-setup.sql"
 echo "4. Click 'Run' to execute the migration"
 echo ""
-read -p "Press Enter when database setup is complete..."
+if [ "${WAITLIST_DB_READY:-}" != "true" ]; then
+  echo "Set WAITLIST_DB_READY=true after completing the SQL setup, then rerun."
+  exit 1
+fi
 echo "✅ Database setup complete"
 echo ""
 

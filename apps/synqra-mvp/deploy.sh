@@ -1,41 +1,26 @@
-#!/bin/bash
-# Quick deployment script for Synqra OS
-# Run this after setting up Vercel/Railway tokens
+#!/usr/bin/env bash
+# Non-interactive Vercel deployment for apps/synqra-mvp.
 
-set -e
+set -euo pipefail
 
-echo "🚀 Synqra OS Deployment Script"
-echo "================================"
-echo ""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Check for deployment tools
-if command -v vercel &> /dev/null; then
-    echo "✓ Vercel CLI found"
-    read -p "Deploy to Vercel? (y/n): " deploy_vercel
-    if [ "$deploy_vercel" = "y" ]; then
-        echo "Deploying to Vercel..."
-        vercel --prod
-    fi
-elif command -v railway &> /dev/null; then
-    echo "✓ Railway CLI found"
-    read -p "Deploy to Railway? (y/n): " deploy_railway
-    if [ "$deploy_railway" = "y" ]; then
-        echo "Deploying to Railway..."
-        railway up
-    fi
-else
-    echo "⚠️  No deployment CLI found"
-    echo ""
-    echo "Install options:"
-    echo "  Vercel: npm i -g vercel"
-    echo "  Railway: bash <(curl -fsSL cli.new)"
-    echo ""
-    echo "Or deploy via web:"
-    echo "  Vercel: https://vercel.com/new"
-    echo "  Railway: https://railway.app/new"
+require_var() {
+  local name="$1"
+  if [ -z "${!name:-}" ]; then
+    echo "Missing required environment variable: $name" >&2
     exit 1
-fi
+  fi
+}
 
-echo ""
-echo "✅ Deployment initiated!"
-echo "Check your dashboard for the live URL"
+require_var VERCEL_TOKEN
+require_var VERCEL_ORG_ID
+require_var VERCEL_PROJECT_ID
+
+echo "Deploying synqra-mvp to Vercel (non-interactive)..."
+pnpm dlx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+pnpm dlx vercel build --prod --token="$VERCEL_TOKEN"
+pnpm dlx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+echo "Deployment command sequence completed."
