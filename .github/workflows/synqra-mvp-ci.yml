@@ -46,7 +46,7 @@ jobs:
 
       - name: Guard - no unresolved merge markers
         run: |
-          if git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' -- .; then
+          if git grep -n -E '^(<{7}( .*)?|={7}|>{7}( .*)?)$' -- .; then
             echo "Unresolved merge markers detected."
             exit 1
           fi
