@@ -1,0 +1,16 @@
+{
+  "extends": "./apps/synqra-mvp/tsconfig.json",
+  "include": [
+    "apps/synqra-mvp/**/*.ts",
+    "apps/synqra-mvp/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "apps/synqra-mvp/app/_archive/**",
+    "apps/synqra-mvp/services/cloud-run-worker/**",
+    "apps/synqra-mvp/**/*.test.ts",
+    "apps/synqra-mvp/**/*.test.tsx",
+    "apps/synqra-mvp/**/*.spec.ts",
+    "apps/synqra-mvp/**/*.spec.tsx"
+  ]
+}

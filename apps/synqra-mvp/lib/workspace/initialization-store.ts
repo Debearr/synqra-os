@@ -10,12 +10,16 @@ interface InitializationState {
   isInitialized: boolean;
   isInitializing: boolean;
   error: string | null;
+  requestId: string | null;
+  input: string | null;
 }
 
 const state: InitializationState = {
   isInitialized: false,
   isInitializing: false,
   error: null,
+  requestId: null,
+  input: null,
 };
 
 type Listener = (state: InitializationState) => void;
@@ -54,11 +58,25 @@ export const initializationStore = {
     state.isInitializing = false;
     notify();
   },
+
+  initialize: (requestId: string, input: string) => {
+    state.isInitializing = true;
+    state.error = null;
+    state.requestId = requestId;
+    state.input = input;
+    notify();
+
+    state.isInitializing = false;
+    state.isInitialized = true;
+    notify();
+  },
   
   reset: () => {
     state.isInitialized = false;
     state.isInitializing = false;
     state.error = null;
+    state.requestId = null;
+    state.input = null;
     notify();
   },
 };

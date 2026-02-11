@@ -33,6 +33,7 @@ type ParsedClassification = {
 const DEFAULT_LABELS: Record<TenantVertical, string[]> = {
   realtor: ["listing_inquiry", "buyer_lead", "seller_lead", "investor_inquiry"],
   travel_advisor: ["honeymoon_inquiry", "destination_question", "itinerary_request", "group_travel"],
+  generic: ["general_inquiry", "follow_up", "support_request", "transactional"],
 };
 
 function getBaseUrl(request: NextRequest): string {

@@ -33,7 +33,7 @@ let stripeClient: Stripe | null = null;
 export function getStripeClient(): Stripe {
   if (!stripeClient && STRIPE_SECRET_KEY) {
     stripeClient = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+      apiVersion: "2025-08-27.basil",
       typescript: true,
     });
   }

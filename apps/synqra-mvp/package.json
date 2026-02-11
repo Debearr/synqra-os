@@ -2,6 +2,7 @@
   "name": "synqra-mvp",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "next dev",
     "dev:3004": "next dev -p 3004",
