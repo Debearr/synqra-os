@@ -7,13 +7,10 @@
     "dev:3004": "next dev -p 3004",
     "build": "next build",
     "start": "PORT=${PORT:-3000} next start",
-<<<<<<< Updated upstream
     "lint": "next lint || echo 'lint skipped'",
     "clean:next": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
     "predev": "pnpm run clean:next",
-    "prebuild": "pnpm run clean:next"
-=======
-    "lint": "eslint . --max-warnings 10",
+    "prebuild": "pnpm run clean:next",
     "type-check": "tsc --noEmit",
     "verify": "pnpm run type-check && pnpm run lint",
     "test:automation-libs": "ts-node -r tsconfig-paths/register --project tests/tsconfig.json tests/automation/automation-libs.test.ts",
@@ -26,10 +23,10 @@
     "test:red-team": "ts-node --project tests/tsconfig.json tests/red-team/audit-report.ts",
     "test:ai-router": "ts-node --project tests/tsconfig.json tests/smoke-test-ai-router.ts",
     "verify:db": "ts-node --project tests/tsconfig.json scripts/verify-db.ts"
->>>>>>> Stashed changes
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@google/generative-ai": "^0.24.1",
     "@react-pdf/renderer": "^4.3.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.45.0",
@@ -39,12 +36,9 @@
     "next": "15.1.9",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-<<<<<<< Updated upstream
-=======
     "redis": "^5.10.0",
     "sharp": "^0.34.5",
     "stripe": "^18.5.0",
->>>>>>> Stashed changes
     "tailwind-merge": "^3.3.1",
     "uuid": "^10.0.0",
     "zod": "^3.23.0"

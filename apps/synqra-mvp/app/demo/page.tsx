@@ -2,10 +2,10 @@
 
 import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import GenerateButton from "../components/GenerateButton";
-import OutputPanel from "../components/OutputPanel";
-import PromptBox from "../components/PromptBox";
-import { generatePerfectDraft } from "../lib/draftEngine";
+import GenerateButton from "../../components/GenerateButton";
+import OutputPanel from "../../components/OutputPanel";
+import PromptBox from "../../components/PromptBox";
+import { generatePerfectDraft } from "../../lib/draftEngine";
 
 const PROMPT_SUGGESTIONS = [
   "Write a LinkedIn post about launching our new product…",
