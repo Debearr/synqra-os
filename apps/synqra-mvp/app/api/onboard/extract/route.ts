@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  enforceBudget,
+  enforceKillSwitch,
+  ensureCorrelationId,
+  logSafeguard,
+  normalizeError,
+} from '@/lib/safeguards';
 
 type ExtractedProfile = {
   name: string;
@@ -23,10 +30,22 @@ const anthropic = new Anthropic({
 });
 
 export async function POST(req: Request) {
+  const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
+
   try {
     const formData = await req.formData();
     const link = formData.get('link') as string | null;
     const file = formData.get('file') as File | null;
+
+    logSafeguard({
+      level: 'info',
+      message: 'onboard.extract.start',
+      scope: 'onboard-extract',
+      correlationId,
+      data: { hasLink: Boolean(link), hasFile: Boolean(file) },
+    });
+
+    enforceKillSwitch({ scope: 'onboard-extract', correlationId });
 
     let extractionInput = '';
 
@@ -41,10 +60,17 @@ export async function POST(req: Request) {
         {
           profile: createMinimalDraft(),
           confidence: 0.0,
+          correlationId,
         },
         { status: 200 }
       );
     }
+
+    enforceBudget({
+      estimatedCost: 0.03,
+      scope: 'onboard-extract',
+      correlationId,
+    });
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
@@ -88,6 +114,7 @@ Rules:
         {
           profile: createMinimalDraft(),
           confidence: 0.0,
+          correlationId,
         },
         { status: 200 }
       );
@@ -97,19 +124,37 @@ Rules:
     const normalized = normalizeExtractedProfile(extracted);
     const validated = validateProfile(normalized);
 
+    logSafeguard({
+      level: 'info',
+      message: 'onboard.extract.success',
+      scope: 'onboard-extract',
+      correlationId,
+      data: { confidence: validated.confidence },
+    });
+
     return NextResponse.json({
       profile: validated,
       confidence: validated.confidence,
+      correlationId,
     });
 
   } catch (error) {
-    console.error('[Onboard Extract] Error:', error);
+    const normalized = normalizeError(error);
+    logSafeguard({
+      level: 'error',
+      message: 'onboard.extract.error',
+      scope: 'onboard-extract',
+      correlationId,
+      data: { error: normalized.code },
+    });
     return NextResponse.json(
       {
         profile: createMinimalDraft(),
         confidence: 0.0,
+        error: normalized.safeMessage,
+        correlationId,
       },
-      { status: 200 }
+      { status: normalized.status }
     );
   }
 }

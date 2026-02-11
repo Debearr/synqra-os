@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runFullBenchmark } from "@/lib/models/benchmark";
+import {
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 /**
  * ============================================================
@@ -10,24 +17,45 @@ import { runFullBenchmark } from "@/lib/models/benchmark";
  */
 
 export async function POST(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
-    console.log("🚀 Starting benchmark suite...");
+    logSafeguard({
+      level: "info",
+      message: "models.benchmark.start",
+      scope: "models/benchmark",
+      correlationId,
+    });
+
+    enforceKillSwitch({ scope: "models/benchmark", correlationId });
     
     const results = await runFullBenchmark();
     
     return NextResponse.json({
+      correlationId,
       success: true,
       ...results,
     });
   } catch (error) {
-    console.error("Benchmark error:", error);
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+    logSafeguard({
+      level: "error",
+      message: "models.benchmark.error",
+      scope: "models/benchmark",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
 
     return NextResponse.json(
-      {
-        error: "Failed to run benchmark",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
     );
   }
 }
@@ -37,8 +65,29 @@ export async function POST(request: NextRequest) {
  * Get benchmark history (placeholder)
  */
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    message: "Benchmark history not yet implemented",
-    endpoint: "POST /api/models/benchmark to run new benchmark",
-  });
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
+  try {
+    enforceKillSwitch({ scope: "models/benchmark", correlationId });
+
+    return NextResponse.json({
+      correlationId,
+      message: "Benchmark history not yet implemented",
+      endpoint: "POST /api/models/benchmark to run new benchmark",
+    });
+  } catch (error) {
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+
+    return NextResponse.json(
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: { message: normalized.safeMessage },
+      }),
+      { status: normalized.status }
+    );
+  }
 }

@@ -37,6 +37,7 @@ All outputs must follow Synqra's signature premium × minimalist × cinematic st
 - **Target Vibe:** {{VIBE}} (premium, cinematic, street-lux, wellness, etc.)  
 - **Audience:** {{AUDIENCE}}  
 - **Model Archetype:** {{MODEL_ARCHETYPE}}
+- **Identity Profile:** {{IDENTITY_PROFILE}} (synqra | noid | aurafx)
 
 ---
 
@@ -98,6 +99,26 @@ Auto-select based on brand type:
 - Follow Synqra Style DNA in every shot
 - Prioritize cinematic composition over everything
 
+---
+
+## IDENTITY ENFORCEMENT (MANDATORY)
+
+Apply these identity controls in every visual output:
+
+- Identity hierarchy order is fixed: `System Seal > Monogram Stamp > Creator Stamp`.
+- Use at most one identity asset per surface. Never combine marks on the same surface.
+- System Seal is authority-only (access, auth, restricted states, system status), static, and non-decorative.
+- Monogram Stamp is compact and secondary to content (favicon/avatar/optional attribution only).
+- Creator Stamp is optional only. If present, keep it extremely subtle in bottom-right placement only.
+- Creator Stamp must never be mandatory and must never be louder than the content.
+- Attribution text, if used, may include `{{IDENTITY_PROFILE}}` name or monogram only.
+- Viral loop constraint: attribution must feel earned, never promotional.
+- Forbid all of the following:
+  - Calls to action tied to attribution
+  - Marketing language in attribution
+  - Decorative logos
+  - Competing marks
+  - Enlarged attribution
 ---
 
 ## 🎨 COLOR GRADING PRESETS
@@ -516,3 +537,4 @@ Returns:
 **Recommended Model:** Claude  
 **Estimated Cost:** $0.020-0.025  
 **Use Cases:** AI image generation, lifestyle campaigns, brand positioning, luxury visual content
+

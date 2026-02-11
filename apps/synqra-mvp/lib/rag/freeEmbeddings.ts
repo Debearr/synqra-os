@@ -162,7 +162,7 @@ export function initializeFreeRAG(): void {
     },
     {
       id: "pricing-enterprise",
-      text: "Synqra Enterprise plan has custom pricing. Includes unlimited users, 24/7 premium support, custom development, and SLA guarantee.",
+      text: "Synqra Enterprise plan has custom pricing. Includes hard capped access for predictable usage and cost control, 24/7 premium support, custom development, and SLA guarantee.",
     },
     {
       id: "features-ai",

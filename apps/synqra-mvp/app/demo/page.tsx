@@ -20,6 +20,7 @@ export default function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentDraft, setCurrentDraft] = useState<string | null>(null);
   const [previousDraft, setPreviousDraft] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Placeholder rotation disabled per Design Constitution (no autoplay loops)
@@ -29,6 +30,7 @@ export default function HomePage() {
   const handleGenerate = useCallback(async () => {
     if (isProcessing || !prompt.trim()) return;
     setIsProcessing(true);
+    setError(null);
 
     try {
       if (currentDraft) {
@@ -36,6 +38,12 @@ export default function HomePage() {
       }
       const draft = await generatePerfectDraft(prompt.trim());
       setCurrentDraft(draft);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "We could not generate a draft right now. Please try again."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -43,6 +51,7 @@ export default function HomePage() {
 
   const handleNewRequest = useCallback(() => {
     setPrompt("");
+    setError(null);
     textareaRef.current?.focus();
   }, []);
 
@@ -61,7 +70,7 @@ export default function HomePage() {
             transition={{ duration: 0.6 }}
           >
             <span className="text-xs uppercase tracking-[0.5em] text-white/40">
-              Synqra by NØID Labs
+              Synqra
             </span>
             <h1 className="mt-4 font-display text-5xl tracking-tight text-white md:text-6xl lg:text-7xl">
               Your executive voice.
@@ -96,6 +105,7 @@ export default function HomePage() {
             onChange={setPrompt}
             onSubmitIntent={handleGenerate}
             placeholder={currentPlaceholder}
+            ariaLabel="Content request prompt"
             disabled={isProcessing}
           />
 
@@ -106,6 +116,11 @@ export default function HomePage() {
               disabled={isProcessing || !prompt.trim()}
               isProcessing={isProcessing}
             />
+            {error && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            )}
             <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.3em] text-white/30">
               <span>No signup required</span>
               <span>Voice learning enabled</span>

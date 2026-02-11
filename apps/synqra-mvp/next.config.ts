@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  ...(process.env.NEXT_PUBLIC_STANDALONE_OUTPUT === 'true' ? { output: "standalone" } : {}),
+  output: 'standalone',
   typedRoutes: true,
   experimental: {
     optimizePackageImports: ["framer-motion"],

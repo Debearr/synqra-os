@@ -152,22 +152,22 @@ I've lived both sides. I know what luxury brands expect. And I know what it's li
 
 ### Back Synqra. Get Lifetime Access.
 
-#### 🥉 PROSUMER — $99/mo
+#### 🥉 SOLO — $99/mo
 **What You Get:**
-- 50 assets/month
+- 50 assets/month (HARD CAP)
 - All content types (social posts, carousels, videos)
 - Multi-AI orchestration
-- Unlimited revisions
+- Hard capped revisions for predictable usage and cost control
 - Email support
 
 **Best For:** Solo creators, side hustlers, personal brands
 
 ---
 
-#### 🥈 STUDIO — $299/mo
+#### 🥈 PRO — $299/mo
 **What You Get:**
-- 200 assets/month
-- Everything in Prosumer, plus:
+- 200 assets/month (HARD CAP)
+- Everything in Solo, plus:
 - Priority generation queue
 - Brand voice training (custom)
 - API access
@@ -177,15 +177,16 @@ I've lived both sides. I know what luxury brands expect. And I know what it's li
 
 ---
 
-#### 🥇 ENTERPRISE — Custom Pricing
+#### 🥇 AGENCY — Custom Pricing
 **What You Get:**
-- Unlimited assets
-- Everything in Studio, plus:
+- 250 assets per month (HARD CAP)
+- Everything in Pro, plus:
 - White-glove onboarding
 - Dedicated success manager
 - Custom integrations (Shopify, LinkedIn, etc.)
 - SOC2 compliance
 - SLA guarantees
+- If you need more than 250 assets: Contact us for custom enterprise volume pricing.
 
 **Best For:** E-commerce brands $10M+ revenue, large agencies
 
@@ -415,10 +416,10 @@ A: If we don't deliver by Q2 2026, all Kickstarter backers get full refunds. No 
 (If we don't hit $100K, all backers refunded)
 
 **Rewards Summary:**
-- Prosumer: $99/mo (unlimited quantity)
-- Studio: $299/mo (unlimited quantity)
+- Solo: $99/mo (50 assets/month HARD CAP)
+- Pro: $299/mo (200 assets/month HARD CAP)
 - Lifetime Founder: $2,499 one-time (limited to 100)
-- Enterprise: Custom (contact for quote)
+- Agency: Custom (250 assets/month HARD CAP; contact for enterprise volume above 250 assets)
 
 **Estimated Delivery:** Q1 2026 (Jan-Mar)
 

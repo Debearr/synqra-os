@@ -35,6 +35,16 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
+<<<<<<< Updated upstream
     "node_modules"
+=======
+    "node_modules",
+    "app/_archive/**",
+    "services/cloud-run-worker/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+>>>>>>> Stashed changes
   ]
 }

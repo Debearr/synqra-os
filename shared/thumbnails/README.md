@@ -479,7 +479,7 @@ console.log("Pattern Reuse:", savings.patternReuse);
 ║  You've mastered the basics.                              ║
 ║                                                            ║
 ║  Most professional creators generate 20-50 thumbnails     ║
-║  per month. Pro unlocks native resolution, unlimited      ║
+║  per month. Pro unlocks native resolution, hard capped    ║
 ║  refinements, and strategic insights to help your         ║
 ║  thumbnails perform 40% better.                           ║
 ║                                                            ║

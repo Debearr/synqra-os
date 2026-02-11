@@ -252,6 +252,30 @@ More recipes coming soon...
 - Be specific about output format
 - Include examples where helpful
 - Set clear constraints (length, tone, structure)
+- Add identity governance constraints for all branded outputs (see section below)
+
+## Identity Governance (Mandatory)
+
+Apply these rules in every recipe used as a system prompt:
+
+- Identity hierarchy is fixed: `System Seal > Monogram Stamp > Creator Stamp`.
+- Conflict rule: only one identity asset per surface.
+- Creator Stamp rules:
+  - Optional only
+  - Bottom-right placement only
+  - Extremely subtle
+  - Never mandatory
+  - Never louder than content
+- Viral loop constraint:
+  - Attribution must feel earned, not promotional
+  - No attribution calls to action
+  - No marketing language in attribution
+- Hard forbids:
+  - Decorative logos
+  - Competing marks on the same surface
+  - Enlarged attribution
+
+For clone safety (`synqra`, `noid`, `aurafx`), each generation must use one active identity profile only.
 
 ### 3. Cost Management
 - Set `maxBudget` appropriately

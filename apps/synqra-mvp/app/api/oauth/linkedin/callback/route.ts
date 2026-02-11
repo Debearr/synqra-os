@@ -12,18 +12,42 @@ export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get("state");
+  const storedState = req.cookies.get("synqra_oauth_state")?.value;
+
+  const withClearedState = (response: NextResponse) => {
+    response.cookies.set("synqra_oauth_state", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
+  };
 
   // Handle OAuth errors
   if (error) {
     const errorDescription = searchParams.get('error_description') || 'Unknown error';
     console.error('LinkedIn OAuth error:', error, errorDescription);
-    return NextResponse.redirect('/admin/integrations?error=linkedin_denied');
+    return withClearedState(
+      NextResponse.redirect('/admin/integrations?error=linkedin_denied')
+    );
+  }
+
+  if (!state || !storedState || state !== storedState) {
+    console.error("LinkedIn OAuth state mismatch");
+    return withClearedState(
+      NextResponse.redirect('/admin/integrations?error=linkedin_state')
+    );
   }
 
   if (!code) {
-    return NextResponse.json(
+    return withClearedState(
+      NextResponse.json(
       { ok: false, error: 'No authorization code received' },
       { status: 400 }
+      )
     );
   }
 
@@ -57,7 +81,9 @@ export async function GET(req: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('LinkedIn token exchange failed:', errorData);
-      return NextResponse.redirect('/admin/integrations?error=linkedin_token_failed');
+      return withClearedState(
+        NextResponse.redirect('/admin/integrations?error=linkedin_token_failed')
+      );
     }
 
     const tokens = await tokenResponse.json();
@@ -71,7 +97,9 @@ export async function GET(req: NextRequest) {
 
     if (!profileResponse.ok) {
       console.error('Failed to fetch LinkedIn profile');
-      return NextResponse.redirect('/admin/integrations?error=linkedin_profile_failed');
+      return withClearedState(
+        NextResponse.redirect('/admin/integrations?error=linkedin_profile_failed')
+      );
     }
 
     const profile = await profileResponse.json();
@@ -96,16 +124,22 @@ export async function GET(req: NextRequest) {
 
     if (dbError) {
       console.error('Database error:', dbError);
-      return NextResponse.redirect('/admin/integrations?error=database_failed');
+      return withClearedState(
+        NextResponse.redirect('/admin/integrations?error=database_failed')
+      );
     }
 
     console.log('✅ LinkedIn OAuth successful for account:', accountId);
 
     // Redirect to admin with success message
-    return NextResponse.redirect('/admin/integrations?success=linkedin');
+    return withClearedState(
+      NextResponse.redirect('/admin/integrations?success=linkedin')
+    );
 
   } catch (error: any) {
     console.error('LinkedIn OAuth callback error:', error);
-    return NextResponse.redirect('/admin/integrations?error=unexpected');
+    return withClearedState(
+      NextResponse.redirect('/admin/integrations?error=unexpected')
+    );
   }
 }

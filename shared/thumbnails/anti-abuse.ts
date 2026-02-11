@@ -147,7 +147,7 @@ export async function checkForAbuse(
         tier === "free"
           ? "Pro tier gives you 50 generations per hour."
           : tier === "pro"
-          ? "Elite tier offers unlimited generations with intelligent throttling."
+          ? "Elite tier offers hard capped generations with intelligent throttling."
           : undefined,
     };
   }
@@ -228,7 +228,7 @@ export async function checkForAbuse(
         tier === "free"
           ? "Pro tier offers 10x more compute resources."
           : tier === "pro"
-          ? "Elite tier offers unlimited compute with intelligent throttling."
+          ? "Elite tier offers hard capped compute with intelligent throttling."
           : undefined,
     };
   }

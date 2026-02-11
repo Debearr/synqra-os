@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AiCallLog {
+  id               String   @id @default(uuid())
+  provider         String
+  model            String
+  task             String
+  userId           String?  @map("user_id")
+  promptHash       String   @map("prompt_hash")
+  promptTokens     Int      @map("prompt_tokens")
+  completionTokens Int      @map("completion_tokens")
+  totalTokens      Int      @map("total_tokens")
+  costUsd          Float    @map("cost_usd")
+  latencyMs        Int      @map("latency_ms")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("ai_call_logs")
+}

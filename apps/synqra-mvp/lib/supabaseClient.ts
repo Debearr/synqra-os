@@ -20,7 +20,8 @@ try {
   const supabaseAnonKey = getSupabaseAnonKey();
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (error) {
-  supabaseInitError = error instanceof Error ? error : new Error("Unknown Supabase init error");
+  supabaseInitError =
+    error instanceof Error ? error : new Error("Unknown Supabase init error");
   supabase = null;
 }
 
@@ -33,8 +34,8 @@ export function requireSupabase(): SupabaseClient {
   if (!supabase) {
     throw new Error(
       "❌ Supabase client not available. " +
-      "Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Railway Variables and restart." +
-      (supabaseInitError ? ` Details: ${supabaseInitError.message}` : "")
+        "Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in Railway Variables and restart." +
+        (supabaseInitError ? ` Details: ${supabaseInitError.message}` : "")
     );
   }
   return supabase;

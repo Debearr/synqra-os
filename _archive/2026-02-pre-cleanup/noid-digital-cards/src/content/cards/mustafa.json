@@ -1,0 +1,27 @@
+{
+  "handle": "mustafa",
+  "name": "Mustafa Aziz",
+  "title": "Director of Data Futures",
+  "location": "Dubai · Riyadh",
+  "bio": "Transforms investor intelligence and guest telemetry into actionable card experiences with ethical safeguards.",
+  "email": "mustafa@noidlux.com",
+  "phone": "+971 50 555 7621",
+  "website": "https://noidlux.com",
+  "industry": "Data Strategy",
+  "focus": [
+    "Predictive hospitality scoring",
+    "Privacy-first guest data flows",
+    "ML-powered credential sequencing"
+  ],
+  "highlights": [
+    "Delivered 120% uplift on investor engagement",
+    "Authored ethical AI guardrails for card AI",
+    "Implemented adaptive QR routing in 6 regions"
+  ],
+  "socials": {
+    "linkedin": "https://linkedin.com/in/mustafaaziz",
+    "x": "https://x.com/mustafa_noid"
+  },
+  "availability": "Partnering with sovereign wealth innovation labs",
+  "avatar": "/images/team/mustafa.svg"
+}

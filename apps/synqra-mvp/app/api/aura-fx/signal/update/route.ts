@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { updateSignal } from "@/lib/aura-fx/tracking";
 import { sendTelegramMessage } from "@/lib/aura-fx/telegram";
+import {
+  AppError,
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 const statusEnum = z.enum(["open", "tp1", "tp2", "tp3", "closed", "stopped"]);
 
@@ -31,24 +39,79 @@ function lessonFromReason(reason?: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const correlationId = ensureCorrelationId(req.headers.get("x-correlation-id"));
+
   try {
+    enforceKillSwitch({ scope: "aura-fx/signal/update", correlationId });
+
+    const url = new URL(req.url);
+    const dryRun = url.searchParams.get("dryRun") === "1";
+
+    logSafeguard({
+      level: "info",
+      message: "aura-fx.signal.update.start",
+      scope: "aura-fx/signal/update",
+      correlationId,
+      data: { dryRun },
+    });
+
     const json = await req.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.message }, { status: 400 });
+      const normalized = normalizeError(
+        new AppError({
+          message: "Invalid signal update request",
+          code: "invalid_request",
+          status: 400,
+          safeMessage: parsed.error.message,
+          details: { correlationId },
+        })
+      );
+
+      return NextResponse.json(
+        buildAgentErrorEnvelope({
+          error: normalized,
+          correlationId,
+        }),
+        { status: normalized.status }
+      );
     }
     const { id, status, note } = parsed.data;
 
     await updateSignal(id, status, note);
 
-    if (["closed", "tp1", "tp2", "tp3", "stopped"].includes(status)) {
+    if (!dryRun && ["closed", "tp1", "tp2", "tp3", "stopped"].includes(status)) {
       const message = summaryMessage(id, status, note);
       await sendTelegramMessage(message);
     }
 
-    return NextResponse.json({ ok: true });
+    logSafeguard({
+      level: "info",
+      message: "aura-fx.signal.update.success",
+      scope: "aura-fx/signal/update",
+      correlationId,
+      data: { id, status, dryRun },
+    });
+
+    return NextResponse.json({ ok: true, dryRun, correlationId });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+    logSafeguard({
+      level: "error",
+      message: "aura-fx.signal.update.error",
+      scope: "aura-fx/signal/update",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
+    return NextResponse.json(
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+      }),
+      { status: normalized.status }
+    );
   }
 }

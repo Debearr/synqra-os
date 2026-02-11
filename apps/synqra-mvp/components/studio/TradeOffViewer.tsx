@@ -1,4 +1,4 @@
-import type { TradeOff } from '@/lib/core';
+type TradeOff = Record<string, unknown>;
 
 export type TradeOffViewerProps = {
   tradeoffs: TradeOff[];

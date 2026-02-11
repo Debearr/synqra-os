@@ -9,6 +9,15 @@ import { createAgentConfirmationGate } from "@/lib/agents/shared/router";
 import { retrieveDocuments, formatDocumentsAsContext } from "@/lib/rag";
 import { applySafetyGuardrails } from "@/lib/safety";
 import { agentConfig } from "@/lib/agents/base/config";
+import {
+  buildAgentErrorEnvelope,
+  ensureCorrelationId,
+  enforceKillSwitch,
+  logSafeguard,
+  normalizeError,
+  requireConfirmation,
+} from "@/lib/safeguards";
+import { AppError } from "@/lib/safeguards/errors";
 
 /**
  * ============================================================
@@ -19,33 +28,51 @@ import { agentConfig } from "@/lib/agents/base/config";
  */
 
 export async function POST(request: NextRequest) {
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
+    logSafeguard({
+      level: "info",
+      message: "agents.invoke.start",
+      scope: "agents",
+      correlationId,
+    });
+
+    enforceKillSwitch({ scope: "agents", correlationId });
+
     // Parse and validate request body
     const body = await request.json();
     const validationResult = AgentRequestSchema.safeParse(body);
 
     if (!validationResult.success) {
+      const normalized = normalizeError(
+        new AppError({
+          message: "Invalid request",
+          code: "invalid_request",
+          status: 400,
+          safeMessage:
+            "We could not read this agent request. Please check the payload and try again.",
+          details: { correlationId },
+        })
+      );
+
       return NextResponse.json(
-        {
-          error: "Invalid request",
-          details: validationResult.error.issues,
-        },
-        { status: 400 }
+        buildAgentErrorEnvelope({
+          error: normalized,
+          correlationId,
+          extras: { details: validationResult.error.issues },
+        }),
+        { status: normalized.status }
       );
     }
 
     // HUMAN-IN-COMMAND: Require explicit confirmation before AI action
     // Client must include { confirmed: true } in request body
-    if (!body.confirmed) {
-      return NextResponse.json(
-        {
-          error: "Confirmation required",
-          message: "AI actions require explicit human confirmation. Include { confirmed: true } in request body.",
-          requiresConfirmation: true,
-        },
-        { status: 403 }
-      );
-    }
+    requireConfirmation({
+      confirmed: body.confirmed,
+      context: "Agent invocation",
+      correlationId,
+    });
 
     const agentRequest: AgentRequest = validationResult.data;
 
@@ -128,17 +155,39 @@ export async function POST(request: NextRequest) {
       headers["X-Safety-Review"] = "true";
     }
 
-    return NextResponse.json(apiResponse, { headers });
+    logSafeguard({
+      level: "info",
+      message: "agents.invoke.success",
+      scope: "agents",
+      correlationId,
+      data: { agent: routing.agent, responseTier: routing.responseTier },
+    });
+
+    return NextResponse.json({ ...apiResponse, correlationId }, { headers });
   } catch (error) {
-    console.error("Agent invocation error:", error);
+    const normalized = normalizeError(error);
+    const resolvedCorrelationId = ensureCorrelationId(
+      (error as any)?.correlationId || correlationId
+    );
+
+    logSafeguard({
+      level: "error",
+      message: "agents.invoke.error",
+      scope: "agents",
+      correlationId: resolvedCorrelationId,
+      data: { code: normalized.code },
+    });
 
     return NextResponse.json(
-      {
-        error: "Agent invocation failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId: resolvedCorrelationId,
+        extras: {
+          requiresConfirmation: normalized.code === "confirmation_required",
+          timestamp: new Date().toISOString(),
+        },
+      }),
+      { status: normalized.status }
     );
   }
 }
@@ -148,8 +197,11 @@ export async function POST(request: NextRequest) {
  * List available agents
  */
 export async function GET() {
+  const correlationId = ensureCorrelationId(null);
+
   try {
     return NextResponse.json({
+      correlationId,
       agents: [
         {
           role: "sales",
@@ -178,14 +230,14 @@ export async function GET() {
       safetyEnabled: agentConfig.safety.hallucinationCheck,
     });
   } catch (error) {
-    console.error("Failed to list agents:", error);
+    const normalized = normalizeError(error);
 
     return NextResponse.json(
-      {
-        error: "Failed to list agents",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      buildAgentErrorEnvelope({
+        error: normalized,
+        correlationId,
+      }),
+      { status: normalized.status }
     );
   }
 }

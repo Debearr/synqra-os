@@ -6,6 +6,7 @@ import { forwardRef } from "react";
 type PromptBoxProps = {
   value: string;
   placeholder: string;
+  ariaLabel?: string;
   onChange: (value: string) => void;
   onFocusChange?: (isFocused: boolean) => void;
   onSubmitIntent?: () => void;
@@ -13,12 +14,13 @@ type PromptBoxProps = {
 };
 
 const PromptBox = forwardRef<HTMLTextAreaElement, PromptBoxProps>(
-  ({ value, placeholder, onChange, onFocusChange, onSubmitIntent, disabled = false }, ref) => {
+  ({ value, placeholder, ariaLabel = "Prompt input", onChange, onFocusChange, onSubmitIntent, disabled = false }, ref) => {
     return (
       <div className="relative">
         <textarea
           ref={ref}
           value={value}
+          aria-label={ariaLabel}
           disabled={disabled}
           rows={6}
           spellCheck

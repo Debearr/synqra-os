@@ -8,6 +8,7 @@ import {
   StyleSheet,
   renderToStream,
   Font,
+  Link,
 } from "@react-pdf/renderer";
 import { buildExecSummary } from "@/features/executive-summary/execSummary.generator";
 import { execSummaryTokens as t } from "@/features/executive-summary/execSummary.tokens";
@@ -134,6 +135,15 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 7,
     color: t.colors.textMuted,
+  },
+  watermark: {
+    position: "absolute",
+    bottom: 18,
+    right: 40,
+    fontSize: 7,
+    color: t.colors.textMuted,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 });
 
@@ -268,6 +278,9 @@ const ExecSummaryPDF = ({ dataOverride }: { dataOverride?: any }) => {
           </View>
 
         </View>
+        <Link src="https://synqra.co" style={styles.watermark}>
+          Synqra
+        </Link>
       </Page>
     </Document>
   );
@@ -295,4 +308,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

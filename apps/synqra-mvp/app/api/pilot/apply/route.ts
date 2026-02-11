@@ -17,7 +17,22 @@ import { sendApplicantConfirmation, sendAdminNotification } from '@/lib/email/no
  * - Input validation with Zod
  */
 
+<<<<<<< Updated upstream
 export async function POST(req: Request) {
+=======
+function summarizeDbError(error: unknown): string {
+  if (!error || typeof error !== "object") return "Unknown database error";
+  const message = (error as { message?: unknown }).message;
+  const code = (error as { code?: unknown }).code;
+  if (typeof message === "string" && typeof code === "string") {
+    return `${code}: ${message}`;
+  }
+  if (typeof message === "string") return message;
+  return "Unknown database error";
+}
+
+export async function POST(request: NextRequest) {
+>>>>>>> Stashed changes
   try {
     // Step 1: Parse and validate request body
     const body = await req.json();
@@ -52,9 +67,28 @@ export async function POST(req: Request) {
     if (existingApplication) {
       return NextResponse.json(
         {
+<<<<<<< Updated upstream
           ok: false,
           error: 'duplicate_application',
           message: 'You have already applied to the Founder Pilot program. Check your email for updates.',
+=======
+          error: "Database lookup failed",
+          details: summarizeDbError(existingError),
+        },
+        { status: 500 }
+      );
+    }
+
+    if (existing?.id) {
+      return NextResponse.json(
+        {
+          error: "Application already exists",
+          data: {
+            id: existing.id,
+            status: existing.status ?? "pending",
+            appliedAt: existing.applied_at ?? null,
+          },
+>>>>>>> Stashed changes
         },
         { status: 409 }
       );
@@ -88,9 +122,72 @@ export async function POST(req: Request) {
       console.error('[Pilot API] Database insert error:', insertError);
       return NextResponse.json(
         {
+<<<<<<< Updated upstream
           ok: false,
           error: 'database_error',
           message: 'Failed to submit application. Please try again.',
+=======
+          error: isDuplicate ? "Application already exists" : "Pilot application failed",
+          details: summarizeDbError(error),
+        },
+        { status: isDuplicate ? 409 : 500 }
+      );
+    }
+
+    const confirmation = await sendSubmissionConfirmation({
+      kind: "pilot",
+      to: email,
+      fullName: data.fullName,
+    });
+
+    return NextResponse.json(
+      {
+        ok: true,
+        data: {
+          id: inserted.id,
+          status: inserted.status ?? "pending",
+          appliedAt: inserted.applied_at ?? null,
+        },
+        confirmation,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Unable to process pilot application",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const emailParam = request.nextUrl.searchParams.get("email");
+    if (!emailParam) {
+      return NextResponse.json(
+        {
+          error: "Missing email query parameter",
+        },
+        { status: 400 }
+      );
+    }
+
+    const email = emailParam.trim().toLowerCase();
+    const supabase = requireSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("pilot_applications")
+      .select("id,status,applied_at")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        {
+          error: "Unable to read application status",
+>>>>>>> Stashed changes
         },
         { status: 500 }
       );

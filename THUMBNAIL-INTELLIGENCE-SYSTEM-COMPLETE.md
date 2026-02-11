@@ -129,7 +129,7 @@ A complete, production-ready thumbnail generation system with:
 **Rate Limits**:
 - Free: 1/min, 3/hour, 10/month
 - Pro: 5/min, 50/hour, 500/month
-- Elite: 20/min, 200/hour, unlimited
+- Elite: 20/min, 200/hour, hard capped for predictable usage and cost control
 
 **Detection Signals**:
 - ✅ Rapid requests (< 1 second apart)

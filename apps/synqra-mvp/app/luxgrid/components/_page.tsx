@@ -1,7 +1,7 @@
 /**
- * LUXGRID COMPONENT LIBRARY SHOWCASE
+ * SYNQRA COMPONENT LIBRARY SHOWCASE
  * 
- * Visual test page for all LuxGrid UI primitives
+ * Visual test page for all Synqra UI primitives
  * Route: /luxgrid/components
  */
 
@@ -46,8 +46,8 @@ export default function LuxGridComponentsShowcase() {
       {/* Header */}
       <div className="container mx-auto px-6 py-16 max-w-7xl">
         <LuxGridPageHeader
-          title="LUXGRID COMPONENTS"
-          subtitle="First-generation UI component library | Tesla minimalism × Tom Ford precision"
+          title="SYNQRA COMPONENTS"
+          subtitle="Synqra UI component library"
           dividerColor="emerald"
         />
       </div>
@@ -69,13 +69,13 @@ export default function LuxGridComponentsShowcase() {
             </div>
             
             <div className="flex flex-col items-center justify-center p-8 border border-lux-white/20 min-h-[200px]">
-              <LuxGridLogo variant="noid" size="md" color="gold" />
-              <p className="mt-4 text-sm text-lux-white/50">NØID / Medium / Gold</p>
+              <LuxGridLogo variant="synqra" size="md" color="gold" />
+              <p className="mt-4 text-sm text-lux-white/50">SYNQRA / Medium / Gold</p>
             </div>
             
             <div className="flex flex-col items-center justify-center p-8 border border-lux-white/20 min-h-[200px]">
-              <LuxGridLogo variant="luxgrid" size="sm" color="emerald" />
-              <p className="mt-4 text-sm text-lux-white/50">LUXGRID / Small / Emerald</p>
+              <LuxGridLogo variant="synqra" size="sm" color="emerald" />
+              <p className="mt-4 text-sm text-lux-white/50">SYNQRA / Small / Emerald</p>
             </div>
           </div>
         </section>
@@ -234,7 +234,7 @@ export default function LuxGridComponentsShowcase() {
               padding="lg"
               header={
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold tracking-wider">NØID</h3>
+                  <h3 className="text-xl font-bold tracking-wider">SYNQRA</h3>
                   <LuxGridTag variant="gold" size="sm">PREMIUM</LuxGridTag>
                 </div>
               }
@@ -297,13 +297,13 @@ export default function LuxGridComponentsShowcase() {
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <LuxGridLogo variant="luxgrid" size="sm" color="white" />
+              <LuxGridLogo variant="synqra" size="sm" color="white" />
               <LuxGridDivider color="emerald" thickness="medium" width="sm" />
               <LuxGridSignature color="emerald" size="sm" />
             </div>
             
             <p className="text-sm tracking-[0.12em] text-lux-white/50 uppercase">
-              LuxGrid System · SYNQRA × NØID · 2025
+              Synqra System · 2025
             </p>
             
             <LuxGridBarcode width={160} height={24} accent="emerald" />

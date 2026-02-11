@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-02-09T03:19:47.104Z",
+  "baseUrl": "http://localhost:3000",
+  "steps": {
+    "step1": {
+      "pass": true,
+      "httpStatus": 200,
+      "brandingVisible": true,
+      "accessInputVisible": true,
+      "marketingCtaCount": 0,
+      "loadMs": 844
+    },
+    "step2": {
+      "pass": true,
+      "finalUrl": "http://localhost:3000/studio",
+      "navigationMs": 500
+    },
+    "step3": {
+      "pass": true,
+      "navigatedToWaitlist": true,
+      "finalUrl": "http://localhost:3000/waitlist",
+      "resultType": "error",
+      "uiMessageSnippet": "Join the Waitlist\n\nRequest access and receive a transactional confirmation with next steps.\n\nEMAIL\nFULL NAME (OPTIONAL)\nDatabase lookup failed\nSUBMIT REQUEST\nPREFER PILOT APPLICATION?"
+    },
+    "step4": {
+      "pass": true,
+      "navigatedToPilot": true,
+      "finalUrl": "http://localhost:3000/pilot/apply",
+      "resultType": "error",
+      "uiMessageSnippet": "FOUNDER PILOT • LIMITED TO 50 SEATS\nSTATUS\nACCESS REQUIRED\nJoin the\nSynqra Pilot.\n\nGet early access to Synqra's executive content engine. We are opening a small cohort for founders who want real leverage.\n\nPRIORITY ONBOARDING\n\nDirect access to the product team and expedited account setup.\n\nFOUNDER ACCESS\n\nLifetime disc"
+    },
+    "oauth": {
+      "googleButtonVisible": true,
+      "appleButtonVisible": true,
+      "postClickSnippet": "{\"code\":400,\"error_code\":\"validation_failed\",\"msg\":\"Unsupported provider: provider is not enabled\"}"
+    },
+    "step5": {
+      "pass": false,
+      "method": "inbox_not_accessible_from_agent_env",
+      "inferredFromApi": {
+        "waitlistConfirmation": null,
+        "pilotConfirmation": null
+      }
+    }
+  },
+  "console": {
+    "errors": [
+      "[error] Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[error] Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[error] Failed to load resource: the server responded with a status of 400 ()"
+    ],
+    "warnings": [
+      "[warning] GoTrueClient@sb-tjfeindwmpuyajvjftke-auth-token:1 (2.89.0) 2026-02-09T03:19:47.921Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+      "[warning] Image with src \"/assets/atmosphere-glow.jpg\" was detected as the Largest Contentful Paint (LCP). Please add the `loading=\"eager\"` property if this image is above the fold.\nRead more: https://nextjs.org/docs/app/api-reference/components/image#loading",
+      "[warning] GoTrueClient@sb-tjfeindwmpuyajvjftke-auth-token:1 (2.89.0) 2026-02-09T03:19:49.157Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+      "[warning] GoTrueClient@sb-tjfeindwmpuyajvjftke-auth-token:1 (2.89.0) 2026-02-09T03:19:51.720Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+      "[warning] GoTrueClient@sb-tjfeindwmpuyajvjftke-auth-token:1 (2.89.0) 2026-02-09T03:19:56.219Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key."
+    ],
+    "pageErrors": []
+  },
+  "network": {
+    "waitlist": {
+      "status": 500,
+      "body": "{\"error\":\"Database lookup failed\"}"
+    },
+    "pilot": {
+      "status": 500,
+      "body": "{\"error\":\"Database lookup failed\"}"
+    }
+  },
+  "screenshots": {
+    "manual_gatekeeper": "C:\\Projects\\Synqra\\apps\\synqra-mvp\\audit\\audit_artifacts\\2026-02-09T03-19-47-102Z_manual_gatekeeper.png",
+    "manual_studio_loaded": "C:\\Projects\\Synqra\\apps\\synqra-mvp\\audit\\audit_artifacts\\2026-02-09T03-19-47-102Z_manual_studio_loaded.png",
+    "manual_waitlist_result": "C:\\Projects\\Synqra\\apps\\synqra-mvp\\audit\\audit_artifacts\\2026-02-09T03-19-47-102Z_manual_waitlist_result.png",
+    "manual_pilot_result": "C:\\Projects\\Synqra\\apps\\synqra-mvp\\audit\\audit_artifacts\\2026-02-09T03-19-47-102Z_manual_pilot_result.png"
+  }
+}

@@ -21,15 +21,24 @@ export async function GET() {
   }
 
   // LinkedIn OAuth 2.0 authorization endpoint
+  const state = crypto.randomUUID();
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: 'w_member_social r_liteprofile', // Permissions needed to post
-    state: crypto.randomUUID(), // CSRF protection
+    state, // CSRF protection
   });
 
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
 
-  return NextResponse.redirect(authUrl);
+  const response = NextResponse.redirect(authUrl);
+  response.cookies.set("synqra_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
+  });
+  return response;
 }

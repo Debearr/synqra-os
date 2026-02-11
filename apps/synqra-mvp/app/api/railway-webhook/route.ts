@@ -8,6 +8,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import {
+  enforceKillSwitch,
+  ensureCorrelationId,
+  logSafeguard,
+  normalizeError,
+} from "@/lib/safeguards";
 
 // TODO: Restore when shared railway modules are implemented
 // import {
@@ -37,6 +43,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
 
   try {
     // Get raw body for signature verification
@@ -49,6 +56,7 @@ export async function POST(request: NextRequest) {
       // TODO: Implement signature verification
       console.log("[RAILWAY WEBHOOK] Signature verification skipped (not implemented)");
     }
+    enforceKillSwitch({ scope: "railway-webhook", correlationId });
 
     // Parse payload
     let payload: RailwayWebhookPayload;
@@ -57,7 +65,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error("[RAILWAY WEBHOOK] Failed to parse payload:", error);
       return NextResponse.json(
-        { error: "Invalid JSON payload" },
+        { error: "Invalid JSON payload", correlationId },
         { status: 400 }
       );
     }
@@ -66,16 +74,22 @@ export async function POST(request: NextRequest) {
     if (!payload.eventType || !payload.serviceName || !payload.environment) {
       console.error("[RAILWAY WEBHOOK] Missing required fields:", payload);
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields", correlationId },
         { status: 400 }
       );
     }
 
     // Log the webhook event
-    console.log("[RAILWAY WEBHOOK] Received event:", {
-      eventType: payload.eventType,
-      service: payload.serviceName,
-      environment: payload.environment,
+    logSafeguard({
+      level: "info",
+      message: "railway.webhook.received",
+      scope: "railway-webhook",
+      correlationId,
+      data: {
+        eventType: payload.eventType,
+        service: payload.serviceName,
+        environment: payload.environment,
+      },
     });
 
     // TODO: Implement full webhook processing
@@ -90,17 +104,26 @@ export async function POST(request: NextRequest) {
       action: "logged",
       reason: "Webhook received and logged (full processing not yet implemented)",
       processingTime: Date.now() - startTime,
+      correlationId,
     });
   } catch (error) {
-    console.error("[RAILWAY WEBHOOK] Unexpected error:", error);
+    const normalized = normalizeError(error);
+    logSafeguard({
+      level: "error",
+      message: "railway.webhook.error",
+      scope: "railway-webhook",
+      correlationId,
+      data: { error: normalized.code },
+    });
 
     return NextResponse.json(
       {
         success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: normalized.code,
+        message: normalized.safeMessage,
+        correlationId,
       },
-      { status: 500 }
+      { status: normalized.status }
     );
   }
 }
@@ -115,5 +138,6 @@ export async function GET() {
     service: "railway-webhook",
     status: "healthy",
     timestamp: new Date().toISOString(),
+    correlationId: ensureCorrelationId(null),
   });
 }

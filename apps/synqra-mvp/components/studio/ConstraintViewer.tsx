@@ -1,4 +1,4 @@
-import type { Constraint } from '@/lib/core';
+type Constraint = Record<string, unknown>;
 
 export type ConstraintViewerProps = {
   constraints: Constraint[];
