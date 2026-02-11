@@ -1,42 +1,66 @@
 /**
  * Workspace Initialization Store
  * Production-safe placeholder for workspace initialization state
+ * Simple module without external dependencies
  * 
  * @module lib/workspace/initialization-store
  */
-
-import { create } from "zustand";
 
 interface InitializationState {
   isInitialized: boolean;
   isInitializing: boolean;
   error: string | null;
-  setInitialized: (value: boolean) => void;
-  setInitializing: (value: boolean) => void;
-  setError: (error: string | null) => void;
-  reset: () => void;
 }
 
-const initialState = {
+const state: InitializationState = {
   isInitialized: false,
   isInitializing: false,
   error: null,
 };
 
+type Listener = (state: InitializationState) => void;
+const listeners: Set<Listener> = new Set();
+
+function notify() {
+  listeners.forEach((listener) => listener(state));
+}
+
 /**
  * Workspace initialization store
  * Manages initialization state for workspace setup
  */
-export const initializationStore = create<InitializationState>((set) => ({
-  ...initialState,
+export const initializationStore = {
+  getState: (): InitializationState => ({ ...state }),
   
-  setInitialized: (value: boolean) => set({ isInitialized: value, isInitializing: false }),
+  subscribe: (listener: Listener): (() => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
   
-  setInitializing: (value: boolean) => set({ isInitializing: value, error: null }),
+  setInitialized: (value: boolean) => {
+    state.isInitialized = value;
+    state.isInitializing = false;
+    notify();
+  },
   
-  setError: (error: string | null) => set({ error, isInitializing: false }),
+  setInitializing: (value: boolean) => {
+    state.isInitializing = value;
+    state.error = null;
+    notify();
+  },
   
-  reset: () => set(initialState),
-}));
+  setError: (error: string | null) => {
+    state.error = error;
+    state.isInitializing = false;
+    notify();
+  },
+  
+  reset: () => {
+    state.isInitialized = false;
+    state.isInitializing = false;
+    state.error = null;
+    notify();
+  },
+};
 
 export default initializationStore;
