@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
     ];
   },
   output: 'standalone',
-  typedRoutes: true,
   experimental: {
     optimizePackageImports: ["framer-motion"],
   },
