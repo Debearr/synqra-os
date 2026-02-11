@@ -1,9 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/enter",
+        permanent: false, // Use 307 temporary redirect
+      },
+    ];
+  },
+  ...(process.env.NEXT_PUBLIC_STANDALONE_OUTPUT === 'true' ? { output: "standalone" } : {}),
+  typedRoutes: true,
   experimental: {
-    typedRoutes: true,
     optimizePackageImports: ["framer-motion"],
   },
   reactStrictMode: true,
