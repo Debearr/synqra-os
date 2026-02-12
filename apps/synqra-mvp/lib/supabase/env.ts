@@ -1,8 +1,8 @@
-const LEGACY_SERVICE_ROLE_ALIASES = ["SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE"] as const;
+const LEGACY_SERVICE_ROLE_ALIASES = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"] as const;
 
-const SUPABASE_URL_CANDIDATES = ["SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"] as const;
-const SUPABASE_ANON_CANDIDATES = ["SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const;
-const SUPABASE_SERVICE_ROLE_CANDIDATES = ["SUPABASE_SERVICE_ROLE_KEY", ...LEGACY_SERVICE_ROLE_ALIASES] as const;
+const SUPABASE_URL_CANDIDATES = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"] as const;
+const SUPABASE_ANON_CANDIDATES = ["NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"] as const;
+const SUPABASE_SERVICE_ROLE_CANDIDATES = ["SUPABASE_SERVICE_ROLE", ...LEGACY_SERVICE_ROLE_ALIASES] as const;
 
 const PLACEHOLDER_PATTERNS = [/^your[_-]/i, /_here$/i, /example/i];
 
@@ -49,15 +49,15 @@ function extractProjectRefFromJwt(token: string): string | null {
   }
 }
 
-function validateProjectRefAlignment(url: string, serviceRoleKey: string) {
-  const projectRef = extractProjectRefFromJwt(serviceRoleKey);
+function validateProjectRefAlignment(url: string, serviceRole: string) {
+  const projectRef = extractProjectRefFromJwt(serviceRole);
   if (!projectRef) return;
 
   try {
     const hostname = new URL(url).hostname;
     if (!hostname.startsWith(`${projectRef}.`)) {
       throw new Error(
-        `[Supabase Env] SUPABASE_URL project ref does not match SUPABASE_SERVICE_ROLE_KEY ref (${projectRef}).`
+        `[Supabase Env] SUPABASE_URL project ref does not match SUPABASE_SERVICE_ROLE ref (${projectRef}).`
       );
     }
   } catch (error) {
@@ -80,7 +80,7 @@ export function getSupabaseUrl(): string {
     validateUrlProtocol(candidate.value, candidate.name);
   }
 
-  const serviceRoleResolved = resolveEnvVar(SUPABASE_SERVICE_ROLE_CANDIDATES, "Supabase service role key");
+  const serviceRoleResolved = resolveEnvVar(SUPABASE_SERVICE_ROLE_CANDIDATES, "Supabase service role");
   const expectedRef = extractProjectRefFromJwt(serviceRoleResolved.value);
   if (!expectedRef) {
     return urlCandidates[0].value;
@@ -104,7 +104,7 @@ export function getSupabaseUrl(): string {
   }
 
   throw new Error(
-    `[Supabase Env] URL project ref does not match SUPABASE_SERVICE_ROLE_KEY ref (${expectedRef}).`
+    `[Supabase Env] URL project ref does not match SUPABASE_SERVICE_ROLE ref (${expectedRef}).`
   );
 }
 
@@ -113,9 +113,9 @@ export function getSupabaseAnonKey(): string {
 }
 
 export function getSupabaseServiceRoleKey(): string {
-  const resolved = resolveEnvVar(SUPABASE_SERVICE_ROLE_CANDIDATES, "Supabase service role key");
-  if (resolved.name !== "SUPABASE_SERVICE_ROLE_KEY") {
-    console.warn(`[Supabase Env] Falling back to ${resolved.name}. Set SUPABASE_SERVICE_ROLE_KEY and restart.`);
+  const resolved = resolveEnvVar(SUPABASE_SERVICE_ROLE_CANDIDATES, "Supabase service role");
+  if (resolved.name !== "SUPABASE_SERVICE_ROLE") {
+    console.warn(`[Supabase Env] Falling back to ${resolved.name}. Set SUPABASE_SERVICE_ROLE and restart.`);
   }
   return resolved.value;
 }

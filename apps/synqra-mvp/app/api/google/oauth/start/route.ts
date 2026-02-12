@@ -4,6 +4,10 @@ import { createClient } from "@/utils/supabase/server";
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
   const supabase = await createClient();
+  // Must be allowed in Supabase Auth redirect URLs:
+  // - ${origin}/api/google/oauth/callback
+  // - ${origin}/enter
+  // - ${origin}/studio
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -12,7 +16,7 @@ export async function GET(request: Request) {
   });
 
   if (error || !data.url) {
-    return NextResponse.redirect(`${origin}/auth/error`);
+    return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 
   return NextResponse.redirect(data.url);

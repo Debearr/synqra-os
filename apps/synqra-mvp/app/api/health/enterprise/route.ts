@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
 async function checkEnvironmentVariables(): Promise<HealthCheck> {
   const start = Date.now();
-  const legacyAliases = ["SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE"].filter(
+  const legacyAliases = ["SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY"].filter(
     (key) => !!process.env[key]
   );
 
@@ -125,7 +125,7 @@ async function checkEnvironmentVariables(): Promise<HealthCheck> {
     const supabaseServiceRoleKey = getSupabaseServiceRoleKey();
 
     const status: HealthCheck["status"] =
-      legacyAliases.length > 0 || !process.env.SUPABASE_SERVICE_ROLE_KEY
+      legacyAliases.length > 0 || !process.env.SUPABASE_SERVICE_ROLE
         ? "warn"
         : "pass";
     const message =

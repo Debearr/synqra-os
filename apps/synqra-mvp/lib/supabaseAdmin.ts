@@ -40,7 +40,7 @@ export function requireSupabaseAdmin(): SupabaseClient {
     return buildClient();
   } catch (error) {
     throw new Error(
-      "Supabase admin client not available. Ensure SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY are set." +
+      "Supabase admin client not available. Ensure NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE are set (SUPABASE_URL/SUPABASE_ANON_KEY are fallback aliases)." +
         ` Details: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }

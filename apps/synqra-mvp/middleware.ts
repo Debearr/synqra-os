@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+function hasSupabaseSessionCookie(request: NextRequest): boolean {
+  return request.cookies.getAll().some((cookie) => {
+    if (!cookie.name.startsWith("sb-")) return false;
+    if (!cookie.name.includes("-auth-token")) return false;
+    return cookie.value.trim().length > 0;
+  });
+}
+
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
@@ -34,8 +42,20 @@ export function middleware(request: NextRequest) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  const protectedRoutes = ["/studio", "/admin", "/agents", "/exec-summary"];
-  const isProtectedRoute = protectedRoutes.some(
+  const supabaseProtectedRoutes = ["/studio"];
+  const isSupabaseProtectedRoute = supabaseProtectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  if (isProduction && isSupabaseProtectedRoute && !hasSupabaseSessionCookie(request)) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/enter";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const adminProtectedRoutes = ["/admin", "/agents", "/exec-summary"];
+  const isAdminProtectedRoute = adminProtectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
   const isExecSummaryRoute =
@@ -64,7 +84,7 @@ export function middleware(request: NextRequest) {
 
   if (
     isProduction &&
-    isProtectedRoute &&
+    isAdminProtectedRoute &&
     !(isExecSummaryRoute && isInvestorDomain)
   ) {
     if (!adminToken) {

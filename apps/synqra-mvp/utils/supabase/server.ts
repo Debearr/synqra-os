@@ -11,6 +11,8 @@ function getRequiredEnv(name: string, fallback?: string): string {
 
 export async function createClient() {
   const cookieStore = await cookies();
+  // Vercel must provide these public vars at build/runtime.
+  // Server-only aliases are kept for local scripts and legacy environments.
   const supabaseUrl = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL");
   const supabaseAnonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
 

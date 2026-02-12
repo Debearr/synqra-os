@@ -6,8 +6,8 @@ import { createClient } from "@/utils/supabase/server";
  *
  * Session authority is server-side:
  * - Exchange OAuth code for Supabase session
- * - Redirect to /dashboard only on successful exchange
- * - Redirect to /auth/error on any failure
+ * - Redirect to /studio only on successful exchange
+ * - Redirect to /enter on any failure
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -16,15 +16,15 @@ export async function GET(request: NextRequest) {
   const { origin } = requestUrl;
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/auth/error`);
+    return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 
   const supabase = await createClient();
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError) {
-    return NextResponse.redirect(`${origin}/auth/error`);
+    return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  return NextResponse.redirect(`${origin}/studio`);
 }
