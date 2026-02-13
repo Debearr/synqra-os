@@ -15,7 +15,7 @@ body {
 }
 
 * {
-  @apply border-ds-text-secondary/40;
+  @apply border-ds-text-secondary;
 }
 
 ::selection {
