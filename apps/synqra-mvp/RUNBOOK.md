@@ -121,10 +121,10 @@ Response
 - Start Command: `npm --prefix apps/synqra-mvp run start`
 - Port: `8080` (binds to `0.0.0.0`)
 
-**Health Check:**
-- Endpoint: `GET /api/health`
-- Expected Status: `200 OK`
-- Response: JSON with system status
+**Health Checks:**
+- Enterprise: `GET /api/health/enterprise` (expected `200 OK`)
+- Models: `GET /api/health/models` (expected `200 OK`)
+- Readiness: `GET /api/ready` (expected `200 OK`)
 
 **DNS Configuration (Porkbun):**
 ```
@@ -231,7 +231,7 @@ await addDocument({
 ### Health Check
 
 ```bash
-GET /api/health
+GET /api/health/enterprise
 ```
 
 **Response:**
@@ -377,7 +377,7 @@ Error: Invalid API key
 **Solution:**
 1. Check Railway logs: `railway logs`
 2. Verify all required env vars are set
-3. Check `/api/health` response for specific errors
+3. Check `/api/health/enterprise` response for specific errors
 
 ### Deployment Issues
 
@@ -402,19 +402,19 @@ Error: Invalid API key
 
 ### Health Checks
 
-**Endpoint:** `/api/health`
+**Endpoints:** `/api/health/enterprise`, `/api/health/models`, `/api/ready`
 **Frequency:** Check every 30 seconds
 **Expected Response Time:** < 100ms
 
 **Monitoring Setup (Example):**
 ```bash
 # Simple health check script
-curl -f https://synqra.co/api/health || echo "Health check failed!"
+curl -f https://synqra.co/api/health/enterprise || echo "Health check failed!"
 ```
 
 **UptimeRobot Configuration:**
 - Monitor Type: HTTP(s)
-- URL: `https://synqra.co/api/health`
+- URL: `https://synqra.co/api/health/enterprise`
 - Interval: 5 minutes
 - Alert Contacts: Your email
 
@@ -474,7 +474,7 @@ npm run build
 npm run start
 
 # Test health endpoint
-curl http://localhost:3000/api/health
+curl http://localhost:3000/api/health/enterprise
 
 # Test agent endpoint
 curl -X POST http://localhost:3000/api/agents \
@@ -530,6 +530,7 @@ For issues or questions:
 - GitHub Issues: https://github.com/Debearr/synqra-os/issues
 - Email: support@synqra.com
 - Dashboard: https://synqra.co/agents
+- Security remediation checklist: `apps/synqra-mvp/docs/SECURITY_REMEDIATION.md`
 
 ## Version History
 

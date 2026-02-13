@@ -51,7 +51,17 @@ type CouncilRequest = {
 };
 
 function getBaseUrl(): string {
-  return (process.env.INTERNAL_API_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+  const raw = process.env.INTERNAL_API_BASE_URL?.trim();
+  if (!raw) {
+    throw new Error("INTERNAL_API_BASE_URL is required for router-client");
+  }
+
+  const normalized = raw.replace(/\/+$/, "");
+  if (process.env.NODE_ENV === "production" && /localhost|127\.0\.0\.1/i.test(normalized)) {
+    throw new Error("INTERNAL_API_BASE_URL must not point to localhost in production");
+  }
+
+  return normalized;
 }
 
 function getSecret(): string {

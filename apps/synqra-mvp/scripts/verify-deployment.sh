@@ -67,7 +67,8 @@ test_endpoint() {
 
 echo -e "${BLUE}━━━ Health & Status Tests ━━━${NC}"
 
-test_endpoint "Health Check" "GET" "/api/health" "200"
+test_endpoint "Enterprise Health Check" "GET" "/api/health/enterprise" "200"
+test_endpoint "Model Health Check" "GET" "/api/health/models" "200"
 test_endpoint "Ready Check" "GET" "/api/ready" "200"
 test_endpoint "System Status" "GET" "/api/status" "200"
 

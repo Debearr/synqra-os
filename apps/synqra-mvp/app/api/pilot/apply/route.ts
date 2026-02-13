@@ -20,7 +20,17 @@ import { sendApplicantConfirmation, sendAdminNotification } from '@/lib/email/no
 export async function POST(req: Request) {
   try {
     // Step 1: Parse and validate request body
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "invalid_request_payload",
+          message: "Request body must be a JSON object",
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate with Zod schema (same as client-side)
     const validationResult = pilotApplicationSchema.safeParse(body);
@@ -43,11 +53,23 @@ export async function POST(req: Request) {
     const supabaseAdmin = requireSupabaseAdmin();
 
     // Step 3: Check for duplicate email
-    const { data: existingApplication } = await supabaseAdmin
+    const { data: existingApplication, error: duplicateLookupError } = await supabaseAdmin
       .from('pilot_applications')
       .select('id, email, status')
       .eq('email', data.email.toLowerCase())
-      .single();
+      .maybeSingle();
+
+    if (duplicateLookupError) {
+      console.error('[Pilot API] Duplicate lookup error:', duplicateLookupError);
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'database_error',
+          message: 'Failed to validate existing applications. Please try again.',
+        },
+        { status: 500 }
+      );
+    }
 
     if (existingApplication) {
       return NextResponse.json(
@@ -85,6 +107,16 @@ export async function POST(req: Request) {
       .single();
 
     if (insertError) {
+      if (insertError.code === '23505') {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'duplicate_application',
+            message: 'You have already applied to the Founder Pilot program. Check your email for updates.',
+          },
+          { status: 409 }
+        );
+      }
       console.error('[Pilot API] Database insert error:', insertError);
       return NextResponse.json(
         {
@@ -143,13 +175,13 @@ export async function POST(req: Request) {
         status: application.status,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Pilot API] Unexpected error:', error);
     return NextResponse.json(
       {
         ok: false,
         error: 'server_error',
-        message: 'An unexpected error occurred. Please try again.',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
       },
       { status: 500 }
     );

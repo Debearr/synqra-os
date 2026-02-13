@@ -9,6 +9,10 @@ function hasSupabaseSessionCookie(request: NextRequest): boolean {
   });
 }
 
+function hasGateAccessCookie(request: NextRequest): boolean {
+  return request.cookies.get("synqra_gate")?.value === "1";
+}
+
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
@@ -42,12 +46,25 @@ export function middleware(request: NextRequest) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
+  const legacyPublicRoutes = ["/demo", "/login"];
+  const isLegacyPublicRoute = legacyPublicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  if (isProduction && isLegacyPublicRoute) {
+    const enterUrl = request.nextUrl.clone();
+    enterUrl.pathname = "/enter";
+    return NextResponse.redirect(enterUrl);
+  }
+
   const supabaseProtectedRoutes = ["/studio"];
   const isSupabaseProtectedRoute = supabaseProtectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  if (isProduction && isSupabaseProtectedRoute && !hasSupabaseSessionCookie(request)) {
+  const hasGateAccess = hasGateAccessCookie(request);
+  const hasSupabaseSession = hasSupabaseSessionCookie(request);
+  if (isProduction && isSupabaseProtectedRoute && !hasGateAccess && !hasSupabaseSession) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/enter";
     loginUrl.searchParams.set("next", pathname);

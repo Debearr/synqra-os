@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminAccess } from '@/app/api/_shared/admin-access';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { enqueue } from '@/lib/posting/queue';
 import { config } from '@/lib/posting/config';
@@ -29,7 +30,21 @@ export async function POST(req: NextRequest) {
   const supabase = requireSupabaseAdmin();
   try {
     const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
-    const { jobId, variantIds, platforms, adminToken, confirmed } = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid JSON body', correlationId },
+        { status: 400 }
+      );
+    }
+
+    const { jobId, variantIds, platforms, adminToken, confirmed } = body as {
+      jobId?: string;
+      variantIds?: string[];
+      platforms?: string[];
+      adminToken?: string;
+      confirmed?: boolean;
+    };
 
     logSafeguard({
       level: 'info',
@@ -46,12 +61,11 @@ export async function POST(req: NextRequest) {
       correlationId,
     });
 
-    // Validate admin token
-    const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
-    if (!adminToken || adminToken !== expectedToken) {
+    const adminAccess = verifyAdminAccess(req, { bodyToken: adminToken ?? null });
+    if (!adminAccess.ok) {
       return NextResponse.json(
-        { ok: false, error: 'Unauthorized - invalid admin token', correlationId },
-        { status: 401 }
+        { ok: false, error: adminAccess.error, correlationId },
+        { status: adminAccess.status }
       );
     }
 
@@ -147,14 +161,6 @@ export async function POST(req: NextRequest) {
         variantId: variant.id,
       });
 
-      // Create scheduled post record
-      await supabase.from('scheduled_posts').insert({
-        job_id: jobId,
-        variant_id: variant.id,
-        platform,
-        scheduled_for: new Date().toISOString(),
-        status: 'queued',
-      });
     }
 
     logSafeguard({
@@ -206,14 +212,11 @@ export async function GET(req: NextRequest) {
   try {
     const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
 
-    const adminToken = req.nextUrl.searchParams.get('adminToken');
-
-    // Validate admin token
-    const expectedToken = process.env.ADMIN_TOKEN || 'change-me';
-    if (!adminToken || adminToken !== expectedToken) {
+    const adminAccess = verifyAdminAccess(req);
+    if (!adminAccess.ok) {
       return NextResponse.json(
-        { ok: false, error: 'Unauthorized', correlationId },
-        { status: 401 }
+        { ok: false, error: adminAccess.error, correlationId },
+        { status: adminAccess.status }
       );
     }
 

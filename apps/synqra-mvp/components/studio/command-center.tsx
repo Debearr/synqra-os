@@ -40,6 +40,8 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
   const [commandRunning, setCommandRunning] = useState(false);
   const [commandResult, setCommandResult] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [commandAccess, setCommandAccess] = useState<"checking" | "allowed" | "blocked" | "error">("checking");
+  const [commandAccessMessage, setCommandAccessMessage] = useState<string>("Checking command access...");
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
@@ -80,6 +82,40 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const resolveCommandAccess = async () => {
+      try {
+        const response = await fetch("/api/v1/commands", { method: "GET" });
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        if (!active) return;
+        if (response.ok) {
+          setCommandAccess("allowed");
+          setCommandAccessMessage("Command actions enabled.");
+          return;
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          setCommandAccess("blocked");
+          setCommandAccessMessage(payload?.error || "Command actions are restricted to admin sessions.");
+          return;
+        }
+
+        setCommandAccess("error");
+        setCommandAccessMessage(payload?.error || "Command actions are temporarily unavailable.");
+      } catch {
+        if (!active) return;
+        setCommandAccess("error");
+        setCommandAccessMessage("Command actions are temporarily unavailable.");
+      }
+    };
+
+    resolveCommandAccess();
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -154,6 +190,12 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
   };
 
   const executeCommand = async (inputMode: "text" | "voice") => {
+    if (commandAccess !== "allowed") {
+      setCommandError(commandAccessMessage);
+      setCommandResult(null);
+      return;
+    }
+
     const normalized = commandText.trim();
     if (!normalized) {
       setCommandError("Enter a command first.");
@@ -438,13 +480,13 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
                 }}
                 placeholder='Try: "Draft a reply to Alex" or "Summarize today&apos;s emails"'
                 className="w-full rounded-lg border border-noid-silver/35 bg-noid-black/60 px-4 py-3 font-mono text-sm text-white outline-none focus:ring-2 focus:ring-[var(--noid-teal)]"
-                disabled={commandRunning}
+                disabled={commandRunning || commandAccess !== "allowed"}
               />
               <div className="mt-3 flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => executeCommand("text")}
-                  disabled={commandRunning || commandText.trim().length === 0}
+                  disabled={commandRunning || commandText.trim().length === 0 || commandAccess !== "allowed"}
                   className="rounded-full border border-noid-silver/35 px-4 py-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-noid-silver transition-opacity hover:opacity-100 disabled:opacity-50"
                 >
                   {commandRunning ? "Running" : "Run command"}
@@ -452,7 +494,7 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
                 <button
                   type="button"
                   onClick={startVoiceCapture}
-                  disabled={!voiceSupported || commandRunning}
+                  disabled={!voiceSupported || commandRunning || commandAccess !== "allowed"}
                   className="rounded-full border border-noid-silver/35 px-4 py-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-noid-silver transition-opacity hover:opacity-100 disabled:opacity-50"
                 >
                   {isListening ? "Stop voice" : "Voice input"}
@@ -461,6 +503,9 @@ export default function StudioCommandCenter({ onInitialized, onStatusChange }: S
                   {voiceSupported ? "Browser voice supported." : "Voice unavailable in this browser."}
                 </div>
               </div>
+              {commandAccess !== "allowed" ? (
+                <div className="mt-3 text-xs text-noid-silver/70">{commandAccessMessage}</div>
+              ) : null}
               {commandResult ? <div className="mt-3 text-xs text-white/85">{commandResult}</div> : null}
               {commandError ? <div className="mt-3 text-xs text-white/75">{commandError}</div> : null}
             </div>

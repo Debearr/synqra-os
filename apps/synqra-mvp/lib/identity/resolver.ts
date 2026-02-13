@@ -15,7 +15,7 @@ const DEFAULT_PROFILE: IdentityProfile = "synqra";
 const DEFAULT_ASSET: IdentityAsset = "system_seal";
 
 const SURFACE_DEFAULTS: Record<Surface, IdentityAsset> = {
-  access: "system_seal",
+  access: "monogram_stamp",
   system_state_indicator: "system_seal",
   portal: "system_seal",
   dashboard: "system_seal",

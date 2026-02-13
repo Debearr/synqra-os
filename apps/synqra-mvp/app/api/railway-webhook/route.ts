@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import {
   enforceKillSwitch,
   ensureCorrelationId,
@@ -36,6 +37,52 @@ type RailwayWebhookPayload = {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function parseSignature(headerValue: string): string {
+  const trimmed = headerValue.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("=")) {
+    const [, value] = trimmed.split("=", 2);
+    return value.trim();
+  }
+  return trimmed;
+}
+
+function secureEquals(a: string, b: string): boolean {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+  if (aBuffer.length !== bBuffer.length) return false;
+  return timingSafeEqual(aBuffer, bBuffer);
+}
+
+function verifyRailwaySignature(params: {
+  rawBody: string;
+  signatureHeader: string;
+  webhookSecret: string;
+  isProduction: boolean;
+}): { ok: true } | { ok: false; status: number; error: string } {
+  const secret = params.webhookSecret.trim();
+  const receivedRaw = parseSignature(params.signatureHeader);
+
+  if (!secret) {
+    if (params.isProduction) {
+      return { ok: false, status: 503, error: "Webhook signature secret is not configured" };
+    }
+    return { ok: true };
+  }
+
+  if (!receivedRaw) {
+    return { ok: false, status: 401, error: "Missing webhook signature" };
+  }
+
+  const expectedHex = createHmac("sha256", secret).update(params.rawBody).digest("hex");
+  const expectedBase64 = createHmac("sha256", secret).update(params.rawBody).digest("base64");
+  if (secureEquals(receivedRaw, expectedHex) || secureEquals(receivedRaw, expectedBase64)) {
+    return { ok: true };
+  }
+
+  return { ok: false, status: 401, error: "Invalid webhook signature" };
+}
+
 /**
  * POST /api/railway-webhook
  * 
@@ -44,6 +91,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const correlationId = ensureCorrelationId(request.headers.get("x-correlation-id"));
+  const isProduction = process.env.NODE_ENV === "production";
 
   try {
     // Get raw body for signature verification
@@ -51,11 +99,27 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-railway-signature") || "";
     const webhookSecret = process.env.RAILWAY_WEBHOOK_SECRET || "";
 
-    // Verify signature (if Railway supports it)
-    if (webhookSecret && signature) {
-      // TODO: Implement signature verification
-      console.log("[RAILWAY WEBHOOK] Signature verification skipped (not implemented)");
+    const signatureValidation = verifyRailwaySignature({
+      rawBody: body,
+      signatureHeader: signature,
+      webhookSecret,
+      isProduction,
+    });
+
+    if (!signatureValidation.ok) {
+      logSafeguard({
+        level: "warn",
+        message: "railway.webhook.signature_failed",
+        scope: "railway-webhook",
+        correlationId,
+        data: { status: signatureValidation.status },
+      });
+      return NextResponse.json(
+        { success: false, error: signatureValidation.error, correlationId },
+        { status: signatureValidation.status }
+      );
     }
+
     enforceKillSwitch({ scope: "railway-webhook", correlationId });
 
     // Parse payload

@@ -17,6 +17,24 @@ gcloud scheduler jobs create http synqra-cron-dispatch \
   --oidc-service-account-email "${SERVICE_ACCOUNT}" \
   --oidc-token-audience "${WORKER_URL}"
 
+gcloud scheduler jobs create http synqra-cron-retry \
+  --project "${GCP_PROJECT_ID}" \
+  --location "${GCP_REGION}" \
+  --schedule "*/5 * * * *" \
+  --uri "${WORKER_URL}/jobs/retry" \
+  --http-method POST \
+  --oidc-service-account-email "${SERVICE_ACCOUNT}" \
+  --oidc-token-audience "${WORKER_URL}"
+
+gcloud scheduler jobs create http synqra-cron-schedule \
+  --project "${GCP_PROJECT_ID}" \
+  --location "${GCP_REGION}" \
+  --schedule "*/5 * * * *" \
+  --uri "${WORKER_URL}/jobs/schedule" \
+  --http-method POST \
+  --oidc-service-account-email "${SERVICE_ACCOUNT}" \
+  --oidc-token-audience "${WORKER_URL}"
+
 gcloud scheduler jobs create http synqra-outcome-audit \
   --project "${GCP_PROJECT_ID}" \
   --location "${GCP_REGION}" \

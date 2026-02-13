@@ -55,7 +55,7 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 ## 3) Cloud Run Deployment
 
 ```bash
-cd services/cloud-run-worker
+cd apps/synqra-mvp/services/cloud-run-worker
 
 gcloud run deploy synqra-automation-worker \
   --source . \
@@ -64,7 +64,7 @@ gcloud run deploy synqra-automation-worker \
   --no-allow-unauthenticated \
   --service-account "automation-worker@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
   --set-secrets="SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,INTERNAL_JOB_SIGNING_SECRET=internal-job-signing-secret:latest,GOOGLE_ENCRYPTION_KEY=google-encryption-key:latest,FIREBASE_PRIVATE_KEY=firebase-private-key:latest" \
-  --set-env-vars="SUPABASE_URL=$SUPABASE_URL,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_REGION=$GCP_REGION,SCHEDULING_ENABLED=false,AUTO_PUBLISH_ENABLED=false,PLATFORM_CONNECTORS_ENABLED=false,SENSITIVE_ACTION_APPROVAL_REQUIRED=true"
+  --set-env-vars="SUPABASE_URL=$SUPABASE_URL,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_REGION=$GCP_REGION,INTERNAL_API_BASE_URL=https://synqra.co,CLOUD_RUN_SERVICE_URL=https://YOUR_CLOUD_RUN_SERVICE_URL,SCHEDULING_ENABLED=false,AUTO_PUBLISH_ENABLED=false,PLATFORM_CONNECTORS_ENABLED=false,SENSITIVE_ACTION_APPROVAL_REQUIRED=true"
 ```
 
 ## 4) Cloud Scheduler Jobs
@@ -78,6 +78,24 @@ SERVICE_URL=$(gcloud run services describe synqra-automation-worker \
 gcloud scheduler jobs create http cron-dispatch \
   --schedule="*/5 * * * *" \
   --uri="$SERVICE_URL/jobs/dispatch" \
+  --http-method=POST \
+  --oidc-service-account-email="automation-worker@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+  --oidc-token-audience="$SERVICE_URL" \
+  --location="$GCP_REGION"
+
+# Every 5 minutes
+gcloud scheduler jobs create http cron-retry \
+  --schedule="*/5 * * * *" \
+  --uri="$SERVICE_URL/jobs/retry" \
+  --http-method=POST \
+  --oidc-service-account-email="automation-worker@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+  --oidc-token-audience="$SERVICE_URL" \
+  --location="$GCP_REGION"
+
+# Every 5 minutes
+gcloud scheduler jobs create http cron-schedule \
+  --schedule="*/5 * * * *" \
+  --uri="$SERVICE_URL/jobs/schedule" \
   --http-method=POST \
   --oidc-service-account-email="automation-worker@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
   --oidc-token-audience="$SERVICE_URL" \
@@ -99,6 +117,8 @@ gcloud scheduler jobs create http outcome-audit \
 ```bash
 curl -s "$SERVICE_URL/health"
 gcloud scheduler jobs describe cron-dispatch --location="$GCP_REGION"
+gcloud scheduler jobs describe cron-retry --location="$GCP_REGION"
+gcloud scheduler jobs describe cron-schedule --location="$GCP_REGION"
 gcloud scheduler jobs describe outcome-audit --location="$GCP_REGION"
 ```
 

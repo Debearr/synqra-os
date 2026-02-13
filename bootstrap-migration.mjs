@@ -11,8 +11,8 @@
 
 import fs from 'fs';
 
-const SUPABASE_URL = 'https://tjfeindwmpuyajvjftke.supabase.co';
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZmVpbmR3bXB1eWFqdmpmdGtlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTYxODU3NiwiZXhwIjoyMDc1MTk0NTc2fQ.VEHAj85_x8LZFh0TA9ojv_DYPQdH02g8stsoIT9nNBI';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
 
 console.log('🔧 Bootstrap Migration Tool\n');
 
@@ -56,6 +56,12 @@ console.log('  PGPASSWORD=$SUPABASE_DB_PASSWORD psql "postgresql://postgres@db.t
 console.log('🚀 Proceeding with migration validation...\n');
 
 async function checkMigrationStatus() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.log('❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY in environment.\n');
+    console.log('Set env vars before running this script.\n');
+    return false;
+  }
+
   // Try to query each expected table
   const tables = ['services', 'health_checks', 'metrics', 'incidents', 
                   'incident_updates', 'maintenance_windows', 'alert_rules',
