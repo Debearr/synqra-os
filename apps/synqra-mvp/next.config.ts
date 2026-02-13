@@ -1,15 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/enter",
-        permanent: false, // Use 307 temporary redirect
-      },
-    ];
-  },
   output: 'standalone',
   experimental: {
     optimizePackageImports: ["framer-motion"],

@@ -1,26 +1,50 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("homepage routing", () => {
-  test("visiting / redirects to /enter with 307 or 308", async ({ request, baseURL }) => {
-    const response = await request.get("/", { maxRedirects: 0 });
+test.describe("route access guard", () => {
+  test("homepage and enter are publicly reachable", async ({ request }) => {
+    const home = await request.get("/", { maxRedirects: 0 });
+    const enter = await request.get("/enter", { maxRedirects: 0 });
 
+    expect(home.status()).toBe(200);
+    expect(enter.status()).toBe(200);
+  });
+
+  test("journey is protected for unauthenticated users", async ({ request, baseURL }) => {
+    const response = await request.get("/journey", { maxRedirects: 0 });
     expect([307, 308]).toContain(response.status());
 
-    const locationHeader = response.headers()["location"];
-    expect(locationHeader).toBeTruthy();
+    const location = response.headers()["location"];
+    expect(location).toBeTruthy();
 
-    const resolvedBaseUrl = baseURL ?? "http://127.0.0.1";
-    const destinationPath = new URL(locationHeader!, resolvedBaseUrl).pathname;
-    expect(destinationPath).toBe("/enter");
+    const resolvedBase = baseURL ?? "http://127.0.0.1";
+    const destination = new URL(location!, resolvedBase);
+    expect(destination.pathname).toBe("/auth/sign-in");
+    expect(destination.searchParams.get("next")).toBe("/journey");
   });
 
-  test("visiting /enter returns 200", async ({ request }) => {
-    const response = await request.get("/enter", { maxRedirects: 0 });
-    expect(response.status()).toBe(200);
+  test("studio is protected for unauthenticated users", async ({ request, baseURL }) => {
+    const response = await request.get("/studio", { maxRedirects: 0 });
+    expect([307, 308]).toContain(response.status());
+
+    const location = response.headers()["location"];
+    expect(location).toBeTruthy();
+
+    const resolvedBase = baseURL ?? "http://127.0.0.1";
+    const destination = new URL(location!, resolvedBase);
+    expect(destination.pathname).toBe("/auth/sign-in");
+    expect(destination.searchParams.get("next")).toBe("/studio");
   });
 
-  test("visiting /demo returns 200", async ({ request }) => {
-    const response = await request.get("/demo", { maxRedirects: 0 });
-    expect(response.status()).toBe(200);
+  test("admin is protected for unauthenticated users", async ({ request, baseURL }) => {
+    const response = await request.get("/admin", { maxRedirects: 0 });
+    expect([307, 308]).toContain(response.status());
+
+    const location = response.headers()["location"];
+    expect(location).toBeTruthy();
+
+    const resolvedBase = baseURL ?? "http://127.0.0.1";
+    const destination = new URL(location!, resolvedBase);
+    expect(destination.pathname).toBe("/auth/sign-in");
+    expect(destination.searchParams.get("next")).toBe("/admin");
   });
 });

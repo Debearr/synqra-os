@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 
 // Use system fonts for Railway deployment compatibility
@@ -32,10 +32,13 @@ export const metadata: Metadata = {
     description: "Generate executive-grade content in seconds with voice-aware automation.",
     images: ["/og-synqra.jpg"],
   },
-  themeColor: "#050505",
   icons: {
     icon: "/favicon.svg",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#050505",
 };
 
 type RootLayoutProps = {

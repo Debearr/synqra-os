@@ -2,21 +2,96 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr/dist/module/createServerClient";
 
-function hasSupabaseSessionCookie(request: NextRequest): boolean {
-  return request.cookies.getAll().some((cookie) => {
-    if (!cookie.name.startsWith("sb-")) return false;
-    if (!cookie.name.includes("-auth-token")) return false;
-    return cookie.value.trim().length > 0;
-  });
+type AccessRole = "public" | "user" | "admin" | "founder";
+type AuthenticatedUser = {
+  email?: string | null;
+  app_metadata?: Record<string, unknown> | null;
+  user_metadata?: Record<string, unknown> | null;
+};
+
+const PREVIEW_BLOCKED_PREFIXES = ["/q-preview", "/statusq-preview"];
+const AUTH_CALLBACK_PREFIXES = ["/auth/callback", "/auth/error"];
+const AUTH_ENTRY_PREFIXES = ["/enter", "/auth"];
+const USER_PROTECTED_PREFIXES = ["/user", "/dashboard", "/journey", "/studio"];
+const ADMIN_PROTECTED_PREFIXES = ["/admin", "/agents", "/exec-summary"];
+const FOUNDER_ONLY_PREFIXES = ["/ops"];
+
+const FOUNDER_ROLE_TOKENS = new Set(["founder", "owner", "debear_ops", "ops"]);
+const ADMIN_ROLE_TOKENS = new Set(["admin"]);
+const INVESTOR_DOMAINS = ["invest.synqra.co", "summary.synqra.co", "synqra.app"];
+
+function matchesPrefix(pathname: string, prefix: string): boolean {
+  if (prefix === "/") return pathname === "/";
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-function hasGateAccessCookie(request: NextRequest): boolean {
-  return request.cookies.get("synqra_gate")?.value === "1";
+function matchesAny(pathname: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((prefix) => matchesPrefix(pathname, prefix));
 }
 
-async function refreshSupabaseSession(
+function normalizeRoleToken(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function resolveFounderEmails(): Set<string> {
+  const sources = [process.env.DEBEAR_OPS_EMAIL, process.env.OWNER_EMAIL, process.env.ADMIN_EMAIL];
+  const emails = sources
+    .flatMap((value) => (value ? value.split(",") : []))
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0);
+  return new Set(emails);
+}
+
+function resolveMetadataRole(user: AuthenticatedUser): string | null {
+  return normalizeRoleToken(user.app_metadata?.role) ?? normalizeRoleToken(user.user_metadata?.role);
+}
+
+function resolveAccessRole(user: AuthenticatedUser | null): AccessRole {
+  if (!user) return "public";
+
+  const founderEmails = resolveFounderEmails();
+  const email = user.email?.trim().toLowerCase() ?? "";
+  if (email && founderEmails.has(email)) {
+    return "founder";
+  }
+
+  const roleToken = resolveMetadataRole(user);
+  if (roleToken && FOUNDER_ROLE_TOKENS.has(roleToken)) {
+    return "founder";
+  }
+  if (roleToken && ADMIN_ROLE_TOKENS.has(roleToken)) {
+    return "admin";
+  }
+
+  return "user";
+}
+
+function redirectTo(request: NextRequest, pathname: string): NextResponse {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.searchParams.delete("next");
+  return NextResponse.redirect(url);
+}
+
+function redirectToSignIn(request: NextRequest): NextResponse {
+  const url = request.nextUrl.clone();
+  url.pathname = "/auth/sign-in";
+  url.searchParams.set("next", request.nextUrl.pathname);
+  return NextResponse.redirect(url);
+}
+
+function redirectHomeByRole(request: NextRequest, role: AccessRole): NextResponse {
+  if (role === "founder") return redirectTo(request, "/ops");
+  if (role === "admin") return redirectTo(request, "/admin");
+  if (role === "user") return redirectTo(request, "/user");
+  return redirectToSignIn(request);
+}
+
+async function resolveSessionUser(
   request: NextRequest
-): Promise<{ response: NextResponse; hasSession: boolean }> {
+): Promise<{ response: NextResponse; user: AuthenticatedUser | null }> {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -26,7 +101,7 @@ async function refreshSupabaseSession(
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) {
-    return { response, hasSession: false };
+    return { response, user: null };
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -50,137 +125,95 @@ async function refreshSupabaseSession(
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, hasSession: Boolean(user) };
+  if (!user) {
+    return { response, user: null };
+  }
+
+  return {
+    response,
+    user: {
+      email: user.email ?? null,
+      app_metadata: user.app_metadata as Record<string, unknown>,
+      user_metadata: user.user_metadata as Record<string, unknown>,
+    },
+  };
 }
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
-  const isProduction = process.env.NODE_ENV === "production";
-  const adminToken = process.env.ADMIN_TOKEN || "";
-  const authCookieName = "synqra_admin_token";
 
-  // Define the specialized domains
-  const investorDomains = [
-    "invest.synqra.co",
-    "summary.synqra.co",
-    "synqra.app" // assuming synqra.app might want this behavior too, or handle differently
-  ];
-
-  // Check if current hostname is one of the investor domains
-  const isInvestorDomain = investorDomains.some(domain => hostname.includes(domain));
-
-  // If on an investor domain and at root, rewrite to /exec-summary
+  const isInvestorDomain = INVESTOR_DOMAINS.some((domain) => hostname.includes(domain));
   if (isInvestorDomain && pathname === "/") {
     return NextResponse.rewrite(new URL("/exec-summary", request.url));
   }
 
-  // Special case for synqra.co/exec-summary (default behavior works, no rewrite needed)
-
-  const previewRoutes = ["/q-preview", "/statusq-preview"];
-  const isPreviewRoute = previewRoutes.some((route) =>
-    pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  if (isProduction && isPreviewRoute) {
+  if (process.env.NODE_ENV === "production" && matchesAny(pathname, PREVIEW_BLOCKED_PREFIXES)) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  const legacyPublicRoutes = ["/demo", "/login"];
-  const isLegacyPublicRoute = legacyPublicRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  if (isProduction && isLegacyPublicRoute) {
-    const enterUrl = request.nextUrl.clone();
-    enterUrl.pathname = "/enter";
-    return NextResponse.redirect(enterUrl);
+  if (matchesAny(pathname, AUTH_CALLBACK_PREFIXES)) {
+    return NextResponse.next();
   }
 
-  const supabaseProtectedRoutes = ["/studio"];
-  const isSupabaseProtectedRoute = supabaseProtectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
+  const isAuthEntryRoute = matchesAny(pathname, AUTH_ENTRY_PREFIXES);
+  const isUserProtectedRoute = matchesAny(pathname, USER_PROTECTED_PREFIXES);
+  const isAdminProtectedRoute = matchesAny(pathname, ADMIN_PROTECTED_PREFIXES);
+  const isFounderOnlyRoute = matchesAny(pathname, FOUNDER_ONLY_PREFIXES);
+  const needsAuthEvaluation = isAuthEntryRoute || isUserProtectedRoute || isAdminProtectedRoute || isFounderOnlyRoute;
 
-  const hasGateAccess = hasGateAccessCookie(request);
-  let hasSupabaseSession = hasSupabaseSessionCookie(request);
-  let sessionResponse: NextResponse | null = null;
-
-  if (isProduction && isSupabaseProtectedRoute && !hasGateAccess) {
-    const refreshedSession = await refreshSupabaseSession(request);
-    sessionResponse = refreshedSession.response;
-    hasSupabaseSession = refreshedSession.hasSession;
+  if (!needsAuthEvaluation) {
+    return NextResponse.next();
   }
 
-  if (
-    isProduction &&
-    isSupabaseProtectedRoute &&
-    pathname !== "/enter" &&
-    !hasGateAccess &&
-    !hasSupabaseSession
-  ) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/enter";
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+  const { response, user } = await resolveSessionUser(request);
+  const role = resolveAccessRole(user);
+
+  if (isAuthEntryRoute) {
+    if (role === "public") {
+      return response;
+    }
+    return redirectHomeByRole(request, role);
   }
 
-  const adminProtectedRoutes = ["/admin", "/agents", "/exec-summary"];
-  const isAdminProtectedRoute = adminProtectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-  const isExecSummaryRoute =
-    pathname === "/exec-summary" || pathname.startsWith("/exec-summary/");
-  const authTokenFromQuery = request.nextUrl.searchParams.get("adminToken");
-  const authTokenFromHeader = request.headers.get("x-admin-token");
-  const authTokenFromCookie = request.cookies.get(authCookieName)?.value;
-  const hasValidToken =
-    adminToken &&
-    [authTokenFromQuery, authTokenFromHeader, authTokenFromCookie].some(
-      (token) => token && token === adminToken
-    );
+  if (role === "public") {
+    return redirectToSignIn(request);
+  }
 
-  if (authTokenFromQuery && adminToken && authTokenFromQuery === adminToken) {
-    const url = request.nextUrl.clone();
-    url.searchParams.delete("adminToken");
-    const response = NextResponse.redirect(url);
-    response.cookies.set(authCookieName, adminToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-    });
+  if (isFounderOnlyRoute) {
+    return role === "founder" ? response : redirectHomeByRole(request, role);
+  }
+
+  if (isAdminProtectedRoute) {
+    if (role === "admin" || role === "founder") {
+      return response;
+    }
+    return redirectHomeByRole(request, role);
+  }
+
+  if (isUserProtectedRoute) {
+    if (role === "admin") {
+      return redirectHomeByRole(request, role);
+    }
     return response;
   }
 
-  if (
-    isProduction &&
-    isAdminProtectedRoute &&
-    !(isExecSummaryRoute && isInvestorDomain)
-  ) {
-    if (!adminToken) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
-    if (!hasValidToken) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-  }
-  
-  if (sessionResponse) {
-    return sessionResponse;
-  }
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
     "/",
+    "/enter/:path*",
+    "/auth/:path*",
+    "/user/:path*",
+    "/dashboard/:path*",
+    "/journey/:path*",
     "/studio/:path*",
-    "/demo/:path*",
-    "/login/:path*",
     "/admin/:path*",
     "/agents/:path*",
     "/exec-summary/:path*",
+    "/ops/:path*",
     "/q-preview/:path*",
     "/statusq-preview/:path*",
   ],

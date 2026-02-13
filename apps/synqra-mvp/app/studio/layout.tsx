@@ -15,11 +15,10 @@ function hasSupabaseSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies
 
 export default async function StudioLayout({ children }: StudioLayoutProps) {
   const cookieStore = await cookies();
-  const hasGateAccess = cookieStore.get("synqra_gate")?.value === "1";
   const hasSession = hasSupabaseSessionCookie(cookieStore);
 
-  if (!hasGateAccess && !hasSession) {
-    redirect("/enter");
+  if (!hasSession) {
+    redirect("/auth/sign-in?next=%2Fstudio");
   }
 
   return <>{children}</>;
