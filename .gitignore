@@ -138,6 +138,8 @@ synqra-os/
 # Allow tracked implementation files inside synqra-mvp app
 !apps/synqra-mvp/lib/
 apps/synqra-mvp/lib/*
+!apps/synqra-mvp/lib/journey/
+!apps/synqra-mvp/lib/journey/**
 !apps/synqra-mvp/lib/jobs/
 !apps/synqra-mvp/lib/integrations/
 !apps/synqra-mvp/lib/telemetry/
