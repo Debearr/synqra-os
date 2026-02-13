@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "PORT=${PORT:-3000} next start",
     "lint": "next lint || echo 'lint skipped'",
+    "validate:design": "node scripts/validate-design-system.mjs",
     "clean:next": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
     "predev": "pnpm run clean:next",
     "prebuild": "pnpm run clean:next",
@@ -53,6 +54,8 @@
     "eslint": "9.14.0",
     "postcss": "8.4.47",
     "tailwindcss": "3.4.14",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "5.6.3"
   },
   "engines": {

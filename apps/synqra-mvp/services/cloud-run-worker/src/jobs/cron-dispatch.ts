@@ -45,6 +45,24 @@ async function markJobStatus(jobId: string, status: BackgroundJobRun["status"], 
   }
 }
 
+async function claimPendingJob(jobId: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("background_job_runs")
+    .update({ status: "running", started_at: nowIso })
+    .eq("id", jobId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to claim pending job ${jobId}: ${error.message}`);
+  }
+
+  return Boolean(data?.id);
+}
+
 async function dispatchJob(job: BackgroundJobRun): Promise<void> {
   if (job.job_type === "scheduling_request") {
     await createInternalSchedulingRequest({
@@ -119,7 +137,10 @@ export async function runCronDispatch(): Promise<DispatchResult> {
       continue;
     }
 
-    await markJobStatus(job.id, "running");
+    const claimed = await claimPendingJob(job.id);
+    if (!claimed) {
+      continue;
+    }
     result.dispatched += 1;
 
     try {

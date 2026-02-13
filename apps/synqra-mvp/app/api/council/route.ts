@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createHash } from "crypto";
 import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
 import {
   assertVertical,
@@ -206,6 +207,23 @@ const isConfiguredKey = (value: string | undefined): value is string => {
   return true;
 };
 
+const buildDeterministicSeed = (prompt: string, tier: SynqraTier): number => {
+  const digest = createHash("sha256").update(`${tier}:${prompt}`).digest("hex");
+  return Number.parseInt(digest.slice(0, 8), 16);
+};
+
+const normalizeEchoText = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const isEchoContent = (prompt: string, content: string): boolean => {
+  const normalizedPrompt = normalizeEchoText(prompt);
+  const normalizedContent = normalizeEchoText(content);
+  if (!normalizedPrompt || !normalizedContent) return false;
+  if (normalizedPrompt === normalizedContent) return true;
+  if (normalizedPrompt.length >= 60 && normalizedContent.includes(normalizedPrompt)) return true;
+  return false;
+};
+
 const parseOpenRouterContent = (payload: unknown): string | null => {
   if (!payload || typeof payload !== "object") return null;
   const message = (payload as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message;
@@ -247,6 +265,7 @@ const generateContent = async (input: {
 }): Promise<{ content: string; provider: string }> => {
   const providerErrors: string[] = [];
   const tierPolicy = getTierPolicy(input.tier);
+  const deterministicSeed = buildDeterministicSeed(input.prompt, input.tier);
 
   const openRouterApiKey = process.env.OPENROUTER_API_KEY;
   const hasOpenRouter = isConfiguredKey(openRouterApiKey);
@@ -273,7 +292,9 @@ const generateContent = async (input: {
           },
           body: JSON.stringify({
             model: OPENROUTER_MODEL,
-            temperature: 0.3,
+            temperature: 0.1,
+            top_p: 0.2,
+            seed: deterministicSeed,
             max_tokens: input.tier === "studio_plus" ? 900 : 500,
             messages: [
               { role: "system", content: input.systemInstruction },
@@ -291,6 +312,9 @@ const generateContent = async (input: {
 
         const content = parseOpenRouterContent(payload);
         if (content) {
+          if (isEchoContent(input.prompt, content)) {
+            throw new Error("OpenRouter returned echoed prompt content");
+          }
           return { content, provider: "openrouter" };
         }
         throw new Error("OpenRouter returned empty content");
@@ -306,8 +330,10 @@ const generateContent = async (input: {
       const model = client.getGenerativeModel({
         model: GEMINI_MODEL,
         generationConfig: {
-          temperature: 0.3,
+          temperature: 0.1,
+          topP: 0.2,
           maxOutputTokens: input.tier === "studio_plus" ? 1024 : 640,
+          ...(deterministicSeed ? ({ seed: deterministicSeed } as Record<string, unknown>) : {}),
         },
       });
       const result = await model.generateContent([
@@ -317,6 +343,9 @@ const generateContent = async (input: {
       ]);
       const content = result.response.text().trim();
       if (content) {
+        if (isEchoContent(input.prompt, content)) {
+          throw new Error("Gemini returned echoed prompt content");
+        }
         return { content, provider: "gemini" };
       }
       throw new Error("Gemini returned empty content");
@@ -511,6 +540,50 @@ export async function POST(request: NextRequest) {
     }
     const { content, provider } = generated;
     const tierPolicy = getTierPolicy(tier);
+    if (isEchoContent(prompt, content)) {
+      return NextResponse.json(
+        {
+          error: "Creation provider returned non-transformative output",
+          message: RESTRICTED_MESSAGE,
+          metadata: {
+            risk: "ELEVATED" as RiskLevel,
+            role,
+            tier,
+            vertical: tenantVertical,
+            verticalTag: verticalTag(tenantVertical),
+            processingPriority: tierPolicy.priority,
+            fxSignalHubEnabled: tierPolicy.fxSignalHubEnabled,
+            provider,
+            identityProfile,
+            creatorStamp,
+          },
+        },
+        { status: 503 }
+      );
+    }
+
+    const agentHopCount = 1;
+    console.info(
+      JSON.stringify({
+        level: "info",
+        message: "council.request.completed",
+        requestId,
+        provider,
+        agentHopCount,
+        tier,
+        vertical: tenantVertical,
+      })
+    );
+    if (agentHopCount > 3) {
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          message: "council.agent_hop_exceeded",
+          requestId,
+          agentHopCount,
+        })
+      );
+    }
 
     return NextResponse.json(
       {
@@ -521,7 +594,7 @@ export async function POST(request: NextRequest) {
             member: {
               model: provider,
               name: `${identityProfile.toUpperCase()} Studio`,
-              role: "Creation Engine",
+              role: "Content Engine",
             },
             response: content,
             tokens: {
@@ -549,7 +622,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Creation engine API error:", error);
+    console.error("Council API error:", error);
     return NextResponse.json(
       {
         error: "Creation request failed",

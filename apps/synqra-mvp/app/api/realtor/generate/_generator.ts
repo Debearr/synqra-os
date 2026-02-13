@@ -10,15 +10,15 @@ const COLORS = {
 const FONT_STACK = "'Cormorant Garamond', 'Times New Roman', serif";
 
 const INSTAGRAM = { width: 1080, height: 1080 } as const;
-const LINKEDIN = { width: 1200, height: 627 } as const;
+const EMAIL = { width: 1200, height: 627 } as const;
 
 const INSTAGRAM_PHOTO_HEIGHT = Math.round(INSTAGRAM.height * 0.7);
-const LINKEDIN_PHOTO_WIDTH = 760;
+const EMAIL_PHOTO_WIDTH = 760;
 
 const MIN_INPUT_DIMENSION = 1200;
 
 export type RealtorAsset = {
-  platform: "instagram" | "linkedin";
+  platform: "instagram" | "email";
   width: number;
   height: number;
   buffer: Buffer;
@@ -111,16 +111,16 @@ function signatureMarkupInstagram(style: SignatureStyle, monogram: string): stri
   return `<line x1="64" y1="850" x2="464" y2="850" stroke="${COLORS.gold}" stroke-width="3" />`;
 }
 
-function signatureMarkupLinkedIn(style: SignatureStyle, monogram: string): string {
+function signatureMarkupEmail(style: SignatureStyle, monogram: string): string {
   if (style === "thin_gold_border") {
-    return `<rect x="8" y="8" width="${LINKEDIN.width - 16}" height="${LINKEDIN.height - 16}" fill="none" stroke="${COLORS.gold}" stroke-width="2" />`;
+    return `<rect x="8" y="8" width="${EMAIL.width - 16}" height="${EMAIL.height - 16}" fill="none" stroke="${COLORS.gold}" stroke-width="2" />`;
   }
   if (style === "monogram_circle") {
-    const cx = LINKEDIN.width - 52;
+    const cx = EMAIL.width - 52;
     return `<circle cx="${cx}" cy="70" r="24" fill="none" stroke="${COLORS.gold}" stroke-width="2" />
       <text x="${cx}" y="78" text-anchor="middle" fill="${COLORS.gold}" font-family="${FONT_STACK}" font-size="18" font-weight="500">${escapeXml(monogram)}</text>`;
   }
-  return `<line x1="${LINKEDIN_PHOTO_WIDTH + 40}" y1="138" x2="${LINKEDIN_PHOTO_WIDTH + 290}" y2="138" stroke="${COLORS.gold}" stroke-width="3" />`;
+  return `<line x1="${EMAIL_PHOTO_WIDTH + 40}" y1="138" x2="${EMAIL_PHOTO_WIDTH + 290}" y2="138" stroke="${COLORS.gold}" stroke-width="3" />`;
 }
 
 function deriveMonogram(input: RealtorGenerateInput): string {
@@ -167,23 +167,23 @@ function instagramOverlaySvg(input: RealtorGenerateInput): Buffer {
   );
 }
 
-function linkedInOverlaySvg(input: RealtorGenerateInput): Buffer {
-  const sidebarX = LINKEDIN_PHOTO_WIDTH;
-  const sidebarWidth = LINKEDIN.width - LINKEDIN_PHOTO_WIDTH;
+function emailOverlaySvg(input: RealtorGenerateInput): Buffer {
+  const sidebarX = EMAIL_PHOTO_WIDTH;
+  const sidebarWidth = EMAIL.width - EMAIL_PHOTO_WIDTH;
   const addressLines = wrapText(input.address, 24, 2);
   const agentLines = wrapText(input.agentName ?? "", 24, 1);
   const brokerageLines = wrapText(input.brokerageName, 30, 1);
   const signatureStyle = input.signatureStyle ?? "gold_underline";
   const monogram = deriveMonogram(input);
   const ehoMarkup = input.includeEho
-    ? `<rect x="${sidebarX + sidebarWidth - 76}" y="${LINKEDIN.height - 42}" width="56" height="24" rx="4" fill="none" stroke="${COLORS.ivory}" stroke-width="1" />
-       <text x="${sidebarX + sidebarWidth - 48}" y="${LINKEDIN.height - 26}" text-anchor="middle" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="12" font-weight="400">EHO</text>`
+    ? `<rect x="${sidebarX + sidebarWidth - 76}" y="${EMAIL.height - 42}" width="56" height="24" rx="4" fill="none" stroke="${COLORS.ivory}" stroke-width="1" />
+       <text x="${sidebarX + sidebarWidth - 48}" y="${EMAIL.height - 26}" text-anchor="middle" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="12" font-weight="400">EHO</text>`
     : "";
 
   return Buffer.from(
-    `<svg width="${LINKEDIN.width}" height="${LINKEDIN.height}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${sidebarX}" y="0" width="${sidebarWidth}" height="${LINKEDIN.height}" fill="${COLORS.black}" />
-      ${signatureMarkupLinkedIn(signatureStyle, monogram)}
+    `<svg width="${EMAIL.width}" height="${EMAIL.height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${sidebarX}" y="0" width="${sidebarWidth}" height="${EMAIL.height}" fill="${COLORS.black}" />
+      ${signatureMarkupEmail(signatureStyle, monogram)}
       <text x="${sidebarX + 40}" y="126" fill="${COLORS.gold}" font-family="${FONT_STACK}" font-size="58" font-weight="500">
         ${escapeXml(formatPrice(input.price))}
       </text>
@@ -196,10 +196,10 @@ function linkedInOverlaySvg(input: RealtorGenerateInput): Buffer {
       <text x="${sidebarX + 40}" y="286" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="31" font-weight="400">
         ${escapeXml(addressLines[1] ?? "")}
       </text>
-      <text x="${sidebarX + 40}" y="${LINKEDIN.height - 64}" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="18" font-weight="400">
+      <text x="${sidebarX + 40}" y="${EMAIL.height - 64}" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="18" font-weight="400">
         ${escapeXml(agentLines[0] ?? "")}
       </text>
-      <text x="${sidebarX + 40}" y="${LINKEDIN.height - 34}" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="12" font-weight="400">
+      <text x="${sidebarX + 40}" y="${EMAIL.height - 34}" fill="${COLORS.ivory}" font-family="${FONT_STACK}" font-size="12" font-weight="400">
         ${escapeXml(brokerageLines[0] ?? "")}
       </text>
       ${ehoMarkup}
@@ -251,10 +251,10 @@ async function renderInstagram(input: RealtorGenerateInput): Promise<Buffer> {
     .toBuffer();
 }
 
-async function renderLinkedIn(input: RealtorGenerateInput): Promise<Buffer> {
+async function renderEmail(input: RealtorGenerateInput): Promise<Buffer> {
   const photoLayer = await sharp(input.photoBuffer)
     .rotate()
-    .resize(LINKEDIN_PHOTO_WIDTH, LINKEDIN.height, {
+    .resize(EMAIL_PHOTO_WIDTH, EMAIL.height, {
       fit: "cover",
       position: "attention",
     })
@@ -262,18 +262,18 @@ async function renderLinkedIn(input: RealtorGenerateInput): Promise<Buffer> {
 
   const composites: sharp.OverlayOptions[] = [
     { input: photoLayer, top: 0, left: 0 },
-    { input: linkedInOverlaySvg(input), top: 0, left: 0 },
+    { input: emailOverlaySvg(input), top: 0, left: 0 },
   ];
 
   if (input.logoBuffer) {
     const logo = await prepareLogo(input.logoBuffer, 142, 52);
-    composites.push({ input: logo, top: LINKEDIN.height - 74, left: LINKEDIN.width - 162 });
+    composites.push({ input: logo, top: EMAIL.height - 74, left: EMAIL.width - 162 });
   }
 
   return sharp({
     create: {
-      width: LINKEDIN.width,
-      height: LINKEDIN.height,
+      width: EMAIL.width,
+      height: EMAIL.height,
       channels: 4,
       background: COLORS.black,
     },
@@ -286,7 +286,7 @@ async function renderLinkedIn(input: RealtorGenerateInput): Promise<Buffer> {
 export async function generateRealtorAssets(input: RealtorGenerateInput): Promise<RealtorAsset[]> {
   await validatePhotoDimensions(input.photoBuffer);
 
-  const [instagramBuffer, linkedInBuffer] = await Promise.all([renderInstagram(input), renderLinkedIn(input)]);
+  const [instagramBuffer, emailBuffer] = await Promise.all([renderInstagram(input), renderEmail(input)]);
 
   return [
     {
@@ -296,10 +296,10 @@ export async function generateRealtorAssets(input: RealtorGenerateInput): Promis
       buffer: instagramBuffer,
     },
     {
-      platform: "linkedin",
-      width: LINKEDIN.width,
-      height: LINKEDIN.height,
-      buffer: linkedInBuffer,
+      platform: "email",
+      width: EMAIL.width,
+      height: EMAIL.height,
+      buffer: emailBuffer,
     },
   ];
 }

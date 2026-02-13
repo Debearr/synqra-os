@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveServiceBaseUrl } from "@/app/api/_shared/service-url";
 import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { verifyInternalRequest } from "@/lib/jobs/internal-auth";
 import {
@@ -36,9 +37,11 @@ const DEFAULT_LABELS: Record<TenantVertical, string[]> = {
   generic: ["general_inquiry", "follow_up", "support_request", "transactional"],
 };
 
-function getBaseUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return configured && /^https?:\/\//i.test(configured) ? configured.replace(/\/+$/, "") : request.nextUrl.origin;
+const COUNCIL_ATTEMPTS = 2;
+const COUNCIL_TIMEOUT_MS = 15_000;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function toRecord(value: unknown): Record<string, unknown> {
@@ -218,28 +221,50 @@ Return strict JSON:
   "sentiment": "positive|neutral|urgent|frustrated"
 }`;
 
-  const baseUrl = getBaseUrl(request);
-  const councilResponse = await fetch(`${baseUrl}/api/council`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(verification.signature ? { "x-internal-signature": verification.signature } : {}),
-    },
-    body: JSON.stringify({
-      prompt: classificationPrompt,
-      tenant: {
-        id: vertical,
-        vertical,
-      },
-    }),
-  });
+  const baseUrl = resolveServiceBaseUrl(request);
+  let parsed = parseClassification("");
+  let classificationSource: "model" | "fallback" = "fallback";
+  for (let attempt = 1; attempt <= COUNCIL_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), COUNCIL_TIMEOUT_MS);
+    try {
+      const councilResponse = await fetch(`${baseUrl}/api/council`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(verification.signature ? { "x-internal-signature": verification.signature } : {}),
+        },
+        body: JSON.stringify({
+          prompt: classificationPrompt,
+          tenant: {
+            id: vertical,
+            vertical,
+          },
+        }),
+        signal: controller.signal,
+      });
 
-  if (!councilResponse.ok) {
-    return NextResponse.json({ error: "Classification failed" }, { status: 500 });
+      if (!councilResponse.ok) {
+        if (councilResponse.status >= 500 && attempt < COUNCIL_ATTEMPTS) {
+          await wait(200 * attempt);
+          continue;
+        }
+        break;
+      }
+
+      const councilData = (await councilResponse.json().catch(() => null)) as { content?: unknown } | null;
+      parsed = parseClassification(councilData?.content);
+      classificationSource = "model";
+      break;
+    } catch {
+      if (attempt < COUNCIL_ATTEMPTS) {
+        await wait(200 * attempt);
+        continue;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
   }
-
-  const councilData = (await councilResponse.json().catch(() => null)) as { content?: unknown } | null;
-  const parsed = parseClassification(councilData?.content);
 
   const { data: emailEvent, error: insertError } = await supabase
     .from("email_events")
@@ -262,6 +287,7 @@ Return strict JSON:
         vertical,
         vertical_tag: verticalTag(vertical),
         advisor_labels: advisorLabels,
+        classification_source: classificationSource,
       },
     })
     .select("id")

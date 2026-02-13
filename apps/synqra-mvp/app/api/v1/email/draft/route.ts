@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveServiceBaseUrl } from "@/app/api/_shared/service-url";
 import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getInternalSigningSecret, verifyInternalRequest } from "@/lib/jobs/internal-auth";
 import { signJobPayload } from "@/lib/jobs/job-signature";
@@ -17,9 +18,26 @@ type ToneConfidenceResult = {
   lowConfidence: boolean;
 };
 
-function getBaseUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return configured && /^https?:\/\//i.test(configured) ? configured.replace(/\/+$/, "") : request.nextUrl.origin;
+const COUNCIL_ATTEMPTS = 2;
+const COUNCIL_TIMEOUT_MS = 20_000;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractCouncilContent(payload: unknown): string {
+  if (!payload || typeof payload !== "object") return "";
+  const typed = payload as {
+    content?: unknown;
+    consensus?: unknown;
+    responses?: Array<{ response?: unknown; content?: unknown }>;
+  };
+  if (typeof typed.content === "string" && typed.content.trim()) return typed.content.trim();
+  if (typeof typed.consensus === "string" && typed.consensus.trim()) return typed.consensus.trim();
+  const first = typed.responses?.[0];
+  if (typeof first?.response === "string" && first.response.trim()) return first.response.trim();
+  if (typeof first?.content === "string" && first.content.trim()) return first.content.trim();
+  return "";
 }
 
 function getToneConfidence(voiceExampleCount: number, context: string, sentiment: string | null): ToneConfidenceResult {
@@ -124,36 +142,68 @@ Requirements:
 - Concise and precise
 - Draft only, no sending instructions${confidenceGuardrail}`;
 
-  const baseUrl = getBaseUrl(request);
-  const councilResponse = await fetch(`${baseUrl}/api/council`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(verification.signature ? { "x-internal-signature": verification.signature } : {}),
-    },
-    body: JSON.stringify({
-      prompt: draftPrompt,
-      tenant: {
-        id: tenant.tenantId,
-        vertical: tenant.vertical,
-      },
-    }),
-  });
+  const baseUrl = resolveServiceBaseUrl(request);
+  let councilData: Record<string, unknown> | null = null;
+  let draftBody = "";
+  let lastCouncilError: string | null = null;
+  for (let attempt = 1; attempt <= COUNCIL_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), COUNCIL_TIMEOUT_MS);
+    try {
+      const councilResponse = await fetch(`${baseUrl}/api/council`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(verification.signature ? { "x-internal-signature": verification.signature } : {}),
+        },
+        body: JSON.stringify({
+          prompt: draftPrompt,
+          tenant: {
+            id: tenant.tenantId,
+            vertical: tenant.vertical,
+          },
+        }),
+        signal: controller.signal,
+      });
 
-  if (!councilResponse.ok) {
-    return NextResponse.json({ error: "Draft generation failed", details: await councilResponse.text() }, { status: 500 });
+      if (!councilResponse.ok) {
+        const responseText = await councilResponse.text().catch(() => "");
+        const message = responseText || "Draft generation failed";
+        if (councilResponse.status >= 500 && attempt < COUNCIL_ATTEMPTS) {
+          lastCouncilError = message;
+          await wait(250 * attempt);
+          continue;
+        }
+        return NextResponse.json({ error: "Draft generation failed", details: message }, { status: 500 });
+      }
+
+      councilData = (await councilResponse.json().catch(() => null)) as Record<string, unknown> | null;
+      draftBody = extractCouncilContent(councilData);
+      if (!draftBody && attempt < COUNCIL_ATTEMPTS) {
+        lastCouncilError = "Draft generation returned empty content";
+        await wait(250 * attempt);
+        continue;
+      }
+      break;
+    } catch (error) {
+      lastCouncilError = error instanceof Error ? error.message : "Draft generation failed";
+      if (attempt < COUNCIL_ATTEMPTS) {
+        await wait(250 * attempt);
+        continue;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
-  const councilData = (await councilResponse.json().catch(() => null)) as
-    | {
-        content?: string;
-        metadata?: Record<string, unknown>;
-      }
-    | null;
-
-  const draftBody = typeof councilData?.content === "string" ? councilData.content.trim() : "";
   if (!draftBody) {
-    return NextResponse.json({ error: "Draft generation returned empty content" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Draft generation returned empty content",
+        details: lastCouncilError || "No model output",
+      },
+      { status: 500 }
+    );
   }
 
   const internalPayload = {
@@ -225,7 +275,7 @@ Requirements:
         vertical_tag: verticalTag(tenant.vertical),
         toneConfidenceScore: confidence.score,
         toneConfidenceGuardrailApplied: confidence.lowConfidence,
-        councilMetadata: councilData?.metadata || {},
+        councilMetadata: (councilData?.metadata as Record<string, unknown>) || {},
       },
     })
     .select("id")

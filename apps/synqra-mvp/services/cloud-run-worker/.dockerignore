@@ -1,0 +1,6 @@
+node_modules
+dist
+.tmp-worker.log
+.tmp-worker.err.log
+npm-debug.log*
+*.local

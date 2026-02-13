@@ -1,7 +1,5 @@
-"use client";
-
-import { ExecutiveSummaryPage } from "@/features/executive-summary/ExecutiveSummaryPage";
+import { redirect } from "next/navigation";
 
 export default function ExecSummaryPage() {
-  return <ExecutiveSummaryPage />;
+  redirect("/studio");
 }

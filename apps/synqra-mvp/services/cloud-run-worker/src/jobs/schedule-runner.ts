@@ -25,6 +25,35 @@ async function markSchedulingRequest(id: string, status: string, metadata: Recor
   }
 }
 
+async function claimApprovedSchedulingRequest(row: {
+  id: string;
+  updated_at: string;
+  metadata: Record<string, unknown> | null;
+}, lockToken: string, nowIso: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("scheduling_requests")
+    .update({
+      metadata: {
+        ...(row.metadata || {}),
+        lastAttemptAt: nowIso,
+        workerLockToken: lockToken,
+      },
+      updated_at: nowIso,
+    })
+    .eq("id", row.id)
+    .eq("approval_status", "approved")
+    .eq("updated_at", row.updated_at)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed claiming scheduling request ${row.id}: ${error.message}`);
+  }
+
+  return Boolean(data?.id);
+}
+
 async function publishApprovedRequest(row: {
   id: string;
   user_id: string;
@@ -56,9 +85,40 @@ async function publishApprovedRequest(row: {
 export async function runScheduleRunner(): Promise<ScheduleRunResult> {
   const supabase = getSupabaseClient();
   const nowIso = new Date().toISOString();
+  const backlogAlertThreshold = Number.parseInt(
+    process.env.SCHEDULER_BACKLOG_ALERT_THRESHOLD || "200",
+    10
+  );
+  const { count: backlogCount, error: backlogError } = await supabase
+    .from("scheduling_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("approval_status", "approved")
+    .lte("scheduled_time", nowIso);
+
+  if (!backlogError && typeof backlogCount === "number") {
+    console.info(
+      JSON.stringify({
+        level: "info",
+        message: "scheduler.queue.backlog",
+        backlogCount,
+        backlogAlertThreshold,
+      })
+    );
+    if (backlogCount > backlogAlertThreshold) {
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          message: "scheduler.queue.backlog_exceeded",
+          backlogCount,
+          backlogAlertThreshold,
+        })
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("scheduling_requests")
-    .select("id,user_id,content_id,platform,scheduled_time,approved_by,approved_at,metadata")
+    .select("id,user_id,content_id,platform,scheduled_time,approved_by,approved_at,metadata,updated_at")
     .eq("approval_status", "approved")
     .lte("scheduled_time", nowIso)
     .order("scheduled_time", { ascending: true })
@@ -77,6 +137,7 @@ export async function runScheduleRunner(): Promise<ScheduleRunResult> {
     approved_by: string | null;
     approved_at: string | null;
     metadata: Record<string, unknown> | null;
+    updated_at: string;
   }>;
 
   const result: ScheduleRunResult = {
@@ -87,10 +148,17 @@ export async function runScheduleRunner(): Promise<ScheduleRunResult> {
   };
 
   for (const row of rows) {
+    const lockToken = `${nowIso}:${row.id}`;
+    const claimed = await claimApprovedSchedulingRequest(row, lockToken, nowIso);
+    if (!claimed) {
+      continue;
+    }
+
     const publishResult = await publishApprovedRequest(row);
     if (publishResult.status === "published") {
       await markSchedulingRequest(row.id, "completed", {
         ...(row.metadata || {}),
+        workerLockToken: lockToken,
         publishedAt: nowIso,
       });
       await recordInternalOutcome({
@@ -110,6 +178,7 @@ export async function runScheduleRunner(): Promise<ScheduleRunResult> {
     if (publishResult.status === "skipped") {
       await markSchedulingRequest(row.id, "approved", {
         ...(row.metadata || {}),
+        workerLockToken: lockToken,
         lastSkipReason: publishResult.reason || "Skipped by scheduler policy",
         lastAttemptAt: nowIso,
       });
@@ -130,6 +199,7 @@ export async function runScheduleRunner(): Promise<ScheduleRunResult> {
 
     await markSchedulingRequest(row.id, "approved", {
       ...(row.metadata || {}),
+      workerLockToken: lockToken,
       lastError: publishResult.reason || "Publish execution failed",
       lastAttemptAt: nowIso,
     });

@@ -42,7 +42,7 @@ export async function runRetryHandler(): Promise<RetryResult> {
     const delaySeconds = calculateBackoff(nextAttempt, baseBackoff, maxBackoff);
     const nextRetryAt = new Date(Date.now() + delaySeconds * 1000).toISOString();
 
-    const { error: updateError } = await supabase
+    const { data: updatedRow, error: updateError } = await supabase
       .from("background_job_runs")
       .update({
         status: "pending",
@@ -50,10 +50,18 @@ export async function runRetryHandler(): Promise<RetryResult> {
         next_retry_at: nextRetryAt,
         scheduled_time: nextRetryAt,
       })
-      .eq("id", job.id);
+      .eq("id", job.id)
+      .eq("status", "failed")
+      .eq("retry_count", job.retry_count)
+      .select("id")
+      .maybeSingle();
 
     if (updateError) {
       throw new Error(`Failed to requeue job ${job.id}: ${updateError.message}`);
+    }
+
+    if (!updatedRow?.id) {
+      continue;
     }
 
     result.requeued += 1;

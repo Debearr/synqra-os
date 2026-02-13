@@ -6,14 +6,14 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://synqra.co"),
-  title: "Synqra - AI Content Orchestration for Executives",
+  title: "Synqra - Content Orchestration for Executives",
   description:
-    "Generate executive-grade content in seconds. Synqra learns your voice, maintains brand consistency, and produces publish-ready copy across LinkedIn, Twitter, and newsletters.",
+    "Generate executive-grade content in seconds. Synqra learns your voice, maintains brand consistency, and produces publish-ready copy for Instagram and email.",
   keywords:
-    "AI content generation, executive content, brand voice AI, content orchestration, LinkedIn automation, Twitter automation, CEO content tools",
+    "content generation, executive content, brand voice, content orchestration, Instagram automation, email drafting, CEO content tools",
   openGraph: {
-    title: "Synqra - AI Content Orchestration for Executives",
-    description: "Generate executive-grade content in seconds with AI that learns your voice.",
+    title: "Synqra - Content Orchestration for Executives",
+    description: "Generate executive-grade content in seconds with voice-aware automation.",
     url: "https://synqra.co",
     siteName: "Synqra",
     type: "website",
@@ -22,17 +22,17 @@ export const metadata: Metadata = {
         url: "/og-synqra.jpg",
         width: 1200,
         height: 630,
-        alt: "Synqra - AI Content Orchestration Platform",
+        alt: "Synqra - Content Orchestration Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Synqra - AI Content Orchestration for Executives",
-    description: "Generate executive-grade content in seconds with AI that learns your voice.",
+    title: "Synqra - Content Orchestration for Executives",
+    description: "Generate executive-grade content in seconds with voice-aware automation.",
     images: ["/og-synqra.jpg"],
   },
-  themeColor: "#0B0B0B",
+  themeColor: "#050505",
   icons: {
     icon: "/favicon.svg",
   },
@@ -44,8 +44,8 @@ type RootLayoutProps = {
 
 const RootLayout = ({ children }: RootLayoutProps) => {
   return (
-    <html lang="en" className="bg-noir">
-      <body className="font-sans">{children}</body>
+    <html lang="en">
+      <body className="min-h-screen bg-ds-bg text-ds-text-primary font-sans antialiased">{children}</body>
     </html>
   );
 };

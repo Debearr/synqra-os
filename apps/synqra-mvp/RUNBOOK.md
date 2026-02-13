@@ -1,574 +1,124 @@
-# Synqra Multi-Agent Voice System - Runbook
+# Synqra MVP Runbook
 
-## Table of Contents
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Deployment](#deployment)
-4. [Configuration](#configuration)
-5. [API Reference](#api-reference)
-6. [Troubleshooting](#troubleshooting)
-7. [Monitoring](#monitoring)
+This runbook documents the current, verified runtime behavior of `apps/synqra-mvp`.
 
----
+## 1) Current User Journey
 
-## Overview
+- Canonical flow:
+  - `/` redirects to `/enter`
+  - `/enter` is the front door
+  - accepted access on `/enter` sets `synqra_gate=1` and moves to `/studio`
+  - `/studio` requires `synqra_gate=1` or a valid Supabase session cookie
+- Production route hardening:
+  - `/demo` redirects to `/enter`
+  - `/login` redirects to `/enter`
 
-The Synqra Multi-Agent Voice System is a complete AI-powered customer engagement platform with three specialized agents:
+## 2) Health Endpoints
 
-- **Sales Agent** - Lead qualification, product inquiries, demo scheduling
-- **Support Agent** - Technical troubleshooting, issue resolution, debugging
-- **Service Agent** - Account management, billing, feature requests
+- `GET /api/health/enterprise`
+  - Full app health check.
+  - Returns `200` when healthy, can return `500`/`503` on degraded or critical conditions.
+- `GET /api/health/models`
+  - Model subsystem health/status.
+  - Returns `200` or `503` depending on model state.
+- `GET /api/ready`
+  - Readiness probe for traffic.
+  - Returns `200` when ready, `503` when not ready.
 
-### Key Features
+## 3) Core API Surfaces
 
-✅ **Dual Mode Operation**
-- **Mock Mode**: No API calls, simulated responses (default)
-- **Live Mode**: Real Claude API integration
+- `POST /api/waitlist`
+  - Validates JSON object payload.
+  - Returns `400` for invalid payloads.
+  - Returns `500` for database/config errors.
+- `POST /api/pilot/apply`
+  - Validates payload with Zod.
+  - Returns `400` for invalid payload.
+  - Returns `409` for duplicate applications.
+  - Returns `500` for server/database errors.
+- `POST /api/railway-webhook`
+  - Enforces webhook signature verification.
+  - Rejects oversized payloads before processing.
+  - Enforces replay window checks and duplicate replay fingerprints.
+  - Returns `401` for invalid signature.
+  - Returns `409` for duplicate replay events.
+  - Returns `5xx` for server-side failures (for example kill switch active).
 
-✅ **Intelligent Routing**
-- Automatic agent selection based on message content
-- Manual agent selection via direct endpoints
+## 4) Worker and Scheduler
 
-✅ **RAG-Enhanced Responses**
-- Knowledge base retrieval for accurate information
-- Source attribution and confidence scoring
+Worker code path: `apps/synqra-mvp/services/cloud-run-worker`
 
-✅ **Safety Guardrails**
-- Hallucination detection
-- Dual-pass validation
-- Content safety checks
+- Health endpoint:
+  - `GET /health`
+- Job endpoints:
+  - `POST /jobs/dispatch`
+  - `POST /jobs/retry`
+  - `POST /jobs/schedule`
+  - `POST /jobs/audit`
+  - `POST /jobs/email-poll-and-classify`
+  - `POST /jobs/high-priority-drafts`
+  - `POST /jobs/daily-normal-digest`
+- Auth:
+  - Job endpoints require bearer auth.
+- Fail-fast startup requirements:
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `INTERNAL_JOB_SIGNING_SECRET`
+  - `INTERNAL_API_BASE_URL`
+  - `CLOUD_RUN_SERVICE_URL`
+  - In production, `INTERNAL_API_BASE_URL` must not point to localhost.
 
-✅ **Conversation Memory**
-- Multi-turn conversation support
-- Context-aware responses
-- History tracking and management
+Scheduler provisioning script:
+- `apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh`
+- Uses idempotent create/update behavior.
+- Applies retry/backoff policy to each cron job.
+- Includes cron wiring for:
+  - dispatch
+  - retry
+  - schedule
+  - audit
+  - email-poll-and-classify
+  - high-priority-drafts
+  - daily-normal-digest
 
----
+## 5) Security and Secrets
 
-## Architecture
+- No secrets should be hardcoded in source files.
+- Use environment variables and secret manager only.
+- If any credential-like value is found in git history or code:
+  1. rotate and reissue immediately
+  2. invalidate old secrets
+  3. update all environments
+  4. perform history rewrite only if required by policy
+- Remediation checklist:
+  - `apps/synqra-mvp/docs/SECURITY_REMEDIATION.md`
 
-### Directory Structure
+## 6) Cost Guardrails (Current State)
 
-```
-apps/synqra-mvp/
-├── app/
-│   ├── agents/              # Agent dashboard UI
-│   │   └── page.tsx
-│   ├── api/
-│   │   ├── agents/          # Agent API routes
-│   │   │   ├── route.ts     # Auto-routing endpoint
-│   │   │   ├── sales/       # Sales agent endpoint
-│   │   │   ├── support/     # Support agent endpoint
-│   │   │   └── service/     # Service agent endpoint
-│   │   └── health/          # Health check for Railway
-│   └── layout.tsx
-├── lib/
-│   ├── agents/              # Agent system core
-│   │   ├── base/
-│   │   │   ├── agent.ts     # BaseAgent class
-│   │   │   ├── config.ts    # Configuration
-│   │   │   └── types.ts     # Type definitions
-│   │   ├── shared/
-│   │   │   ├── memory.ts    # Conversation memory
-│   │   │   ├── tools.ts     # Tool definitions
-│   │   │   ├── router.ts    # Intelligent routing
-│   │   │   └── personaPresets.ts
-│   │   ├── sales/           # Sales agent
-│   │   ├── support/         # Support agent
-│   │   ├── service/         # Service agent
-│   │   └── index.ts
-│   ├── rag/                 # RAG retrieval system
-│   │   ├── retrieval.ts
-│   │   └── index.ts
-│   └── safety/              # Safety guardrails
-│       ├── guardrails.ts
-│       └── index.ts
-├── .env.example             # Example environment variables
-├── .env.local               # Local development config
-└── RUNBOOK.md              # This file
-```
+- Council endpoint (`POST /api/council`) currently enforces:
+  - tier-based request limits (prompt length and requests/minute)
+  - feature gating by tier (for example FX Signal Hub)
+  - provider fallback (OpenRouter first, Gemini fallback)
+- Publish/approve flows enforce safeguards budget checks.
+- Monitoring and alert bootstrap script:
+  - `apps/synqra-mvp/services/cloud-run-worker/monitoring-alerts.sh`
+  - Covers worker restarts, p95 latency, scheduler backlog breach, and agent hop breach.
+- Current gaps:
+  - no strict structured output schema validation for council responses
+  - no persisted per-request token-cost ledger for council calls
 
-### Component Diagram
+## 7) Validation Commands
 
-```
-User Request
-    ↓
-[API Route] (/api/agents)
-    ↓
-[Router] (Intelligent routing)
-    ↓
-[Agent] (Sales/Support/Service)
-    ↓
-[RAG] (Knowledge retrieval)
-    ↓
-[Claude API] (if live mode)
-    ↓
-[Safety] (Guardrails validation)
-    ↓
-Response
-```
-
----
-
-## Deployment
-
-### Railway Deployment
-
-**Current Configuration:**
-- Domain: `synqra.co`
-- Railway Domain: `synqra-os-production.up.railway.app`
-- Build Command: `npm --prefix apps/synqra-mvp run build`
-- Start Command: `npm --prefix apps/synqra-mvp run start`
-- Port: `8080` (binds to `0.0.0.0`)
-
-**Health Checks:**
-- Enterprise: `GET /api/health/enterprise` (expected `200 OK`)
-- Models: `GET /api/health/models` (expected `200 OK`)
-- Readiness: `GET /api/ready` (expected `200 OK`)
-
-**DNS Configuration (Porkbun):**
-```
-ALIAS @ → synqra-os-production.up.railway.app
-CNAME www → synqra-os-production.up.railway.app
-```
-
-### Build Process
+From repo root:
 
 ```bash
-# 1. Navigate to app directory
-cd apps/synqra-mvp
-
-# 2. Install dependencies
-npm install
-
-# 3. Build Next.js app
-npm run build
-
-# 4. Start production server
-npm run start
+npx tsc --noEmit
+pnpm -C apps/synqra-mvp build
+pnpm -C apps/synqra-mvp test:routing
 ```
 
-### Environment Variables (Railway)
-
-**Required for Live Mode:**
-```bash
-ANTHROPIC_API_KEY=sk-ant-api03-...
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
-AGENT_MODE=live
-```
-
-**Optional:**
-```bash
-DEBUG_AGENTS=false
-RAG_ENABLED=true
-HALLUCINATION_CHECK=true
-DUAL_PASS_VALIDATION=true
-```
-
----
-
-## Configuration
-
-### Mode Switching
-
-**Mock Mode (Default)**
-- No API calls
-- Instant responses
-- Perfect for testing
-- Set via: `AGENT_MODE=mock`
-
-**Live Mode**
-- Real Claude API calls
-- Requires `ANTHROPIC_API_KEY`
-- Set via: `AGENT_MODE=live`
-
-### Agent Configuration
-
-**Temperature Settings:**
-- Sales: `0.7` (balanced)
-- Support: `0.5` (more consistent)
-- Service: `0.6` (slightly creative)
-
-**Max Tokens:**
-- Default: `4096`
-- Override via: `AGENT_MAX_TOKENS=8192`
-
-### RAG Configuration
-
-**Knowledge Base:**
-- Location: `lib/rag/retrieval.ts`
-- Default Documents: 10 categories
-- Similarity Threshold: `0.7`
-
-**Categories:**
-- pricing
-- authentication
-- integrations
-- api
-- trial
-- billing
-- team
-- support
-- data
-- security
-
-**To Add Documents:**
-```typescript
-import { addDocument } from '@/lib/rag';
-
-await addDocument({
-  content: "Your documentation content here",
-  source: "/docs/your-page",
-  category: "support",
-  keywords: ["keyword1", "keyword2"]
-});
-```
-
----
-
-## API Reference
-
-### Health Check
+For deployment checks:
 
 ```bash
-GET /api/health/enterprise
+bash apps/synqra-mvp/scripts/verify-deployment.sh https://your-host
 ```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-11-09T...",
-  "services": {
-    "agents": {
-      "status": "healthy",
-      "mode": "mock",
-      "errors": []
-    },
-    "rag": {
-      "status": "healthy",
-      "documentsCount": 10,
-      "categoriesCount": 10
-    }
-  },
-  "version": "1.0.0"
-}
-```
-
-### List Agents
-
-```bash
-GET /api/agents
-```
-
-**Response:**
-```json
-{
-  "agents": [
-    {
-      "role": "sales",
-      "name": "Synqra Sales Agent",
-      "description": "...",
-      "endpoint": "/api/agents/sales"
-    },
-    ...
-  ],
-  "mode": "mock",
-  "ragEnabled": true,
-  "safetyEnabled": true
-}
-```
-
-### Auto-Routing Agent Invocation
-
-```bash
-POST /api/agents
-Content-Type: application/json
-
-{
-  "message": "How much does Synqra cost?",
-  "conversationId": "optional-conv-id",
-  "context": {},
-  "history": []
-}
-```
-
-**Response:**
-```json
-{
-  "agent": "sales",
-  "routing": {
-    "confidence": 0.95,
-    "reason": "Sales or product inquiry detected"
-  },
-  "response": {
-    "answer": "Great question about pricing!...",
-    "confidence": 0.95,
-    "sources": ["/pricing", "/docs/plans"],
-    "reasoning": "Mock sales response..."
-  },
-  "safety": {
-    "recommendation": "allow",
-    "confidence": 0.9,
-    "flags": []
-  },
-  "timestamp": "2025-11-09T..."
-}
-```
-
-### Direct Agent Invocation
-
-**Sales Agent:**
-```bash
-POST /api/agents/sales
-```
-
-**Support Agent:**
-```bash
-POST /api/agents/support
-```
-
-**Service Agent:**
-```bash
-POST /api/agents/service
-```
-
-All use the same request/response format as auto-routing.
-
----
-
-## Troubleshooting
-
-### Build Failures
-
-**Problem: Font fetch errors**
-```
-Failed to fetch font `Inter` from Google Fonts
-```
-
-**Solution:**
-Fonts have been switched to system fonts. If you see this error:
-1. Check `app/layout.tsx` - should NOT import from `next/font/google`
-2. Verify `tailwind.config.ts` uses system font stack
-3. Rebuild: `npm run build`
-
-**Problem: TypeScript errors on `z.record`**
-```
-Expected 2-3 arguments, but got 1
-```
-
-**Solution:**
-Use `z.record(z.string(), z.any())` instead of `z.record(z.any())`
-
-### Runtime Errors
-
-**Problem: Anthropic API errors in live mode**
-```
-Error: Invalid API key
-```
-
-**Solution:**
-1. Check `.env.local` has `ANTHROPIC_API_KEY=sk-ant-...`
-2. Verify key starts with `sk-ant-api03-`
-3. Switch to mock mode for testing: `AGENT_MODE=mock`
-
-**Problem: Health check returns 503**
-
-**Solution:**
-1. Check Railway logs: `railway logs`
-2. Verify all required env vars are set
-3. Check `/api/health/enterprise` response for specific errors
-
-### Deployment Issues
-
-**Problem: Railway deployment fails**
-
-**Solution:**
-1. Check build logs in Railway dashboard
-2. Verify `railway.json` points to correct paths
-3. Ensure `PORT` env var is set (Railway auto-sets)
-4. Test build locally: `npm run build`
-
-**Problem: App builds but returns 404**
-
-**Solution:**
-1. Verify Railway start command: `npm --prefix apps/synqra-mvp run start`
-2. Check Next.js is binding to `0.0.0.0`, not `localhost`
-3. Verify port is `${PORT:-3000}`
-
----
-
-## Monitoring
-
-### Health Checks
-
-**Endpoints:** `/api/health/enterprise`, `/api/health/models`, `/api/ready`
-**Frequency:** Check every 30 seconds
-**Expected Response Time:** < 100ms
-
-**Monitoring Setup (Example):**
-```bash
-# Simple health check script
-curl -f https://synqra.co/api/health/enterprise || echo "Health check failed!"
-```
-
-**UptimeRobot Configuration:**
-- Monitor Type: HTTP(s)
-- URL: `https://synqra.co/api/health/enterprise`
-- Interval: 5 minutes
-- Alert Contacts: Your email
-
-### Key Metrics
-
-**Performance:**
-- Mock mode response time: ~1.5s
-- Live mode response time: ~3-5s (depends on Claude API)
-- Health check: <100ms
-
-**Availability:**
-- Target: 99.9% uptime
-- Health endpoint should always return 200 or 503
-
-**Errors to Monitor:**
-- 500 errors (agent invocation failures)
-- 503 errors (service unavailable)
-- 400 errors (validation failures)
-
-### Logging
-
-**Debug Mode:**
-```bash
-DEBUG_AGENTS=true
-```
-
-**Log Output:**
-```
-🤖 [Synqra Sales Agent] Invocation:
-   mode: mock
-   message: How much does...
-   conversationId: test-123
-
-🔀 Routing to sales agent (95% confidence)
-   Reason: Sales or product inquiry detected
-```
-
-**Production Logging:**
-- Set `DEBUG_AGENTS=false`
-- Monitor Railway logs for errors
-- Set up log aggregation (optional: Datadog, Logtail, etc.)
-
----
-
-## Quick Reference
-
-### Local Development
-
-```bash
-# Start dev server
-npm run dev
-
-# Build production
-npm run build
-
-# Start production
-npm run start
-
-# Test health endpoint
-curl http://localhost:3000/api/health/enterprise
-
-# Test agent endpoint
-curl -X POST http://localhost:3000/api/agents \
-  -H "Content-Type: application/json" \
-  -d '{"message": "How much does Synqra cost?"}'
-```
-
-### Testing Agents
-
-**Dashboard UI:**
-Visit: `https://synqra.co/agents`
-
-**Example Queries:**
-
-*Sales:*
-- "How much does Synqra cost?"
-- "I want to schedule a demo"
-- "What features do you offer?"
-
-*Support:*
-- "I can't log in to my account"
-- "The API is returning 401 errors"
-- "The dashboard is loading slowly"
-
-*Service:*
-- "I want to upgrade my plan"
-- "How do I cancel my subscription?"
-- "Can you add a new feature for CSV export?"
-
-### Switching Modes
-
-**Mock to Live:**
-1. Get Anthropic API key from console.anthropic.com
-2. Update `.env.local`:
-   ```bash
-   ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
-   AGENT_MODE=live
-   ```
-3. Restart server: `npm run dev`
-
-**Live to Mock:**
-1. Update `.env.local`:
-   ```bash
-   AGENT_MODE=mock
-   ```
-2. Restart server
-
----
-
-## Support
-
-For issues or questions:
-- GitHub Issues: https://github.com/Debearr/synqra-os/issues
-- Email: support@synqra.com
-- Dashboard: https://synqra.co/agents
-- Security remediation checklist: `apps/synqra-mvp/docs/SECURITY_REMEDIATION.md`
-
-## Version History
-
-- **v1.0.0** (2025-11-09): Initial release
-  - Multi-agent system (Sales, Support, Service)
-  - RAG retrieval with knowledge base
-  - Safety guardrails
-  - Mock + Live modes
-  - Health check endpoint
-  - Dashboard UI
-
----
-
-## Next Steps
-
-### Recommended Enhancements
-
-1. **Voice Integration**
-   - Add speech-to-text (Deepgram, AssemblyAI)
-   - Add text-to-speech (ElevenLabs, PlayHT)
-   - Implement audio streaming
-
-2. **Advanced RAG**
-   - Connect to vector database (Pinecone, Weaviate)
-   - Implement semantic search
-   - Add document embeddings
-
-3. **Production Tooling**
-   - Connect to real ticketing system (Zendesk, Intercom)
-   - Integrate with CRM (Salesforce, HubSpot)
-   - Add analytics dashboard
-
-4. **Monitoring**
-   - Set up error tracking (Sentry)
-   - Add performance monitoring (Vercel Analytics)
-   - Implement usage analytics
-
-5. **Testing**
-   - Add unit tests (Jest, Vitest)
-   - Add integration tests
-   - Add E2E tests (Playwright)

@@ -14,7 +14,7 @@ export interface ContentVariant {
   variantIndex: number;
 }
 
-export type Platform = "youtube" | "tiktok" | "x" | "linkedin";
+export type Platform = "youtube" | "tiktok" | "x" | "linkedin" | "instagram";
 
 const HOOK_TEMPLATES = {
   youtube: [
@@ -37,6 +37,11 @@ const HOOK_TEMPLATES = {
     (brief: string) => `Lessons learned: ${brief}`,
     (brief: string) => `${brief} | A practical guide`,
   ],
+  instagram: [
+    (brief: string) => `${brief} in one move.`,
+    (brief: string) => `${brief} - save this for later.`,
+    (brief: string) => `${brief}, made simple.`,
+  ],
 };
 
 const CTA_TEMPLATES = {
@@ -44,6 +49,7 @@ const CTA_TEMPLATES = {
   tiktok: "Follow for daily tips",
   x: "Repost if this helped you",
   linkedin: "Connect with me for more insights",
+  instagram: "Save this and share with your team",
 };
 
 /**

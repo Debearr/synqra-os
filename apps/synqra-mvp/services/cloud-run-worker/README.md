@@ -30,7 +30,8 @@ npm start
 ## Deploy
 
 ```bash
-chmod +x deploy.sh scheduler-jobs.sh
+chmod +x deploy.sh scheduler-jobs.sh monitoring-alerts.sh
 ./deploy.sh
 WORKER_URL=https://your-worker-url ./scheduler-jobs.sh
+./monitoring-alerts.sh
 ```

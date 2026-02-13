@@ -69,7 +69,7 @@ type ParsedInput = {
 };
 
 type UploadedAsset = {
-  platform: "instagram" | "linkedin";
+  platform: "instagram" | "email";
   url: string;
   width: number;
   height: number;

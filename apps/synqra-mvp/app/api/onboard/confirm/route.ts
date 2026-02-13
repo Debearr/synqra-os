@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { z } from 'zod';
+import { randomInt } from "crypto";
 import {
   enforceKillSwitch,
   ensureCorrelationId,
@@ -30,7 +31,18 @@ type PilotAgentInput = z.infer<typeof pilotAgentSchema>;
 export async function POST(req: Request) {
   try {
     const correlationId = ensureCorrelationId(req.headers.get('x-correlation-id'));
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "invalid_request_payload",
+          message: "Request body must be a JSON object",
+          correlationId,
+        },
+        { status: 400 }
+      );
+    }
 
     logSafeguard({
       level: 'info',
@@ -217,7 +229,7 @@ function generateSecurePassword(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   let password = '';
   for (let i = 0; i < 24; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += chars.charAt(randomInt(chars.length));
   }
   return password;
 }

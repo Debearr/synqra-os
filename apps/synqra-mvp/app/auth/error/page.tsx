@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function AuthErrorPage() {
-  return <div>Authentication error</div>;
+  redirect("/enter");
 }

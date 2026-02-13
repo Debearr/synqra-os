@@ -1,77 +1,26 @@
+@import "./tokens.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-  /* Legacy brand variables - aligned with LuxGrid/Tailwind tokens */
-  --brand-bg: #0B0B0B;      /* = noir.DEFAULT */
-  --brand-fg: #EDEDED;      /* = brand.fg */
-  --brand-gold: #D4AF37;    /* = lux.gold */
-  --brand-teal: #00FFC6;    /* = brand.teal */
-  --brand-gray: #A0A0A0;    /* = brand.gray */
-  --brand-ink: #141414;     /* = brand.ink */
-  --brand-mute: #F7F7F7;    /* = brand.mute */
-  /* Canonical tokens */
-  --lux-black: #000000;
-  --lux-gold: #D4AF37;
-  --lux-emerald: #00D9A3;
-  --lux-white: #FFFFFF;
-  --gold-cta: #C5A572;
-  --ivory-warm: #F5F3F0;
-  --accent-teal: #2DD4BF;
-  --state-error: #EF4444;
-  --noir-deep: #0A0A0A;
-}
-
 html,
 body {
   height: 100%;
-  background: var(--brand-bg);
-  color: var(--brand-fg);
-  font-feature-settings: "ss01","ss02","ss03";
+  background: var(--ds-bg);
+  color: var(--ds-text-primary);
 }
 
 body {
-  @apply bg-noir text-white font-sans antialiased;
-  background-color: var(--brand-bg);
-  background-image: radial-gradient(circle at 20% 20%, rgba(75, 82, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 10%, rgba(75, 82, 255, 0.12), transparent 40%);
-  color: var(--brand-fg);
-}
-
-.h-display {
-  font-family: var(--font-display, "Playfair Display");
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.h-hero {
-  font-size: clamp(3rem, 6vw, 6rem);
-}
-
-.h-h1 {
-  font-size: clamp(2rem, 3.2vw, 3.5rem);
-}
-
-.h-h2 {
-  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
-}
-
-.body-lg {
-  font-size: 1.125rem;
-  line-height: 1.6;
-}
-
-.caption {
-  font-family: "JetBrains Mono";
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  @apply font-sans antialiased;
 }
 
 * {
-  @apply selection:bg-indigo/60 selection:text-white;
+  @apply border-ds-text-secondary/40;
+}
+
+::selection {
+  background: var(--ds-gold);
+  color: var(--ds-bg);
 }
 
 ::-webkit-scrollbar {
@@ -79,10 +28,10 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ds-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(75, 82, 255, 0.45);
-  border-radius: 9999px;
+  background: var(--ds-gold);
+  border-radius: 4px;
 }

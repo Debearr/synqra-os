@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   const sensitivityLevel = body.sensitivityLevel ?? "normal";
-  const requiresApprovalBeforeDraft = sensitivityLevel === "high" && body.type !== "email";
+  const requiresApprovalBeforeDraft = sensitivityLevel === "high";
   if (requiresApprovalBeforeDraft && requiresSensitiveApproval() && !body.approved) {
     return NextResponse.json(
       {

@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminAccess } from "@/app/api/_shared/admin-access";
+import { resolveServiceBaseUrl } from "@/app/api/_shared/service-url";
 import { createGmailDraft } from "@/lib/integrations/google/gmail-drafts";
 import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
@@ -35,9 +37,31 @@ type CouncilResponse = {
   message?: string;
 };
 
+const MAX_COMMAND_LENGTH = 400;
+const COUNCIL_ATTEMPTS = 2;
+const COUNCIL_TIMEOUT_MS = 20_000;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeCommandInput(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/g, "")
+    .trim();
+}
+
+function isLikelyEcho(source: string, generated: string): boolean {
+  const normalizedSource = source.replace(/\s+/g, " ").trim().toLowerCase();
+  const normalizedGenerated = generated.replace(/\s+/g, " ").trim().toLowerCase();
+  return normalizedSource.length > 0 && normalizedSource === normalizedGenerated;
+}
+
 function parseSupportedCommand(raw: string): SupportedCommand | null {
-  const normalized = raw.trim();
-  const replyMatch = normalized.match(/^draft a reply to\s+(.+)$/i);
+  const normalized = normalizeCommandInput(raw);
+  const replyMatch = normalized.match(/^draft(?:\s+a)?\s+reply\s+to\s+(.+)$/i);
   if (replyMatch?.[1]) {
     return {
       type: "draft_reply",
@@ -79,11 +103,6 @@ function extractCouncilContent(payload: CouncilResponse | null): string {
   return "";
 }
 
-function getBaseUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return configured && /^https?:\/\//i.test(configured) ? configured.replace(/\/+$/, "") : request.nextUrl.origin;
-}
-
 function getStartOfTodayUtcIso(): string {
   const now = new Date();
   const startUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
@@ -116,33 +135,66 @@ async function generateWithCouncil(
   vertical: TenantVertical
 ): Promise<string> {
   const authHeader = request.headers.get("authorization");
-  const response = await fetch(`${getBaseUrl(request)}/api/council`, {
-    method: "POST",
-    headers: authHeader
-      ? {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
+  const baseUrl = resolveServiceBaseUrl(request);
+  let lastError: string | null = null;
+
+  for (let attempt = 1; attempt <= COUNCIL_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), COUNCIL_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${baseUrl}/api/council`, {
+        method: "POST",
+        headers: authHeader
+          ? {
+              "Content-Type": "application/json",
+              Authorization: authHeader,
+            }
+          : { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          tenant: {
+            id: vertical,
+            vertical,
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      const payload = (await response.json().catch(() => null)) as CouncilResponse | null;
+      if (!response.ok) {
+        const message = payload?.message || payload?.error || "Council generation failed";
+        if (response.status >= 500 && attempt < COUNCIL_ATTEMPTS) {
+          lastError = message;
+          await wait(250 * attempt);
+          continue;
         }
-      : { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      tenant: {
-        id: vertical,
-        vertical,
-      },
-    }),
-  });
+        throw new Error(message);
+      }
 
-  const payload = (await response.json().catch(() => null)) as CouncilResponse | null;
-  if (!response.ok) {
-    throw new Error(payload?.message || payload?.error || "Council generation failed");
+      const content = extractCouncilContent(payload);
+      if (!content || isLikelyEcho(prompt, content)) {
+        const reason = !content ? "Council returned empty content" : "Council returned echoed input";
+        if (attempt < COUNCIL_ATTEMPTS) {
+          lastError = reason;
+          await wait(250 * attempt);
+          continue;
+        }
+        throw new Error(reason);
+      }
+      return content;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Council generation failed";
+      if (attempt < COUNCIL_ATTEMPTS) {
+        await wait(250 * attempt);
+        continue;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
-  const content = extractCouncilContent(payload);
-  if (!content) {
-    throw new Error("Council returned empty content");
-  }
-  return content;
+  throw new Error(lastError || "Council generation failed");
 }
 
 async function handleDraftReplyCommand(
@@ -260,7 +312,7 @@ Requirements:
     return NextResponse.json({ error: "Draft was created but logging failed", details: saveDraftError.message }, { status: 500 });
   }
 
-  await supabase.from("communications_queue").insert({
+  const { error: queueError } = await supabase.from("communications_queue").insert({
     user_id: user.id,
     type: "email",
     recipient,
@@ -278,6 +330,16 @@ Requirements:
         vertical_tag: verticalTag(user.vertical),
       },
   });
+  if (queueError) {
+    return NextResponse.json(
+      {
+        error: "Draft was created but queue logging failed",
+        details: queueError.message,
+        gmail_draft_id: draftResult.draftId,
+      },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({
     ok: true,
@@ -399,9 +461,24 @@ ${eventLines}`;
 
 export async function POST(request: NextRequest) {
   try {
+    const adminAccess = verifyAdminAccess(request);
+    if (!adminAccess.ok) {
+      return NextResponse.json({ error: adminAccess.error }, { status: adminAccess.status });
+    }
+
     const body = (await request.json().catch(() => null)) as CommandBody | null;
     if (!body?.command || typeof body.command !== "string") {
       return NextResponse.json({ error: "Missing command text" }, { status: 400 });
+    }
+    const normalizedCommand = normalizeCommandInput(body.command);
+    if (!normalizedCommand) {
+      return NextResponse.json({ error: "Missing command text" }, { status: 400 });
+    }
+    if (normalizedCommand.length > MAX_COMMAND_LENGTH) {
+      return NextResponse.json(
+        { error: `Command is too long (max ${MAX_COMMAND_LENGTH} characters)` },
+        { status: 413 }
+      );
     }
 
     const user = await resolveUser(request);
@@ -424,7 +501,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsed = parseSupportedCommand(body.command);
+    const parsed = parseSupportedCommand(normalizedCommand);
     if (!parsed) {
       return NextResponse.json(
         {
@@ -449,11 +526,16 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const adminAccess = verifyAdminAccess(request);
+  if (!adminAccess.ok) {
+    return NextResponse.json({ error: adminAccess.error }, { status: adminAccess.status });
+  }
+
   return NextResponse.json({
     endpoint: "/api/v1/commands",
     supported_commands: ["Draft a reply to [Name]", "Summarize today's emails"],
     input_modes: ["text", "voice"],
-    behavior: "Outputs are saved as Gmail drafts only",
+    behavior: "Admin-only endpoint. Outputs are saved as Gmail drafts only",
   });
 }

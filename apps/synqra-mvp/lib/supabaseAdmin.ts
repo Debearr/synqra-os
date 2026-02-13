@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { assertSupabaseConfigured, getSupabaseServiceRoleKey, getSupabaseUrl } from "./supabase/env";
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from "./supabase/env";
 
 /**
  * Server-side only Supabase client with service role credentials.
@@ -13,7 +13,6 @@ function buildSignature(url: string, key: string): string {
 }
 
 function buildClient(): SupabaseClient {
-  assertSupabaseConfigured();
   const supabaseUrl = getSupabaseUrl();
   const supabaseKey = getSupabaseServiceRoleKey();
   const signature = buildSignature(supabaseUrl, supabaseKey);

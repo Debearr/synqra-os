@@ -103,3 +103,11 @@ export async function getRefreshToken(userId: string): Promise<string | null> {
   return decryptToken(data.refresh_token_encrypted, getEncryptionKeyFromEnv());
 }
 
+export async function storeRawRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  if (!refreshToken || !refreshToken.trim()) {
+    throw new Error("refreshToken is required");
+  }
+  const encrypted = encryptToken(refreshToken.trim(), getEncryptionKeyFromEnv());
+  await storeRefreshToken(userId, encrypted);
+}
+

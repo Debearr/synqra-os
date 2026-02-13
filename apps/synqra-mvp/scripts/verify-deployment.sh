@@ -67,6 +67,10 @@ test_endpoint() {
 
 echo -e "${BLUE}━━━ Health & Status Tests ━━━${NC}"
 
+# Canonical health surfaces:
+# - /api/health/enterprise
+# - /api/health/models
+# - /api/ready
 test_endpoint "Enterprise Health Check" "GET" "/api/health/enterprise" "200"
 test_endpoint "Model Health Check" "GET" "/api/health/models" "200"
 test_endpoint "Ready Check" "GET" "/api/ready" "200"

@@ -223,10 +223,10 @@ export async function GET(request: NextRequest) {
     method: "POST",
     description: "Generate platform-native hooks and CTAs from a brief",
     requiredFields: ["brief", "platforms"],
-    supportedPlatforms: ["youtube", "tiktok", "x", "linkedin"],
+    supportedPlatforms: ["youtube", "tiktok", "x", "linkedin", "instagram"],
     example: {
       brief: "How to build a content flywheel with zero budget",
-      platforms: ["youtube", "tiktok", "x", "linkedin"],
+      platforms: ["linkedin", "instagram", "x"],
     },
   });
 }

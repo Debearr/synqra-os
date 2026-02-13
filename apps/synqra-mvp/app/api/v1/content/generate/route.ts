@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveServiceBaseUrl } from "@/app/api/_shared/service-url";
 import { requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { verifyInternalRequest } from "@/lib/jobs/internal-auth";
 import {
@@ -20,11 +21,6 @@ type GenerateBody = {
 
 const DEFAULT_TRAVEL_COMPLIANCE =
   "Prices subject to change. Advisor is not the travel supplier. Final pricing confirmed at booking.";
-
-function getBaseUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return configured && /^https?:\/\//i.test(configured) ? configured.replace(/\/+$/, "") : request.nextUrl.origin;
-}
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -187,7 +183,7 @@ export async function POST(request: NextRequest) {
     prompt,
   });
 
-  const baseUrl = getBaseUrl(request);
+  const baseUrl = resolveServiceBaseUrl(request);
   const councilResponse = await fetch(`${baseUrl}/api/council`, {
     method: "POST",
     headers: {

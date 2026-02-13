@@ -19,8 +19,15 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, full_name } = body;
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid request payload" },
+        { status: 400 }
+      );
+    }
+
+    const { email, full_name } = body as { email?: unknown; full_name?: unknown };
 
     // Validation: Email required
     if (!email || typeof email !== 'string') {
@@ -41,9 +48,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (full_name !== undefined && full_name !== null && typeof full_name !== "string") {
+      return NextResponse.json(
+        { ok: false, error: "full_name must be a string when provided" },
+        { status: 400 }
+      );
+    }
+
     // Insert into database
     const supabaseAdmin = requireSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
+    let { data, error } = await supabaseAdmin
       .from('waitlist')
       .insert([
         {
@@ -57,6 +71,31 @@ export async function POST(req: Request) {
         },
       ])
       .select();
+
+    // Backward-compatible fallback for environments where waitlist.metadata is not present yet.
+    if (error?.code === "PGRST204" && error.message?.includes("'metadata'")) {
+      const fallback = await supabaseAdmin
+        .from("waitlist")
+        .insert([
+          {
+            email: cleanEmail,
+            full_name: full_name?.trim() || null,
+          },
+        ])
+        .select();
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    // Older waitlist schemas may only accept `email`.
+    if (error?.code === "PGRST204" && error.message?.includes("'full_name'")) {
+      const minimal = await supabaseAdmin
+        .from("waitlist")
+        .insert([{ email: cleanEmail }])
+        .select();
+      data = minimal.data;
+      error = minimal.error;
+    }
 
     if (error) {
       // Handle duplicate email (Postgres UNIQUE constraint violation)
@@ -85,11 +124,15 @@ export async function POST(req: Request) {
       data,
       message: 'Successfully joined waitlist',
     });
-  } catch (e: any) {
-    console.error('[Waitlist API] Unexpected error:', e);
+  } catch (error: unknown) {
+    console.error('[Waitlist API] Unexpected error:', error);
     return NextResponse.json(
-      { ok: false, error: 'Invalid request' },
-      { status: 400 }
+      {
+        ok: false,
+        error: "Server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
     );
   }
 }

@@ -12,6 +12,11 @@ export async function GET(request: Request) {
     provider: "google",
     options: {
       redirectTo: `${origin}/api/google/oauth/callback`,
+      scopes: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.compose",
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
     },
   });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr/dist/module/createServerClient";
 
 function hasSupabaseSessionCookie(request: NextRequest): boolean {
   return request.cookies.getAll().some((cookie) => {
@@ -13,7 +14,46 @@ function hasGateAccessCookie(request: NextRequest): boolean {
   return request.cookies.get("synqra_gate")?.value === "1";
 }
 
-export function middleware(request: NextRequest) {
+async function refreshSupabaseSession(
+  request: NextRequest
+): Promise<{ response: NextResponse; hasSession: boolean }> {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { response, hasSession: false };
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return { response, hasSession: Boolean(user) };
+}
+
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
   const isProduction = process.env.NODE_ENV === "production";
@@ -63,8 +103,22 @@ export function middleware(request: NextRequest) {
   );
 
   const hasGateAccess = hasGateAccessCookie(request);
-  const hasSupabaseSession = hasSupabaseSessionCookie(request);
-  if (isProduction && isSupabaseProtectedRoute && !hasGateAccess && !hasSupabaseSession) {
+  let hasSupabaseSession = hasSupabaseSessionCookie(request);
+  let sessionResponse: NextResponse | null = null;
+
+  if (isProduction && isSupabaseProtectedRoute && !hasGateAccess) {
+    const refreshedSession = await refreshSupabaseSession(request);
+    sessionResponse = refreshedSession.response;
+    hasSupabaseSession = refreshedSession.hasSession;
+  }
+
+  if (
+    isProduction &&
+    isSupabaseProtectedRoute &&
+    pathname !== "/enter" &&
+    !hasGateAccess &&
+    !hasSupabaseSession
+  ) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/enter";
     loginUrl.searchParams.set("next", pathname);
@@ -92,8 +146,8 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.redirect(url);
     response.cookies.set(authCookieName, adminToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "strict",
       path: "/",
     });
     return response;
@@ -112,18 +166,22 @@ export function middleware(request: NextRequest) {
     }
   }
   
+  if (sessionResponse) {
+    return sessionResponse;
+  }
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/",
+    "/studio/:path*",
+    "/demo/:path*",
+    "/login/:path*",
+    "/admin/:path*",
+    "/agents/:path*",
+    "/exec-summary/:path*",
+    "/q-preview/:path*",
+    "/statusq-preview/:path*",
   ],
 };
