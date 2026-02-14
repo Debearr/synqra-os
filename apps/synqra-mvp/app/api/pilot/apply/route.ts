@@ -128,8 +128,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Step 5: Send email notifications (async, don't block response)
-    Promise.all([
+    // Step 5: Send email notifications
+    await Promise.all([
       sendApplicantConfirmation({
         fullName: data.fullName,
         email: data.email,
@@ -148,17 +148,7 @@ export async function POST(req: Request) {
         linkedinProfile: data.linkedinProfile,
         whyPilot: data.whyPilot,
       }),
-    ])
-      .then(([applicantResult, adminResult]) => {
-        console.log('[Pilot API] Email notifications sent:', {
-          applicant: applicantResult.success,
-          admin: adminResult.success,
-        });
-      })
-      .catch((err) => {
-        console.error('[Pilot API] Email notification error:', err);
-        // Don't fail the request if emails fail
-      });
+    ]);
 
     // Step 6: Return success response
     console.log('[Pilot API] Application submitted successfully:', {

@@ -32,7 +32,14 @@ export async function GET(request: Request) {
   }
 
   if (code) {
-    const supabase = await createClient();
+    let supabase: Awaited<ReturnType<typeof createClient>>;
+    try {
+      supabase = await createClient();
+    } catch (clientError) {
+      console.error("[google/oauth/callback] Supabase client configuration error:", clientError);
+      return NextResponse.redirect(`${origin}/enter?auth=config_error`);
+    }
+
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -47,6 +54,8 @@ export async function GET(request: Request) {
       }
       return NextResponse.redirect(`${origin}/studio`);
     }
+
+    console.error("[google/oauth/callback] Session exchange failed:", error);
   }
 
   return NextResponse.redirect(`${origin}/enter?auth=error`);

@@ -41,10 +41,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch (clientError) {
+    console.error("[auth/callback] Supabase client configuration error:", clientError);
+    return NextResponse.redirect(`${origin}/enter?auth=config_error`);
+  }
+
   const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError) {
+    console.error("[auth/callback] Session exchange failed:", exchangeError);
     return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 

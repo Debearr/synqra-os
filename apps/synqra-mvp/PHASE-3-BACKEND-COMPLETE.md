@@ -324,36 +324,21 @@ pnpm run dev
 ## 📧 Email Configuration
 
 ### Current Setup
-Emails are **logged to console** (not sent) until you're ready.
+Emails are sent through Resend using runtime-required env vars.
 
-### To Enable Real Emails
+### Required Email Env
 ```bash
-# 1. Set SMTP credentials in .env.local
-SMTP_HOST=smtp.privateemail.com
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=noreply@synqra.com
-SMTP_PASS=your_password
+# Set Resend credentials in .env.local
+RESEND_API_KEY=re_your_resend_api_key_here
 FROM_EMAIL=noreply@synqra.com
 ADMIN_EMAIL=your-email@synqra.com
-
-# 2. Install nodemailer
-cd apps/synqra-mvp
-pnpm add nodemailer @types/nodemailer
-
-# 3. Uncomment sendEmail() in lib/email/notifications.ts
-
-# 4. Restart server
-pnpm run dev
 ```
 
-### Alternative: Use Resend/SendGrid
-Replace SMTP code with:
+### Sending Logic
 ```typescript
-// lib/email/notifications.ts
-import { Resend } from 'resend';
-const resend = new Resend(process.env.RESEND_API_KEY);
-await resend.emails.send({ ... });
+// lib/email/resend.ts
+sendTransactionalEmail(to, subject, html)
+// Throws on missing env or provider failure.
 ```
 
 ---
@@ -416,15 +401,14 @@ apps/synqra-mvp/
 - [ ] Set environment variables:
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_KEY`
-  - `SMTP_HOST` (optional)
-  - `SMTP_USER` (optional)
-  - `SMTP_PASS` (optional)
+  - `RESEND_API_KEY`
+  - `FROM_EMAIL`
   - `ADMIN_EMAIL`
 - [ ] Test API endpoint locally
 - [ ] Verify form submission works
 - [ ] Check Supabase dashboard shows new applications
 - [ ] Test duplicate email detection
-- [ ] Review email templates in console logs
+- [ ] Verify email delivery in Resend dashboard
 
 ### After Deploying
 

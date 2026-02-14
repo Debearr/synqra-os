@@ -3,7 +3,14 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch (error) {
+    console.error("[google/oauth/start] Supabase client configuration error:", error);
+    return NextResponse.redirect(`${origin}/enter?auth=config_error`);
+  }
+
   // Must be allowed in Supabase Auth redirect URLs:
   // - ${origin}/api/google/oauth/callback
   // - ${origin}/enter
@@ -21,6 +28,7 @@ export async function GET(request: Request) {
   });
 
   if (error || !data.url) {
+    console.error("[google/oauth/start] OAuth URL generation failed:", error);
     return NextResponse.redirect(`${origin}/enter?auth=error`);
   }
 
