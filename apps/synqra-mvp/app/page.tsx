@@ -27,6 +27,20 @@ export default function HomePage() {
               Sign up
             </Link>
           </div>
+
+          <footer className="border-t border-ds-text-secondary/30 pt-4 text-xs leading-copy text-ds-text-secondary">
+            <div className="flex items-center gap-4">
+              <Link href="/terms" className="hover:text-ds-text-primary">
+                Terms
+              </Link>
+              <Link href="/privacy" className="hover:text-ds-text-primary">
+                Privacy
+              </Link>
+              <Link href="/terms#no-refund-policy" className="hover:text-ds-text-primary">
+                No Refund
+              </Link>
+            </div>
+          </footer>
         </section>
       </div>
     </main>
