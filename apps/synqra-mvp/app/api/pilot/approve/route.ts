@@ -27,8 +27,6 @@ type PilotApplicationRow = {
   email: string;
   full_name: string;
   status: string;
-  reviewed_at: string | null;
-  reviewed_by: string | null;
 };
 
 type AccessCodeInsertRow = {
@@ -56,7 +54,7 @@ async function resolvePilotApplication(
 
   const query = supabaseAdmin
     .from("pilot_applications")
-    .select("id, email, full_name, status, reviewed_at, reviewed_by")
+    .select("id, email, full_name, status")
     .limit(1);
 
   const { data, error } = applicationId
@@ -83,7 +81,7 @@ async function rollbackAccessCodeInsert(accessCodeId: string, requestId: string)
 }
 
 async function rollbackPilotStatus(
-  application: Pick<PilotApplicationRow, "id" | "status" | "reviewed_at" | "reviewed_by">,
+  application: Pick<PilotApplicationRow, "id" | "status">,
   requestId: string
 ): Promise<void> {
   const supabaseAdmin = requireSupabaseAdmin();
@@ -91,8 +89,6 @@ async function rollbackPilotStatus(
     .from("pilot_applications")
     .update({
       status: application.status,
-      reviewed_at: application.reviewed_at,
-      reviewed_by: application.reviewed_by,
     })
     .eq("id", application.id);
 
@@ -237,8 +233,6 @@ export async function POST(request: NextRequest) {
       .from("pilot_applications")
       .update({
         status: "approved",
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: "admin_token",
       })
       .eq("id", application.id);
 
