@@ -1,0 +1,7 @@
+[Unit]
+Description=Synqra Healthcheck (Ollama + App + systemd)
+
+[Service]
+Type=oneshot
+Environment=DEPLOY_ENV_FILE=/opt/synqra/ops/synqra.deploy.env
+ExecStart=/usr/bin/env bash /opt/synqra/synqra-os/ops/healthcheck.sh

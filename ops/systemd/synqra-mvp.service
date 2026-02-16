@@ -1,0 +1,20 @@
+[Unit]
+Description=Synqra MVP (Next.js) - apps/synqra-mvp
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/synqra/synqra-os
+EnvironmentFile=/opt/synqra/synqra-os/apps/synqra-mvp/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/bin/env pnpm -w --filter synqra-mvp start
+Restart=always
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=20
+SyslogIdentifier=synqra-mvp
+
+[Install]
+WantedBy=multi-user.target
