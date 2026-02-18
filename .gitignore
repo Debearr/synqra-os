@@ -146,6 +146,8 @@ apps/synqra-mvp/lib/*
 !apps/synqra-mvp/lib/jobs/
 !apps/synqra-mvp/lib/integrations/
 !apps/synqra-mvp/lib/telemetry/
+!apps/synqra-mvp/lib/ops/
+!apps/synqra-mvp/lib/ops/**
 apps/synqra-mvp/lib/integrations/*
 !apps/synqra-mvp/lib/integrations/google/
 apps/synqra-mvp/lib/jobs/*
