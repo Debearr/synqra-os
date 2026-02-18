@@ -31,6 +31,10 @@ ts-debug.log*
 env_config_temp.txt
 *.temp
 *.tmp
+tmp_*
+tmp_screenshots/
+tmp_screenshots_postfix/
+*.probe.json
 
 # vercel
 .vercel

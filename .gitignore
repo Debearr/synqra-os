@@ -171,6 +171,10 @@ apps/synqra-mvp/lib/telemetry/*
 nul
 *.ps1
 *.sh
+tmp_*
+tmp_screenshots/
+tmp_screenshots_postfix/
+*.probe.json
 !apps/synqra-mvp/services/cloud-run-worker/deploy.sh
 !apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh
 !ops/*.sh
