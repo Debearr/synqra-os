@@ -1,3 +1,4 @@
+
 # 🎯 Synqra Waitlist - Deployment Guide
 
 ## ✅ Implementation Complete

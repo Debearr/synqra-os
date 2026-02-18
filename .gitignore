@@ -106,6 +106,7 @@ reports/
 !apps/synqra-mvp/README.md
 !apps/synqra-mvp/docs/
 !apps/synqra-mvp/docs/**
+!ops/*.md
 
 # Archives and backups
 *.zip
@@ -140,6 +141,8 @@ synqra-os/
 apps/synqra-mvp/lib/*
 !apps/synqra-mvp/lib/journey/
 !apps/synqra-mvp/lib/journey/**
+!apps/synqra-mvp/lib/email/
+!apps/synqra-mvp/lib/email/**
 !apps/synqra-mvp/lib/jobs/
 !apps/synqra-mvp/lib/integrations/
 !apps/synqra-mvp/lib/telemetry/
@@ -168,6 +171,9 @@ nul
 *.sh
 !apps/synqra-mvp/services/cloud-run-worker/deploy.sh
 !apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh
+!ops/*.sh
+!ops/systemd/*.service
+!ops/systemd/*.timer
 
 # Claude and AI tooling
 .claude/

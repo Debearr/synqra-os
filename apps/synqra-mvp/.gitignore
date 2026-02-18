@@ -38,3 +38,11 @@ env_config_temp.txt
 # typescript
 *.tsbuildinfo
 
+# Allow tracked deployment scripts in this app even if parent ignore blocks *.sh
+!scripts/block1_capacity_readiness.sh
+!scripts/block2_routing_stress.sh
+!scripts/block3_production_deploy.sh
+!scripts/block4_monitoring_rollback.sh
+!scripts/run_4block_console.sh
+!scripts/configure-telegram.sh
+

@@ -1,0 +1,5 @@
+ops/*.sh text eol=lf
+ops/*.env.example text eol=lf
+ops/systemd/*.service text eol=lf
+ops/systemd/*.timer text eol=lf
+ops/*.md text eol=lf

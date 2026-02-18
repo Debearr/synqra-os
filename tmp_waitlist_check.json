@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "validStatus": 200,
+  "validBody": "{\"ok\":true,\"data\":[{\"id\":2,\"created_at\":\"2026-02-13T03:34:21.304882+00:00\",\"email\":\"block3+1770953655194188@example.com\",\"source\":null,\"status\":\"pending\",\"note\":null,\"full_name\":\"Block Three\"}],\"message\":\"Successfully joined waitlist\"}",
+  "invalidStatus": 400,
+  "invalidBody": "{\"ok\":false,\"error\":\"Invalid request payload\"}",
+  "logsTail": "   ▲ Next.js 15.1.9\n   - Local:        http://localhost:3220\n   - Network:      http://10.0.0.227:3220\n   - Environments: .env.local\n\n ✓ Starting...\n ✓ Ready in 8.9s\n ○ Compiling /api/ready ...\n ✓ Compiled /api/ready in 8.1s (331 modules)\n GET /api/ready 200 in 3364ms\n GET /api/ready 200 in 102ms\n ○ Compiling /api/waitlist ...\n ✓ Compiled /api/waitlist in 4s (408 modules)\n[Supabase Env] Falling back to SUPABASE_SERVICE_ROLE_KEY. Set SUPABASE_SERVICE_ROLE and restart.\n[Waitlist API] New signup: block3+1770953655194188@example.com\n POST /api/waitlist 200 in 6453ms\n"
+}

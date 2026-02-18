@@ -1,5 +1,5 @@
 export const councilConfig = {
-  model: "llama-3.1-8b-instant",
+  model: process.env.GROQ_MODEL?.trim() || "llama-3.1-8b-instant",
   maxTokens: 512,
   temperature: 0.4,
   timeoutMs: 30_000,

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createHash } from "crypto";
 import { getSupabaseUrl, getSupabaseAnonKey } from "@/lib/supabase/env";
+import { getGroqUsageSnapshot, hasGroqApiKey, requestGroq } from "@/lib/council/groq-client";
 import {
   assertVertical,
   normalizeVertical,
@@ -37,10 +37,32 @@ type CouncilRequestBody = {
   prompt?: string;
   identityProfile?: string;
   creatorStampEnabled?: boolean | string;
+  intent?: string;
+  taskType?: string;
+  premiumIntent?: boolean;
+  intentFlags?: {
+    premium?: boolean;
+  };
   tenant?: {
     id?: string;
     vertical?: string;
   };
+};
+
+type CouncilProvider = "groq" | "openrouter" | "ollama";
+type CouncilRouteIntent = "public" | "internal";
+type CouncilModelTier = "fast" | "premium";
+type CouncilTaskType = "general" | "analysis" | "compliance" | "internal_ops";
+type ProviderModelMap = Record<CouncilProvider, string>;
+type ProviderTokenCapMap = Record<CouncilProvider, number>;
+type CouncilRoutingPolicy = {
+  intent: CouncilRouteIntent;
+  modelTier: CouncilModelTier;
+  taskType: CouncilTaskType;
+  providerOrder: CouncilProvider[];
+  modelMap: ProviderModelMap;
+  tokenCaps: ProviderTokenCapMap;
+  premiumRequested: boolean;
 };
 
 const ALLOWED_ROLES = new Set(["guest", "authenticated", "demo", "member", "admin", "owner"]);
@@ -56,10 +78,11 @@ const RESTRICTED_PATTERNS = [
 ];
 const COMPLIANCE_MAX_PROMPT_CHARS = 4000;
 const FX_SIGNAL_PATTERNS = [/\bfx\b/i, /\bforex\b/i, /\bsignal\s*hub\b/i, /\btelegram\s+signal/i];
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const RATE_WINDOW_MS = 60_000;
+const parsedProviderTimeoutMs = Number.parseInt(process.env.COUNCIL_PROVIDER_TIMEOUT_MS || "12000", 10);
+const PROVIDER_TIMEOUT_MS = Number.isFinite(parsedProviderTimeoutMs) ? Math.max(parsedProviderTimeoutMs, 1_000) : 12_000;
+const PROVIDER_RETRY_ATTEMPTS = 2;
+const INTERNAL_INTENT_ROLES = new Set(["admin", "owner"]);
 const usageWindows = new Map<string, UsageWindow>();
 const STUDIO_PLUS_TOKENS = new Set([
   "studio_plus",
@@ -84,6 +107,107 @@ const TIER_POLICIES: Record<SynqraTier, TierPolicy> = {
     fxSignalHubEnabled: true,
   },
 };
+
+const PROVIDER_ORDER: Record<CouncilRouteIntent, CouncilProvider[]> = {
+  public: ["groq", "openrouter"],
+  internal: ["ollama", "groq", "openrouter"],
+};
+
+const TASK_MODEL_MAP: Record<CouncilTaskType, Record<CouncilModelTier, ProviderModelMap>> = {
+  general: {
+    fast: {
+      groq: "llama-3.1-8b-instant",
+      openrouter: "anthropic/claude-sonnet-4.5",
+      ollama: "llama3.1:8b",
+    },
+    premium: {
+      groq: "qwen/qwen3-32b",
+      openrouter: "openai/gpt-oss-120b",
+      ollama: "qwen2.5:14b",
+    },
+  },
+  analysis: {
+    fast: {
+      groq: "llama-3.1-8b-instant",
+      openrouter: "anthropic/claude-sonnet-4.5",
+      ollama: "qwen2.5:7b",
+    },
+    premium: {
+      groq: "qwen/qwen3-32b",
+      openrouter: "openai/gpt-oss-120b",
+      ollama: "qwen2.5:14b",
+    },
+  },
+  compliance: {
+    fast: {
+      groq: "llama-3.1-8b-instant",
+      openrouter: "anthropic/claude-sonnet-4.5",
+      ollama: "qwen2.5:7b",
+    },
+    premium: {
+      groq: "qwen/qwen3-32b",
+      openrouter: "openai/gpt-oss-120b",
+      ollama: "qwen2.5:14b",
+    },
+  },
+  internal_ops: {
+    fast: {
+      groq: "llama-3.1-8b-instant",
+      openrouter: "anthropic/claude-sonnet-4.5",
+      ollama: "llama3.1:8b",
+    },
+    premium: {
+      groq: "qwen/qwen3-32b",
+      openrouter: "openai/gpt-oss-120b",
+      ollama: "qwen2.5:14b",
+    },
+  },
+};
+
+const TOKEN_CAPS: Record<CouncilRouteIntent, Record<CouncilModelTier, ProviderTokenCapMap>> = {
+  public: {
+    fast: {
+      groq: 280,
+      openrouter: 500,
+      ollama: 0,
+    },
+    premium: {
+      groq: 420,
+      openrouter: 700,
+      ollama: 0,
+    },
+  },
+  internal: {
+    fast: {
+      groq: 280,
+      openrouter: 500,
+      ollama: 320,
+    },
+    premium: {
+      groq: 420,
+      openrouter: 700,
+      ollama: 512,
+    },
+  },
+};
+
+const GROQ_MODEL_ALLOWLIST = new Set([
+  "llama-3.1-8b-instant",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3-32b",
+]);
+
+const OPENROUTER_MODEL_ALLOWLIST = new Set([
+  "anthropic/claude-sonnet-4.5",
+  "openai/gpt-oss-120b",
+  "openai/gpt-4o-mini",
+]);
+
+const OLLAMA_MODEL_ALLOWLIST = new Set([
+  "llama3.1:8b",
+  "qwen2.5:14b",
+  "qwen2.5:7b",
+]);
 
 class PublicGatekeeperError extends Error {
   constructor(
@@ -199,12 +323,72 @@ const evaluateCompliance = (prompt: string): { allowed: boolean; risk: RiskLevel
   return { allowed: true, risk: "BASELINE", reason: "Allowed" };
 };
 
-const isConfiguredKey = (value: string | undefined): value is string => {
-  if (!value) return false;
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  if (trimmed.includes("your_") || trimmed.endsWith("_here")) return false;
-  return true;
+const normalizePolicyIntent = (rawIntent: string | null | undefined): CouncilRouteIntent => {
+  const value = (rawIntent ?? "").trim().toLowerCase();
+  if (value === "internal" || value === "ops" || value === "ba_ops") {
+    return "internal";
+  }
+  return "public";
+};
+
+const normalizePolicyTaskType = (rawTaskType: string | null | undefined): CouncilTaskType => {
+  const value = (rawTaskType ?? "").trim().toLowerCase();
+  if (value === "analysis" || value === "reasoning") return "analysis";
+  if (value === "compliance" || value === "policy") return "compliance";
+  if (value === "internal_ops" || value === "internal" || value === "ops") return "internal_ops";
+  return "general";
+};
+
+const resolveAllowedModel = (
+  overrideValue: string | undefined,
+  fallbackValue: string,
+  allowlist: Set<string>
+): string => {
+  const trimmed = overrideValue?.trim();
+  if (trimmed && allowlist.has(trimmed)) {
+    return trimmed;
+  }
+  return fallbackValue;
+};
+
+const resolveCouncilRoutingPolicy = (input: {
+  intent?: string | null;
+  taskType?: string | null;
+  premiumIntent?: boolean;
+}): CouncilRoutingPolicy => {
+  const intent = normalizePolicyIntent(input.intent);
+  const taskType = normalizePolicyTaskType(input.taskType);
+  const premiumRequested = input.premiumIntent === true;
+  const modelTier: CouncilModelTier = premiumRequested ? "premium" : "fast";
+  const defaults = TASK_MODEL_MAP[taskType][modelTier];
+
+  const modelMap: ProviderModelMap = {
+    groq: resolveAllowedModel(
+      premiumRequested ? process.env.GROQ_PREMIUM_MODEL : process.env.GROQ_MODEL,
+      defaults.groq,
+      GROQ_MODEL_ALLOWLIST
+    ),
+    openrouter: resolveAllowedModel(
+      premiumRequested ? process.env.OPENROUTER_PREMIUM_MODEL : process.env.OPENROUTER_MODEL,
+      defaults.openrouter,
+      OPENROUTER_MODEL_ALLOWLIST
+    ),
+    ollama: resolveAllowedModel(
+      premiumRequested ? process.env.OLLAMA_PREMIUM_MODEL : process.env.OLLAMA_MODEL,
+      defaults.ollama,
+      OLLAMA_MODEL_ALLOWLIST
+    ),
+  };
+
+  return {
+    intent,
+    modelTier,
+    taskType,
+    providerOrder: PROVIDER_ORDER[intent],
+    modelMap,
+    tokenCaps: TOKEN_CAPS[intent][modelTier],
+    premiumRequested,
+  };
 };
 
 const buildDeterministicSeed = (prompt: string, tier: SynqraTier): number => {
@@ -224,27 +408,6 @@ const isEchoContent = (prompt: string, content: string): boolean => {
   return false;
 };
 
-const parseOpenRouterContent = (payload: unknown): string | null => {
-  if (!payload || typeof payload !== "object") return null;
-  const message = (payload as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message;
-  const content = message?.content;
-  if (typeof content === "string" && content.trim()) {
-    return content.trim();
-  }
-  if (Array.isArray(content)) {
-    const flattened = content
-      .map((item) => {
-        if (!item || typeof item !== "object") return "";
-        const text = (item as { text?: unknown }).text;
-        return typeof text === "string" ? text : "";
-      })
-      .join("")
-      .trim();
-    return flattened || null;
-  }
-  return null;
-};
-
 const resolveActorKey = (request: NextRequest, userId: string | null): string => {
   if (userId) {
     return `user:${userId}`;
@@ -258,105 +421,391 @@ const resolveActorKey = (request: NextRequest, userId: string | null): string =>
   return `ua:${request.headers.get("user-agent") || "unknown"}`;
 };
 
+const resolveRequestedIntent = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const resolvePremiumIntent = (body: CouncilRequestBody | null): boolean => {
+  return body?.premiumIntent === true || body?.intentFlags?.premium === true;
+};
+
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MAX_PROMPT_CHARS = 2400;
+const OLLAMA_MAX_PROMPT_CHARS = 2400;
+
+const hasOpenRouterApiKey = (): boolean => Boolean(process.env.OPENROUTER_API_KEY?.trim());
+const hasOllamaConfigured = (): boolean => {
+  const toggle = process.env.OLLAMA_ENABLED?.trim().toLowerCase();
+  return !(toggle === "false" || toggle === "0");
+};
+
+const parseOpenRouterMessageContent = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  if (Array.isArray(value)) {
+    const merged = value
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") return "";
+        const text = (entry as { text?: unknown }).text;
+        return typeof text === "string" ? text : "";
+      })
+      .join("")
+      .trim();
+    return merged || null;
+  }
+  return null;
+};
+
+const requestOpenRouter = async (input: {
+  prompt: string;
+  systemPrompt?: string;
+  model: string;
+  maxTokens: number;
+  seed: number;
+  signal: AbortSignal;
+}): Promise<{ ok: true; content: string; model: string } | { ok: false; error: string }> => {
+  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey) {
+    return { ok: false, error: "OPENROUTER_API_KEY is missing." };
+  }
+
+  const prompt = input.prompt.trim();
+  if (!prompt) {
+    return { ok: false, error: "Prompt is required." };
+  }
+  if (prompt.length > OPENROUTER_MAX_PROMPT_CHARS) {
+    return { ok: false, error: `Prompt exceeds ${OPENROUTER_MAX_PROMPT_CHARS} characters.` };
+  }
+
+  const messages: Array<{ role: "system" | "user"; content: string }> = [];
+  if (input.systemPrompt?.trim()) {
+    messages.push({ role: "system", content: input.systemPrompt.trim() });
+  }
+  messages.push({ role: "user", content: prompt });
+
+  try {
+    const response = await fetch(OPENROUTER_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": process.env.OPENROUTER_REFERER?.trim() || "https://synqra.com",
+        "X-Title": process.env.OPENROUTER_TITLE?.trim() || "Synqra Council",
+      },
+      body: JSON.stringify({
+        model: input.model,
+        temperature: 0.1,
+        max_tokens: Math.max(1, Math.floor(input.maxTokens)),
+        seed: input.seed,
+        messages,
+      }),
+      signal: input.signal,
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | {
+          choices?: Array<{ message?: { content?: unknown } }>;
+          model?: string;
+          error?: { message?: string };
+        }
+      | null;
+    if (!response.ok) {
+      const reason = payload?.error?.message || `OpenRouter status ${response.status}`;
+      return { ok: false, error: reason };
+    }
+
+    const content = parseOpenRouterMessageContent(payload?.choices?.[0]?.message?.content);
+    if (!content) {
+      return { ok: false, error: "OpenRouter returned empty response." };
+    }
+
+    return {
+      ok: true,
+      content,
+      model: payload?.model || input.model,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "OpenRouter request failed",
+    };
+  }
+};
+
+const requestOllama = async (input: {
+  prompt: string;
+  systemPrompt?: string;
+  model: string;
+  maxTokens: number;
+  signal: AbortSignal;
+}): Promise<{ ok: true; content: string; model: string } | { ok: false; error: string }> => {
+  const prompt = input.prompt.trim();
+  if (!prompt) {
+    return { ok: false, error: "Prompt is required." };
+  }
+  if (prompt.length > OLLAMA_MAX_PROMPT_CHARS) {
+    return { ok: false, error: `Prompt exceeds ${OLLAMA_MAX_PROMPT_CHARS} characters.` };
+  }
+
+  const baseUrl = process.env.OLLAMA_BASE_URL?.trim() || "http://127.0.0.1:11434";
+  try {
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: input.model,
+        stream: false,
+        messages: [
+          ...(input.systemPrompt?.trim() ? [{ role: "system" as const, content: input.systemPrompt.trim() }] : []),
+          { role: "user" as const, content: prompt },
+        ],
+        options: {
+          temperature: 0.1,
+          num_predict: Math.max(1, Math.floor(input.maxTokens)),
+        },
+      }),
+      signal: input.signal,
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | {
+          message?: { content?: string };
+          model?: string;
+          error?: string;
+        }
+      | null;
+    if (!response.ok) {
+      return { ok: false, error: payload?.error || `Ollama status ${response.status}` };
+    }
+
+    const content = payload?.message?.content?.trim();
+    if (!content) {
+      return { ok: false, error: "Ollama returned empty response." };
+    }
+
+    return {
+      ok: true,
+      content,
+      model: payload?.model || input.model,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Ollama request failed",
+    };
+  }
+};
+
+const withTimeout = async <T>(task: (signal: AbortSignal) => Promise<T>): Promise<T> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+  try {
+    return await task(controller.signal);
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const isProviderReady = (provider: CouncilProvider): boolean => {
+  if (provider === "groq") return hasGroqApiKey();
+  if (provider === "openrouter") return hasOpenRouterApiKey();
+  if (provider === "ollama") return hasOllamaConfigured();
+  return false;
+};
+
+const runProvider = async (input: {
+  provider: CouncilProvider;
+  policy: CouncilRoutingPolicy;
+  prompt: string;
+  systemInstruction: string;
+  deterministicSeed: number;
+  signal: AbortSignal;
+}): Promise<{ ok: true; content: string; model: string; usageCount?: number } | { ok: false; error: string }> => {
+  if (input.provider === "groq") {
+    const result = await requestGroq({
+      prompt: input.prompt,
+      systemPrompt: input.systemInstruction,
+      temperature: 0.1,
+      maxTokens: input.policy.tokenCaps.groq,
+      model: input.policy.modelMap.groq,
+      signal: input.signal,
+    });
+    if (!result.success || !result.content) {
+      return { ok: false, error: result.error?.message || "Groq request failed" };
+    }
+    return {
+      ok: true,
+      content: result.content,
+      model: result.model || input.policy.modelMap.groq,
+      usageCount: getGroqUsageSnapshot().calls,
+    };
+  }
+
+  if (input.provider === "openrouter") {
+    const result = await requestOpenRouter({
+      prompt: input.prompt,
+      systemPrompt: input.systemInstruction,
+      maxTokens: input.policy.tokenCaps.openrouter,
+      model: input.policy.modelMap.openrouter,
+      seed: input.deterministicSeed,
+      signal: input.signal,
+    });
+    if (!result.ok) {
+      return { ok: false, error: result.error || "OpenRouter request failed" };
+    }
+    return {
+      ok: true,
+      content: result.content,
+      model: result.model || input.policy.modelMap.openrouter,
+    };
+  }
+
+  const result = await requestOllama({
+    prompt: input.prompt,
+    systemPrompt: input.systemInstruction,
+    maxTokens: input.policy.tokenCaps.ollama,
+    model: input.policy.modelMap.ollama,
+    signal: input.signal,
+  });
+  if (!result.ok) {
+    return { ok: false, error: result.error || "Ollama request failed" };
+  }
+  return {
+    ok: true,
+    content: result.content,
+    model: result.model || input.policy.modelMap.ollama,
+  };
+};
+
 const generateContent = async (input: {
   prompt: string;
   tier: SynqraTier;
   systemInstruction: string;
-}): Promise<{ content: string; provider: string }> => {
+  intent: string | null;
+  taskType: string | null;
+  premiumIntent: boolean;
+  requestId: string;
+}): Promise<{
+  content: string;
+  provider: CouncilProvider;
+  model: string;
+  modelTier: "fast" | "premium";
+  routeIntent: CouncilRouteIntent;
+  taskType: CouncilTaskType;
+  tokenCap: number;
+  fallbackCount: number;
+  premiumRequested: boolean;
+  groqUsageCount?: number;
+}> => {
   const providerErrors: string[] = [];
-  const tierPolicy = getTierPolicy(input.tier);
+  const policy = resolveCouncilRoutingPolicy({
+    intent: input.intent,
+    taskType: input.taskType,
+    premiumIntent: input.premiumIntent,
+  });
   const deterministicSeed = buildDeterministicSeed(input.prompt, input.tier);
+  let fallbackCount = 0;
 
-  const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-  const hasOpenRouter = isConfiguredKey(openRouterApiKey);
-  const geminiApiKey = [process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2].find(
-    isConfiguredKey
+  console.info(
+    JSON.stringify({
+      level: "info",
+      message: "council.routing.policy",
+      requestId: input.requestId,
+      intent: policy.intent,
+      taskType: policy.taskType,
+      modelTier: policy.modelTier,
+      providerOrder: policy.providerOrder,
+      premiumRequested: policy.premiumRequested,
+    })
   );
-  const hasGemini = Boolean(geminiApiKey);
 
-  if (!hasOpenRouter && !hasGemini) {
-    throw new Error("No AI providers are configured for council generation");
-  }
+  for (const provider of policy.providerOrder) {
+    if (!isProviderReady(provider)) {
+      providerErrors.push(`${provider}: provider not configured`);
+      continue;
+    }
 
-  if (hasOpenRouter) {
-    const attempts = tierPolicy.priority === "priority" ? 2 : 1;
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= PROVIDER_RETRY_ATTEMPTS; attempt += 1) {
+      console.info(
+        JSON.stringify({
+          level: "info",
+          message: "council.provider.attempt",
+          requestId: input.requestId,
+          provider,
+          attempt,
+          timeoutMs: PROVIDER_TIMEOUT_MS,
+          model: policy.modelMap[provider],
+          tokenCap: policy.tokenCaps[provider],
+        })
+      );
+
       try {
-        const response = await fetch(OPENROUTER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openRouterApiKey}`,
-            "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "Synqra Studio (Local Dev)",
-          },
-          body: JSON.stringify({
-            model: OPENROUTER_MODEL,
-            temperature: 0.1,
-            top_p: 0.2,
-            seed: deterministicSeed,
-            max_tokens: input.tier === "studio_plus" ? 900 : 500,
-            messages: [
-              { role: "system", content: input.systemInstruction },
-              { role: "user", content: input.prompt },
-            ],
-          }),
-        });
+        const result = await withTimeout((signal) =>
+          runProvider({
+            provider,
+            policy,
+            prompt: input.prompt,
+            systemInstruction: input.systemInstruction,
+            deterministicSeed,
+            signal,
+          })
+        );
 
-        const payload = await response.json().catch(() => null);
-        if (!response.ok) {
-          const reason =
-            (payload as { error?: { message?: string } })?.error?.message || `OpenRouter status ${response.status}`;
-          throw new Error(reason);
-        }
-
-        const content = parseOpenRouterContent(payload);
-        if (content) {
-          if (isEchoContent(input.prompt, content)) {
-            throw new Error("OpenRouter returned echoed prompt content");
+        if (result.ok) {
+          if (isEchoContent(input.prompt, result.content)) {
+            throw new Error(`${provider} returned echoed prompt content`);
           }
-          return { content, provider: "openrouter" };
+          return {
+            content: result.content,
+            provider,
+            model: result.model,
+            modelTier: policy.modelTier,
+            routeIntent: policy.intent,
+            taskType: policy.taskType,
+            tokenCap: policy.tokenCaps[provider],
+            fallbackCount,
+            premiumRequested: policy.premiumRequested,
+            groqUsageCount: provider === "groq" ? result.usageCount : undefined,
+          };
         }
-        throw new Error("OpenRouter returned empty content");
+
+        providerErrors.push(`${provider} attempt ${attempt}: ${result.error}`);
+        console.error(
+          JSON.stringify({
+            level: "error",
+            message: "council.provider.failure",
+            requestId: input.requestId,
+            provider,
+            attempt,
+            error: result.error,
+          })
+        );
       } catch (error) {
-        providerErrors.push(error instanceof Error ? error.message : "OpenRouter call failed");
+        const message = error instanceof Error ? error.message : "Provider execution failed";
+        providerErrors.push(`${provider} attempt ${attempt}: ${message}`);
+        console.error(
+          JSON.stringify({
+            level: "error",
+            message: "council.provider.failure",
+            requestId: input.requestId,
+            provider,
+            attempt,
+            error: message,
+          })
+        );
       }
     }
+
+    fallbackCount += 1;
   }
 
-  if (geminiApiKey) {
-    try {
-      const client = new GoogleGenerativeAI(geminiApiKey);
-      const model = client.getGenerativeModel({
-        model: GEMINI_MODEL,
-        generationConfig: {
-          temperature: 0.1,
-          topP: 0.2,
-          maxOutputTokens: input.tier === "studio_plus" ? 1024 : 640,
-          ...(deterministicSeed ? ({ seed: deterministicSeed } as Record<string, unknown>) : {}),
-        },
-      });
-      const result = await model.generateContent([
-        input.systemInstruction,
-        "",
-        `Prompt: ${input.prompt}`,
-      ]);
-      const content = result.response.text().trim();
-      if (content) {
-        if (isEchoContent(input.prompt, content)) {
-          throw new Error("Gemini returned echoed prompt content");
-        }
-        return { content, provider: "gemini" };
-      }
-      throw new Error("Gemini returned empty content");
-    } catch (error) {
-      providerErrors.push(error instanceof Error ? error.message : "Gemini call failed");
-    }
-  }
-
-  throw new Error(
-    `Council generation failed across providers: ${providerErrors.join(" | ") || "unknown provider error"}`
-  );
+  throw new Error(`Council generation failed across providers: ${providerErrors.join(" | ")}`);
 };
 
 /**
@@ -396,6 +845,9 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => null)) as CouncilRequestBody | null;
     const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
+    const requestedIntent = resolveRequestedIntent(body?.intent);
+    const requestedTaskType = resolveRequestedIntent(body?.taskType);
+    const premiumIntent = resolvePremiumIntent(body);
     const requestedTenantId = typeof body?.tenant?.id === "string" ? body.tenant.id.trim() : "";
     const requestedVertical = normalizeVertical(body?.tenant?.vertical);
     let tenantVertical: TenantVertical = requestedVertical ?? resolveVerticalFromTenantId(requestedTenantId || "realtor");
@@ -425,6 +877,12 @@ export async function POST(request: NextRequest) {
       creatorStampEnabled,
     });
     const actorKey = resolveActorKey(request, userId);
+    const internalIntentRequested =
+      requestedIntent === "internal" || requestedIntent === "ops" || requestedIntent === "ba_ops";
+    const internalRoutingToken = request.headers.get("x-synqra-internal-token")?.trim();
+    const expectedInternalRoutingToken = process.env.INTERNAL_ROUTING_TOKEN?.trim();
+    const hasValidInternalRoutingToken =
+      Boolean(expectedInternalRoutingToken) && internalRoutingToken === expectedInternalRoutingToken;
 
     if (!prompt) {
       return NextResponse.json(
@@ -440,16 +898,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: RESTRICTED_MESSAGE,
-            metadata: {
-              risk: "CRITICAL" as RiskLevel,
-              role,
-              vertical: tenantVertical,
-              verticalTag: verticalTag(tenantVertical),
-              identityProfile,
-              creatorStamp,
-            },
+          metadata: {
+            risk: "CRITICAL" as RiskLevel,
+            role,
+            vertical: tenantVertical,
+            verticalTag: verticalTag(tenantVertical),
+            identityProfile,
+            creatorStamp,
           },
-          { status: 403 }
+        },
+        { status: 403 }
+      );
+    }
+
+    if (internalIntentRequested && !INTERNAL_INTENT_ROLES.has(role) && !hasValidInternalRoutingToken) {
+      return NextResponse.json(
+        {
+          error: RESTRICTED_MESSAGE,
+          message: "Internal routing intent requires admin role or valid internal token.",
+          metadata: {
+            risk: "CRITICAL" as RiskLevel,
+            role,
+            tier,
+            vertical: tenantVertical,
+            verticalTag: verticalTag(tenantVertical),
+            identityProfile,
+            creatorStamp,
+          },
+        },
+        { status: 403 }
       );
     }
 
@@ -510,12 +987,27 @@ export async function POST(request: NextRequest) {
     }
 
     const requestId = `content_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    let generated: { content: string; provider: string };
+    let generated: {
+      content: string;
+      provider: CouncilProvider;
+      model: string;
+      modelTier: "fast" | "premium";
+      routeIntent: CouncilRouteIntent;
+      taskType: CouncilTaskType;
+      tokenCap: number;
+      fallbackCount: number;
+      premiumRequested: boolean;
+      groqUsageCount?: number;
+    };
     try {
       generated = await generateContent({
         prompt,
         tier,
         systemInstruction,
+        intent: requestedIntent,
+        taskType: requestedTaskType,
+        premiumIntent,
+        requestId,
       });
     } catch (generationError) {
       const tierPolicy = getTierPolicy(tier);
@@ -538,7 +1030,18 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    const { content, provider } = generated;
+    const {
+      content,
+      provider,
+      model,
+      modelTier,
+      routeIntent,
+      taskType,
+      tokenCap,
+      fallbackCount,
+      premiumRequested,
+      groqUsageCount,
+    } = generated;
     const tierPolicy = getTierPolicy(tier);
     if (isEchoContent(prompt, content)) {
       return NextResponse.json(
@@ -567,11 +1070,18 @@ export async function POST(request: NextRequest) {
       JSON.stringify({
         level: "info",
         message: "council.request.completed",
-        requestId,
-        provider,
-        agentHopCount,
-        tier,
-        vertical: tenantVertical,
+          requestId,
+          provider,
+          model,
+          modelTier,
+          routeIntent,
+          taskType,
+          tokenCap,
+          fallbackCount,
+          premiumRequested,
+          agentHopCount,
+          tier,
+          vertical: tenantVertical,
       })
     );
     if (agentHopCount > 3) {
@@ -585,7 +1095,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         content,
         consensus: content,
@@ -615,12 +1125,31 @@ export async function POST(request: NextRequest) {
           processingPriority: tierPolicy.priority,
           fxSignalHubEnabled: tierPolicy.fxSignalHubEnabled,
           provider,
+          model,
+          modelTier,
+          routeIntent,
+          taskType,
+          tokenCap,
+          fallbackCount,
+          premiumRequested,
+          groqUsageCount: typeof groqUsageCount === "number" ? groqUsageCount : undefined,
           identityProfile,
           creatorStamp,
         },
       },
       { status: 200 }
     );
+    response.headers.set("x-council-provider", provider);
+    response.headers.set("x-council-model", model);
+    response.headers.set("x-council-model-tier", modelTier);
+    response.headers.set("x-council-intent", routeIntent);
+    response.headers.set("x-council-task-type", taskType);
+    response.headers.set("x-council-token-cap", String(tokenCap));
+    response.headers.set("x-council-fallback-count", String(fallbackCount));
+    if (provider === "groq" && typeof groqUsageCount === "number") {
+      response.headers.set("x-groq-usage-count", String(groqUsageCount));
+    }
+    return response;
   } catch (error) {
     console.error("Council API error:", error);
     return NextResponse.json(
@@ -646,9 +1175,15 @@ export async function GET() {
       prompt: "string (required) - The prompt for generation",
       identityProfile: "string (optional) - one of synqra | noid | aurafx",
       creatorStampEnabled: "boolean (optional, default false)",
+      intent: "string (optional) - public | internal",
+      taskType: "string (optional) - general | analysis | compliance | internal_ops",
+      premiumIntent: "boolean (optional, default false) - explicit premium model gate",
     },
     example: {
       prompt: "Generate a listing launch brief for this property",
+      intent: "public",
+      taskType: "general",
+      premiumIntent: false,
     },
   });
 }
