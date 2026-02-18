@@ -1,6 +1,0 @@
-{
-  "ok": true,
-  "status": 503,
-  "body": "{\"success\":false,\"error\":\"kill_switch_active\",\"message\":\"This feature is temporarily paused while we keep things safe. Please try again soon.\",\"correlationId\":\"e51024f3-650d-4118-ab2f-ae098aea0962\"}",
-  "logsTail": "   ▲ Next.js 15.1.9\n   - Local:        http://localhost:3212\n   - Network:      http://10.0.0.227:3212\n\n ✓ Starting...\n ⚠ \"next start\" does not work with \"output: standalone\" configuration. Use \"node .next/standalone/server.js\" instead.\n ✓ Ready in 1349ms\n{\"level\":\"warn\",\"message\":\"Global kill switch active\",\"scope\":\"railway-webhook\",\"correlationId\":\"e51024f3-650d-4118-ab2f-ae098aea0962\",\"timestamp\":\"2026-02-13T03:03:27.573Z\"}\n{\"level\":\"error\",\"message\":\"railway.webhook.error\",\"scope\":\"railway-webhook\",\"correlationId\":\"e51024f3-650d-4118-ab2f-ae098aea0962\",\"timestamp\":\"2026-02-13T03:03:27.573Z\",\"data\":{\"error\":\"kill_switch_active\"}}\n"
-}
