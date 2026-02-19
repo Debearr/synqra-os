@@ -36,6 +36,7 @@ export class SupportAgent extends BaseAgent {
     history: Message[]
   ): AgentResponse {
     const message = request.message.toLowerCase();
+    const supportEmail = process.env.SUPPORT_EMAIL ?? "";
 
     let answer = "";
     let confidence = 0.85;
@@ -238,7 +239,7 @@ If data from integrations is delayed:
 **⚠️ IMPORTANT - Data Recovery:**
 If data was accidentally deleted:
 • We maintain backups for 30 days
-• Contact support@synqra.com immediately
+• Contact ${supportEmail || "support team"} immediately
 • Include: what was deleted, when, by whom (if known)
 
 **Immediate Actions:**

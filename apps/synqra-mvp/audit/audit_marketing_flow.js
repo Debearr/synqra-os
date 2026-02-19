@@ -4,6 +4,7 @@ const path = require('path');
 
 (async () => {
     console.log('Starting Audit of New Marketing Flow...');
+    const auditEmail = process.env.AUDIT_EMAIL || 'audit@example.com';
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -37,7 +38,7 @@ const path = require('path');
         // Fill Form
         console.log('Filling Pilot Form...');
         await page.fill('input[name="fullName"]', 'Audit Bot');
-        await page.fill('input[name="email"]', 'audit@noidlabs.com');
+        await page.fill('input[name="email"]', auditEmail);
         await page.fill('input[name="companyName"]', 'Noid Labs');
         await page.fill('input[name="role"]', 'Auditor');
         await page.selectOption('select[name="companySize"]', '1-10');

@@ -24,6 +24,7 @@ export async function sendAdminNotification(data: PilotApplicationData): Promise
 }
 
 function generateApplicantEmail(data: PilotApplicationData): string {
+  const pilotEmail = process.env.PILOT_EMAIL ?? "";
   return `
 <!DOCTYPE html>
 <html>
@@ -77,7 +78,11 @@ function generateApplicantEmail(data: PilotApplicationData): string {
       <li><strong>Company Size:</strong> ${data.companySize} employees</li>
     </ul>
 
-    <p>Questions? Reply to this email or contact <a href="mailto:pilot@synqra.com" style="color: #2DD4BF;">pilot@synqra.com</a></p>
+    <p>${
+      pilotEmail
+        ? `Questions? Reply to this email or contact <a href="mailto:${pilotEmail}" style="color: #2DD4BF;">${pilotEmail}</a>`
+        : "Questions? Reply to this email and our team will assist you."
+    }</p>
 
     <div class="footer">
       <p style="margin: 0;">Synqra</p>

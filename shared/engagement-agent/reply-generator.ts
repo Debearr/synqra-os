@@ -235,6 +235,8 @@ function addCTA(
   ctaType: "product" | "support" | "content" | "waitlist",
   productFit: string
 ): string {
+  const supportEmail = process.env.SUPPORT_EMAIL ?? "";
+
   const ctas = {
     product: {
       synqra: "Want to see how Synqra works for your content?",
@@ -243,9 +245,15 @@ function addCTA(
       default: "Want to learn more?",
     },
     support: {
-      synqra: "Need help? Hit me up at support@synqra.app",
-      noid: "Need help? Reach out at support@noid.app",
-      aurafx: "Need help? Contact support@aurafx.ai",
+      synqra: supportEmail
+        ? `Need help? Hit me up at ${supportEmail}`
+        : "Need help? Reach out to support.",
+      noid: supportEmail
+        ? `Need help? Reach out at ${supportEmail}`
+        : "Need help? Reach out to support.",
+      aurafx: supportEmail
+        ? `Need help? Contact ${supportEmail}`
+        : "Need help? Reach out to support.",
       default: "Need help? Let me know.",
     },
     content: {

@@ -4,10 +4,14 @@
 
 # Environment variables (NEVER commit)
 .env
+.env.*
 .env.local
+.env.automation
+.env.automation.*
 .env.*.local
 .env.production
 .env.development
+!.env.example
 
 # Secrets and keys
 *.pem
@@ -129,6 +133,7 @@ packages/
 synqra-os/
 !nixpacks.toml
 !Procfile
+!scripts/email-guard.sh
 !apps/synqra-mvp/lib/
 # Allow MVP safeguards library
 !apps/synqra-mvp/lib/safeguards/
@@ -178,6 +183,7 @@ tmp_screenshots_postfix/
 !apps/synqra-mvp/services/cloud-run-worker/deploy.sh
 !apps/synqra-mvp/services/cloud-run-worker/scheduler-jobs.sh
 !ops/*.sh
+!scripts/email-guard.sh
 !ops/systemd/*.service
 !ops/systemd/*.timer
 
