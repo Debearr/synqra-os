@@ -23,11 +23,7 @@ function firstForwardedValue(value: string | null): string | null {
 }
 
 export function resolveServiceBaseUrl(request: NextRequest): string {
-  const fromEnv = [
-    process.env.SERVICE_BASE_URL,
-    process.env.CLOUD_RUN_SERVICE_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-  ]
+  const fromEnv = [process.env.CLOUD_RUN_SERVICE_URL, process.env.NEXT_PUBLIC_APP_URL]
     .map((value) => toBaseUrl(value))
     .find((value): value is string => Boolean(value));
 

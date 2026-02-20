@@ -15,6 +15,12 @@ export default function HomePage() {
 
           <div className="space-y-4">
             <Link
+              href="/dashboard"
+              className="block w-full border border-ds-text-secondary/40 bg-ds-surface px-4 py-2 text-center text-sm font-medium leading-copy text-ds-text-primary"
+            >
+              Dashboard
+            </Link>
+            <Link
               href="/auth/sign-in"
               className="block w-full bg-ds-gold px-4 py-2 text-center text-sm font-medium leading-copy text-ds-bg"
             >

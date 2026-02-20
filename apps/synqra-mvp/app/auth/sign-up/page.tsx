@@ -13,7 +13,7 @@ export default function SignUpPage() {
 
       <div className="space-y-4">
         <Link
-          href="/waitlist"
+          href="/apply"
           className="block w-full bg-ds-gold px-4 py-2 text-center text-sm font-medium leading-copy text-ds-bg"
         >
           Join waitlist

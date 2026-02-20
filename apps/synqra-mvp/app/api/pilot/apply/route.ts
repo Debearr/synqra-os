@@ -1,226 +1,231 @@
-import { NextResponse } from 'next/server';
-import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { pilotApplicationSchema } from '@/lib/validations/pilot-form';
-import { sendApplicantConfirmation, sendAdminNotification } from '@/lib/email/notifications';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { updateUserRoleState } from "@/lib/user-role-state";
 
-/**
- * ============================================================
- * PILOT APPLICATION API ENDPOINT
- * ============================================================
- * Phase 3: Backend Integration
- *
- * Features:
- * - Store applications in Supabase
- * - Send confirmation email to applicant
- * - Send notification to admin
- * - Duplicate detection
- * - Input validation with Zod
- */
+type PilotApplyBody = {
+  name?: unknown;
+  company?: unknown;
+  website?: unknown;
+  business_type?: unknown;
+  goal?: unknown;
+  desired_outcome?: unknown;
+  why_synqra?: unknown;
+};
 
-export async function POST(req: Request) {
+type PilotScore = {
+  score: number;
+  summary: string;
+  source: "openai" | "fallback";
+};
+
+function asTrimmedString(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function clampScore(input: unknown): number {
+  const raw = typeof input === "number" ? input : Number(input);
+  if (!Number.isFinite(raw)) return 5;
+  const rounded = Math.round(raw);
+  if (rounded < 1) return 1;
+  if (rounded > 10) return 10;
+  return rounded;
+}
+
+function summarizeFallback(payload: Required<Record<keyof PilotApplyBody, string>>): string {
+  return `Application received for ${payload.company}. Goal: ${payload.goal}. Desired outcome: ${payload.desired_outcome}.`;
+}
+
+function parseScoringPayload(text: string): { score: number; summary: string } | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const direct = (() => {
+    try {
+      return JSON.parse(trimmed) as { score?: unknown; summary?: unknown };
+    } catch {
+      return null;
+    }
+  })();
+
+  const candidate = direct ?? (() => {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) return null;
+    try {
+      return JSON.parse(trimmed.slice(start, end + 1)) as { score?: unknown; summary?: unknown };
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!candidate) return null;
+  if (typeof candidate.summary !== "string" || !candidate.summary.trim()) return null;
+
+  return {
+    score: clampScore(candidate.score),
+    summary: candidate.summary.trim(),
+  };
+}
+
+async function scoreWithOpenAI(payload: Required<Record<keyof PilotApplyBody, string>>): Promise<PilotScore> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    return {
+      score: 5,
+      summary: summarizeFallback(payload),
+      source: "fallback",
+    };
+  }
+
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
+  const rubricPrompt = [
+    "You are scoring founder pilot applications for B2B software.",
+    "Return strict JSON: {\"score\": <integer 1-10>, \"summary\": <string under 220 chars>}.",
+    "Scoring rubric:",
+    "- Problem clarity and urgency",
+    "- ICP fit and business model quality",
+    "- Likelihood to execute with Synqra",
+    "- Measurable desired outcome",
+    "",
+    `Name: ${payload.name}`,
+    `Company: ${payload.company}`,
+    `Website: ${payload.website}`,
+    `Business Type: ${payload.business_type}`,
+    `Goal: ${payload.goal}`,
+    `Desired Outcome: ${payload.desired_outcome}`,
+    `Why Synqra: ${payload.why_synqra}`,
+  ].join("\n");
+
   try {
-    // Step 1: Parse and validate request body
-    const body = await req.json().catch(() => null);
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        max_tokens: 220,
+        messages: [
+          {
+            role: "system",
+            content: "Return valid JSON only.",
+          },
+          {
+            role: "user",
+            content: rubricPrompt,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`OpenAI scoring failed: ${response.status} ${errorText}`);
+    }
+
+    const payloadJson = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = payloadJson.choices?.[0]?.message?.content ?? "";
+    const parsed = parseScoringPayload(content);
+    if (!parsed) {
+      throw new Error("OpenAI response did not include parseable scoring JSON");
+    }
+
+    return {
+      score: parsed.score,
+      summary: parsed.summary,
+      source: "openai",
+    };
+  } catch (error) {
+    console.warn("[pilot/apply] OpenAI scoring fallback:", error);
+    return {
+      score: 5,
+      summary: summarizeFallback(payload),
+      source: "fallback",
+    };
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json().catch(() => null)) as PilotApplyBody | null;
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return NextResponse.json(
         {
           ok: false,
           error: "invalid_request_payload",
-          message: "Request body must be a JSON object",
+          message: "Body must be a JSON object",
         },
         { status: 400 }
       );
     }
 
-    // Validate with Zod schema (same as client-side)
-    const validationResult = pilotApplicationSchema.safeParse(body);
+    const normalized = {
+      name: asTrimmedString(body.name),
+      company: asTrimmedString(body.company),
+      website: asTrimmedString(body.website),
+      business_type: asTrimmedString(body.business_type),
+      goal: asTrimmedString(body.goal),
+      desired_outcome: asTrimmedString(body.desired_outcome),
+      why_synqra: asTrimmedString(body.why_synqra),
+    };
 
-    if (!validationResult.success) {
+    const requiredFields = Object.entries(normalized).filter(([, value]) => !value).map(([key]) => key);
+    if (requiredFields.length > 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: 'validation_failed',
-          message: 'Please check your form inputs',
-          details: validationResult.error.issues,
+          error: "missing_fields",
+          fields: requiredFields,
         },
         { status: 400 }
       );
     }
 
-    const data = validationResult.data;
-
-    // Step 2: Get Supabase client
-    const supabaseAdmin = requireSupabaseAdmin();
-
-    // Step 3: Check for duplicate email
-    const { data: existingApplication, error: duplicateLookupError } = await supabaseAdmin
-      .from('pilot_applications')
-      .select('id, email, status')
-      .eq('email', data.email.toLowerCase())
-      .maybeSingle();
-
-    if (duplicateLookupError) {
-      console.error('[Pilot API] Duplicate lookup error:', duplicateLookupError);
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'database_error',
-          message: 'Failed to validate existing applications. Please try again.',
-        },
-        { status: 500 }
-      );
+    let supabase: Awaited<ReturnType<typeof createClient>>;
+    try {
+      supabase = await createClient();
+    } catch (error) {
+      console.error("[pilot/apply] Supabase client error:", error);
+      return NextResponse.json({ ok: false, error: "supabase_client_unavailable" }, { status: 500 });
     }
 
-    if (existingApplication) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'duplicate_application',
-          message: 'You have already applied to the Founder Pilot program. Check your email for updates.',
-        },
-        { status: 409 }
-      );
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user?.id) {
+      return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
 
-    // Step 4: Insert application into database
-    const { data: application, error: insertError } = await supabaseAdmin
-      .from('pilot_applications')
-      .insert([
-        {
-          full_name: data.fullName,
-          email: data.email.toLowerCase(),
-          company_name: data.companyName,
-          role: data.role,
-          company_size: data.companySize,
-          linkedin_profile: data.linkedinProfile || null,
-          why_pilot: data.whyPilot,
-          status: 'pending',
-          source: 'web',
-          user_agent: req.headers.get('user-agent') || 'unknown',
-          metadata: {
-            submitted_at: new Date().toISOString(),
-            referrer: req.headers.get('referer') || 'direct',
-          },
-        },
-      ])
-      .select()
-      .single();
+    const scoring = await scoreWithOpenAI(normalized);
 
-    if (insertError) {
-      if (insertError.code === '23505') {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: 'duplicate_application',
-            message: 'You have already applied to the Founder Pilot program. Check your email for updates.',
-          },
-          { status: 409 }
-        );
-      }
-      console.error('[Pilot API] Database insert error:', insertError);
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'database_error',
-          message: 'Failed to submit application. Please try again.',
-        },
-        { status: 500 }
-      );
-    }
-
-    // Step 5: Send email notifications
-    await Promise.all([
-      sendApplicantConfirmation({
-        fullName: data.fullName,
-        email: data.email,
-        companyName: data.companyName,
-        role: data.role,
-        companySize: data.companySize,
-        linkedinProfile: data.linkedinProfile,
-        whyPilot: data.whyPilot,
-      }),
-      sendAdminNotification({
-        fullName: data.fullName,
-        email: data.email,
-        companyName: data.companyName,
-        role: data.role,
-        companySize: data.companySize,
-        linkedinProfile: data.linkedinProfile,
-        whyPilot: data.whyPilot,
-      }),
-    ]);
-
-    // Step 6: Return success response
-    console.log('[Pilot API] Application submitted successfully:', {
-      id: application.id,
-      email: data.email,
-      company: data.companyName,
+    await updateUserRoleState({
+      userId: user.id,
+      role: "applicant",
+      pilotScore: scoring.score,
+      pilotSummary: scoring.summary,
     });
 
-    return NextResponse.json({
-      ok: true,
-      message: 'Application submitted successfully',
-      data: {
-        id: application.id,
-        status: application.status,
-      },
-    });
-  } catch (error: unknown) {
-    console.error('[Pilot API] Unexpected error:', error);
     return NextResponse.json(
       {
-        ok: false,
-        error: 'server_error',
-        message: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+        ok: true,
+        data: {
+          score: scoring.score,
+          summary: scoring.summary,
+          scoring_source: scoring.source,
+        },
       },
-      { status: 500 }
+      { status: 200 }
     );
-  }
-}
-
-/**
- * GET: Retrieve application status by email (for future use)
- */
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
-
-    if (!email) {
-      return NextResponse.json(
-        { ok: false, error: 'Email parameter required' },
-        { status: 400 }
-      );
-    }
-
-    const supabaseAdmin = requireSupabaseAdmin();
-
-    const { data: application, error } = await supabaseAdmin
-      .from('pilot_applications')
-      .select('id, status, applied_at')
-      .eq('email', email.toLowerCase())
-      .single();
-
-    if (error || !application) {
-      return NextResponse.json(
-        { ok: false, error: 'Application not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      ok: true,
-      data: {
-        id: application.id,
-        status: application.status,
-        appliedAt: application.applied_at,
-      },
-    });
   } catch (error) {
-    console.error('[Pilot API] GET error:', error);
-    return NextResponse.json(
-      { ok: false, error: 'Server error' },
-      { status: 500 }
-    );
+    console.error("[pilot/apply] unexpected error:", error);
+    return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 });
   }
 }
+

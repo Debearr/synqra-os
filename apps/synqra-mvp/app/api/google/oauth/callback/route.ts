@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { storeRawRefreshToken } from "@/lib/integrations/google/token-store";
+import { getRedirectForRole } from "@/lib/redirects";
+import { getUserRoleState } from "@/lib/user-role-state";
 
 type ExchangeSession = {
   id?: string | null;
@@ -52,7 +54,18 @@ export async function GET(request: Request) {
           console.warn("Failed to persist Google refresh token after OAuth callback:", tokenStoreError);
         }
       }
-      return NextResponse.redirect(`${origin}/studio`);
+
+      let role = "visitor";
+      if (userId) {
+        try {
+          role = await getUserRoleState(userId);
+        } catch (roleError) {
+          console.warn("[google/oauth/callback] Failed to resolve role from Supabase users table:", roleError);
+        }
+      }
+
+      const destination = getRedirectForRole(role);
+      return NextResponse.redirect(`${origin}${destination}`);
     }
 
     console.error("[google/oauth/callback] Session exchange failed:", error);
