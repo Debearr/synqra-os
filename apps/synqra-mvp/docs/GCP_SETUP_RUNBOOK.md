@@ -31,7 +31,7 @@ echo -n "YOUR_FIREBASE_PRIVATE_KEY" | gcloud secrets create firebase-private-key
   --data-file=- \
   --replication-policy="automatic"
 
-# Supabase service key (if not already created)
+# Supabase service key (canonical secret name: supabase-service-role-key)
 echo -n "YOUR_SUPABASE_SERVICE_ROLE_KEY" | gcloud secrets create supabase-service-role-key \
   --data-file=- \
   --replication-policy="automatic"

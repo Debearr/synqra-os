@@ -27,7 +27,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --no-allow-unauthenticated \
   --service-account "${SERVICE_ACCOUNT}" \
   --set-env-vars INTERNAL_API_BASE_URL="${INTERNAL_API_BASE_URL}",CLOUD_RUN_SERVICE_URL="${CLOUD_RUN_SERVICE_URL}" \
-  --set-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-key:latest,INTERNAL_JOB_SIGNING_SECRET=internal-job-signing-secret:latest,GOOGLE_ENCRYPTION_KEY=google-encryption-key:latest,FIREBASE_PRIVATE_KEY=firebase-private-key:latest
+  --set-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,INTERNAL_JOB_SIGNING_SECRET=internal-job-signing-secret:latest,GOOGLE_ENCRYPTION_KEY=google-encryption-key:latest,FIREBASE_PRIVATE_KEY=firebase-private-key:latest
 
 echo "Cloud Run deployment complete."
 
