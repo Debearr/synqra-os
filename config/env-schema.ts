@@ -22,11 +22,8 @@ export type EnvSchema = {
   // AI
   ANTHROPIC_API_KEY: string;
   
-  // Railway
-  RAILWAY_WEBHOOK_SECRET?: string;
-  RAILWAY_API_TOKEN?: string;
-  RAILWAY_PROJECT_ID?: string;
-  RAILWAY_ENVIRONMENT?: EnvironmentTier;
+  // Deployment metadata
+  VERCEL_ENV?: "production" | "preview" | "development";
   
   // App URLs (for health checks)
   SYNQRA_HEALTH_URL?: string;
@@ -172,16 +169,13 @@ export function getEnv(): EnvSchema {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "",
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || "",
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || ""
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || "",
     
     // AI
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
     
-    // Railway
-    RAILWAY_WEBHOOK_SECRET: process.env.RAILWAY_WEBHOOK_SECRET,
-    RAILWAY_API_TOKEN: process.env.RAILWAY_API_TOKEN,
-    RAILWAY_PROJECT_ID: process.env.RAILWAY_PROJECT_ID,
-    RAILWAY_ENVIRONMENT: (process.env.RAILWAY_ENVIRONMENT as EnvironmentTier) || "development",
+    // Deployment metadata
+    VERCEL_ENV: process.env.VERCEL_ENV as EnvSchema["VERCEL_ENV"],
     
     // Health URLs
     SYNQRA_HEALTH_URL: process.env.SYNQRA_HEALTH_URL,
@@ -220,9 +214,12 @@ export function isFeatureEnabled(flag: keyof Pick<EnvSchema, "ENABLE_AUTO_REPAIR
  * Get environment tier
  */
 export function getEnvironmentTier(): EnvironmentTier {
-  const railwayEnv = process.env.RAILWAY_ENVIRONMENT;
-  if (railwayEnv === "production" || railwayEnv === "staging" || railwayEnv === "pr") {
-    return railwayEnv;
+  const vercelEnv = process.env.VERCEL_ENV;
+  if (vercelEnv === "production") {
+    return "production";
+  }
+  if (vercelEnv === "preview") {
+    return "pr";
   }
   
   return process.env.NODE_ENV === "production" ? "production" : "development";

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Get raw body for signature verification
     const body = await request.text();
     const signature = request.headers.get("x-railway-signature") || "";
-    const webhookSecret = process.env.RAILWAY_WEBHOOK_SECRET || "";
+    const webhookSecret = process.env.WEBHOOK_SECRET || "";
 
     // Verify signature (if Railway supports it)
     if (webhookSecret && signature) {

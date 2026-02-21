@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         failed,
         warnings,
       },
-      environment: process.env.RAILWAY_ENVIRONMENT || "development",
+      environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
       autoRepairAttempted: false,
     };
 
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         failed: 1,
         warnings: 0,
       },
-      environment: process.env.RAILWAY_ENVIRONMENT || "development",
+      environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
       autoRepairAttempted: false,
     };
 
