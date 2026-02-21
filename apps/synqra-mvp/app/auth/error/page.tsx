@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { REDIRECT_PATHS } from "@/lib/redirects";
 
 export default function AuthErrorPage() {
-  redirect("/auth/sign-in");
+  redirect(REDIRECT_PATHS.AUTH_SIGN_IN);
 }

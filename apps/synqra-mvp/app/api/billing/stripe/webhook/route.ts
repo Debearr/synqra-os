@@ -1,2 +1,8 @@
-export { runtime, POST } from "@/app/api/webhooks/stripe/route";
+import type { NextRequest } from "next/server";
+import { POST as handleStripeWebhook } from "@/app/api/webhooks/stripe/route";
 
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  return handleStripeWebhook(request);
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getLinkedInCallbackRedirectPath } from "@/lib/redirects";
 
 /**
  * LinkedIn OAuth Flow - Step 2: Handle Callback
@@ -31,14 +32,14 @@ export async function GET(req: NextRequest) {
     const errorDescription = searchParams.get('error_description') || 'Unknown error';
     console.error('LinkedIn OAuth error:', error, errorDescription);
     return withClearedState(
-      NextResponse.redirect('/admin/integrations?error=linkedin_denied')
+      NextResponse.redirect(getLinkedInCallbackRedirectPath("linkedin_denied"))
     );
   }
 
   if (!state || !storedState || state !== storedState) {
     console.error("LinkedIn OAuth state mismatch");
     return withClearedState(
-      NextResponse.redirect('/admin/integrations?error=linkedin_state')
+      NextResponse.redirect(getLinkedInCallbackRedirectPath("linkedin_state"))
     );
   }
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
       const errorData = await tokenResponse.text();
       console.error('LinkedIn token exchange failed:', errorData);
       return withClearedState(
-        NextResponse.redirect('/admin/integrations?error=linkedin_token_failed')
+        NextResponse.redirect(getLinkedInCallbackRedirectPath("linkedin_token_failed"))
       );
     }
 
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
     if (!profileResponse.ok) {
       console.error('Failed to fetch LinkedIn profile');
       return withClearedState(
-        NextResponse.redirect('/admin/integrations?error=linkedin_profile_failed')
+        NextResponse.redirect(getLinkedInCallbackRedirectPath("linkedin_profile_failed"))
       );
     }
 
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
     if (dbError) {
       console.error('Database error:', dbError);
       return withClearedState(
-        NextResponse.redirect('/admin/integrations?error=database_failed')
+        NextResponse.redirect(getLinkedInCallbackRedirectPath("database_failed"))
       );
     }
 
@@ -133,13 +134,13 @@ export async function GET(req: NextRequest) {
 
     // Redirect to admin with success message
     return withClearedState(
-      NextResponse.redirect('/admin/integrations?success=linkedin')
+      NextResponse.redirect(getLinkedInCallbackRedirectPath("linkedin"))
     );
 
   } catch (error: any) {
     console.error('LinkedIn OAuth callback error:', error);
     return withClearedState(
-      NextResponse.redirect('/admin/integrations?error=unexpected')
+      NextResponse.redirect(getLinkedInCallbackRedirectPath("unexpected"))
     );
   }
 }

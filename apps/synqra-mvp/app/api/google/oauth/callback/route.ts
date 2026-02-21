@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { storeRawRefreshToken } from "@/lib/integrations/google/token-store";
-import { getRedirectForRole } from "@/lib/redirects";
+import { buildAbsoluteRedirectUrl, getGoogleAuthRedirectPath, getRedirectForRole } from "@/lib/redirects";
 import { getUserRoleState } from "@/lib/user-role-state";
 
 type ExchangeSession = {
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const error = searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(`${origin}/enter?auth=error`);
+    return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, getGoogleAuthRedirectPath("error")));
   }
 
   if (code) {
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       supabase = await createClient();
     } catch (clientError) {
       console.error("[google/oauth/callback] Supabase client configuration error:", clientError);
-      return NextResponse.redirect(`${origin}/enter?auth=config_error`);
+      return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, getGoogleAuthRedirectPath("config_error")));
     }
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -65,11 +65,11 @@ export async function GET(request: Request) {
       }
 
       const destination = getRedirectForRole(role);
-      return NextResponse.redirect(`${origin}${destination}`);
+      return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, destination));
     }
 
     console.error("[google/oauth/callback] Session exchange failed:", error);
   }
 
-  return NextResponse.redirect(`${origin}/enter?auth=error`);
+  return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, getGoogleAuthRedirectPath("error")));
 }

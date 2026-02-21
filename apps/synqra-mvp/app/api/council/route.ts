@@ -65,7 +65,6 @@ type CouncilRoutingPolicy = {
   premiumRequested: boolean;
 };
 
-const ALLOWED_ROLES = new Set(["guest", "authenticated", "demo", "member", "admin", "owner"]);
 const RESTRICTED_MESSAGE = "Restricted by governance.";
 const RESTRICTED_PATTERNS = [
   /\bwire\s+transfer\b/i,
@@ -82,7 +81,6 @@ const RATE_WINDOW_MS = 60_000;
 const parsedProviderTimeoutMs = Number.parseInt(process.env.COUNCIL_PROVIDER_TIMEOUT_MS || "12000", 10);
 const PROVIDER_TIMEOUT_MS = Number.isFinite(parsedProviderTimeoutMs) ? Math.max(parsedProviderTimeoutMs, 1_000) : 12_000;
 const PROVIDER_RETRY_ATTEMPTS = 2;
-const INTERNAL_INTENT_ROLES = new Set(["admin", "owner"]);
 const usageWindows = new Map<string, UsageWindow>();
 const STUDIO_PLUS_TOKENS = new Set([
   "studio_plus",
@@ -290,20 +288,6 @@ const enforceTierUsage = (input: {
 
   existing.requestCount += 1;
   usageWindows.set(input.actorKey, existing);
-};
-
-const toRole = (user: { app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> }) => {
-  const appRole = user.app_metadata?.role;
-  if (typeof appRole === "string" && appRole.trim().length > 0) {
-    return appRole.trim().toLowerCase();
-  }
-
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.trim().length > 0) {
-    return userRole.trim().toLowerCase();
-  }
-
-  return "authenticated";
 };
 
 const evaluateCompliance = (prompt: string): { allowed: boolean; risk: RiskLevel; reason: string } => {
@@ -834,7 +818,7 @@ export async function POST(request: NextRequest) {
         } = await supabase.auth.getUser();
 
         if (user) {
-          role = toRole(user);
+          role = "authenticated";
           tier = resolveSynqraTier(user);
           userId = typeof user.id === "string" ? user.id : null;
         }
@@ -877,13 +861,6 @@ export async function POST(request: NextRequest) {
       creatorStampEnabled,
     });
     const actorKey = resolveActorKey(request, userId);
-    const internalIntentRequested =
-      requestedIntent === "internal" || requestedIntent === "ops" || requestedIntent === "ba_ops";
-    const internalRoutingToken = request.headers.get("x-synqra-internal-token")?.trim();
-    const expectedInternalRoutingToken = process.env.INTERNAL_ROUTING_TOKEN?.trim();
-    const hasValidInternalRoutingToken =
-      Boolean(expectedInternalRoutingToken) && internalRoutingToken === expectedInternalRoutingToken;
-
     if (!prompt) {
       return NextResponse.json(
         {
@@ -891,42 +868,6 @@ export async function POST(request: NextRequest) {
           message: "The 'prompt' field is required and must be a string",
         },
         { status: 400 }
-      );
-    }
-
-    if (!ALLOWED_ROLES.has(role)) {
-      return NextResponse.json(
-        {
-          error: RESTRICTED_MESSAGE,
-          metadata: {
-            risk: "CRITICAL" as RiskLevel,
-            role,
-            vertical: tenantVertical,
-            verticalTag: verticalTag(tenantVertical),
-            identityProfile,
-            creatorStamp,
-          },
-        },
-        { status: 403 }
-      );
-    }
-
-    if (internalIntentRequested && !INTERNAL_INTENT_ROLES.has(role) && !hasValidInternalRoutingToken) {
-      return NextResponse.json(
-        {
-          error: RESTRICTED_MESSAGE,
-          message: "Internal routing intent requires admin role or valid internal token.",
-          metadata: {
-            risk: "CRITICAL" as RiskLevel,
-            role,
-            tier,
-            vertical: tenantVertical,
-            verticalTag: verticalTag(tenantVertical),
-            identityProfile,
-            creatorStamp,
-          },
-        },
-        { status: 403 }
       );
     }
 
