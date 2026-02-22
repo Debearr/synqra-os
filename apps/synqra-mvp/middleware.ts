@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { getRedirectForRole } from "@/lib/redirects";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 type RoleState = "visitor" | "applicant" | "approved_pilot" | "subscriber" | "lapsed";
 type SessionUser = {
@@ -31,6 +30,14 @@ const PUBLIC_EXACT_PATHS: ReadonlySet<string> = new Set([
 ]);
 
 const PROTECTED_PREFIXES = ["/dashboard", "/studio", "/calendar", "/account", "/user", "/journey", "/admin", "/ops", "/exec-summary", "/api/council"];
+const ROLE_REDIRECTS: Readonly<Record<RoleState | "denied", string>> = {
+  visitor: "/",
+  applicant: "/apply/status",
+  approved_pilot: "/dashboard",
+  subscriber: "/dashboard",
+  lapsed: "/pricing",
+  denied: "/apply/status",
+};
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
@@ -57,28 +64,29 @@ async function resolveSessionRole(
     },
   });
 
-  const accessToken = readAccessToken(request);
-  if (!accessToken) {
-    return Promise.resolve({ response, role: "visitor" });
-  }
-
   const config = resolveSupabasePublicConfig();
   if (!config) {
     return Promise.resolve({ response, role: "visitor" });
   }
 
   try {
-    const supabase = createClient(config.url, config.anonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+    const supabase = createServerClient(config.url, config.anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: CookieOptions }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
       },
     });
 
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(accessToken);
+    } = await supabase.auth.getUser();
     if (error || !user) {
       return Promise.resolve({ response, role: "visitor" });
     }
@@ -90,7 +98,7 @@ async function resolveSessionRole(
 }
 
 function redirectToRoleRoute(request: NextRequest, role: RoleState): NextResponse {
-  const destination = getRedirectForRole(role);
+  const destination = ROLE_REDIRECTS[role] ?? ROLE_REDIRECTS.visitor;
   if (request.nextUrl.pathname === destination) {
     return NextResponse.next();
   }
@@ -99,50 +107,6 @@ function redirectToRoleRoute(request: NextRequest, role: RoleState): NextRespons
   url.pathname = destination;
   url.search = "";
   return NextResponse.redirect(url);
-}
-
-function readAccessTokenFromAuthorizationHeader(request: NextRequest): string | null {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) return null;
-  const [scheme, token] = authHeader.split(" ");
-  if (scheme?.toLowerCase() !== "bearer") return null;
-  const trimmed = token?.trim();
-  return trimmed ? trimmed : null;
-}
-
-function readSupabaseAccessTokenFromCookies(request: NextRequest): string | null {
-  const supabaseCookie = request.cookies
-    .getAll()
-    .find(({ name }) => name.startsWith("sb-") && name.endsWith("-auth-token"));
-
-  if (!supabaseCookie?.value) {
-    return null;
-  }
-
-  const decodedValue = decodeURIComponent(supabaseCookie.value);
-  if (!decodedValue) return null;
-
-  if (decodedValue.includes(".") && !decodedValue.startsWith("{") && !decodedValue.startsWith("[")) {
-    return decodedValue;
-  }
-
-  try {
-    const parsed = JSON.parse(decodedValue) as unknown;
-    if (Array.isArray(parsed) && typeof parsed[0] === "string" && parsed[0].includes(".")) {
-      return parsed[0];
-    }
-
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const token = (parsed as Record<string, unknown>).access_token;
-      if (typeof token === "string" && token.includes(".")) {
-        return token;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
 }
 
 function isConfigured(value: string | undefined): value is string {
@@ -162,10 +126,6 @@ function resolveSupabasePublicConfig(): { url: string; anonKey: string } | null 
     url: urlCandidate.trim(),
     anonKey: anonKeyCandidate.trim(),
   };
-}
-
-function readAccessToken(request: NextRequest): string | null {
-  return readAccessTokenFromAuthorizationHeader(request) ?? readSupabaseAccessTokenFromCookies(request);
 }
 
 export async function middleware(request: NextRequest) {
