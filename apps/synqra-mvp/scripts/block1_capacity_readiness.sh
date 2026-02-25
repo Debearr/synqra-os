@@ -3,11 +3,9 @@
 set -euo pipefail
 
 MIN_RAM_GB="${MIN_RAM_GB:-8}"
-MODEL_FAST="${MODEL_FAST:-llama3.1:8b}"
-MODEL_PREMIUM="${MODEL_PREMIUM:-qwen2.5:14b}"
+MODEL_PRIMARY="${MODEL_PRIMARY:-phi3:mini}"
 AUTO_INSTALL_OLLAMA="${AUTO_INSTALL_OLLAMA:-0}"
-TEST_PROMPT_FAST="${TEST_PROMPT_FAST:-Hello from Ollama fast model}"
-TEST_PROMPT_PREMIUM="${TEST_PROMPT_PREMIUM:-Hello from Ollama premium model}"
+TEST_PROMPT_PRIMARY="${TEST_PROMPT_PRIMARY:-Hello from Ollama primary model}"
 OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
 MIN_AVAILABLE_MB_AFTER_TEST="${MIN_AVAILABLE_MB_AFTER_TEST:-512}"
 MAX_SWAP_PAGES_DELTA="${MAX_SWAP_PAGES_DELTA:-1024}"
@@ -107,39 +105,27 @@ fi
 pass "Ollama API reachable at ${OLLAMA_BASE_URL}"
 
 section "3) Pull Required Models"
-for model in "${MODEL_FAST}" "${MODEL_PREMIUM}"; do
-  if ollama pull "${model}"; then
-    pass "Model pull succeeded (${model})"
-  else
-    fail "Model pull failed (${model})"
-  fi
-done
+if ollama pull "${MODEL_PRIMARY}"; then
+  pass "Model pull succeeded (${MODEL_PRIMARY})"
+else
+  fail "Model pull failed (${MODEL_PRIMARY})"
+fi
 
 section "4) Inference Validation"
 PAGES_BEFORE="$(awk '/pswpin/ {in=$2} /pswpout/ {out=$2} END {print in+out+0}' /proc/vmstat)"
 
-INFER_LOG_FAST="$(mktemp /tmp/synqra_ollama_fast.XXXXXX.log)"
-INFER_LOG_PREMIUM="$(mktemp /tmp/synqra_ollama_premium.XXXXXX.log)"
+INFER_LOG_PRIMARY="$(mktemp /tmp/synqra_ollama_primary.XXXXXX.log)"
 
-timeout 180 ollama run "${MODEL_FAST}" "${TEST_PROMPT_FAST}" >"${INFER_LOG_FAST}" 2>&1 || true
-timeout 240 ollama run "${MODEL_PREMIUM}" "${TEST_PROMPT_PREMIUM}" >"${INFER_LOG_PREMIUM}" 2>&1 || true
+timeout 180 ollama run "${MODEL_PRIMARY}" "${TEST_PROMPT_PRIMARY}" >"${INFER_LOG_PRIMARY}" 2>&1 || true
 
-if grep -qiE "error|failed|panic|killed" "${INFER_LOG_FAST}"; then
-  fail "Fast model inference showed error markers (${MODEL_FAST})"
+if grep -qiE "error|failed|panic|killed" "${INFER_LOG_PRIMARY}"; then
+  fail "Primary model inference showed error markers (${MODEL_PRIMARY})"
 else
-  pass "Fast model inference completed (${MODEL_FAST})"
+  pass "Primary model inference completed (${MODEL_PRIMARY})"
 fi
 
-if grep -qiE "error|failed|panic|killed" "${INFER_LOG_PREMIUM}"; then
-  fail "Premium model inference showed error markers (${MODEL_PREMIUM})"
-else
-  pass "Premium model inference completed (${MODEL_PREMIUM})"
-fi
-
-echo "Fast model output sample:"
-head -n 5 "${INFER_LOG_FAST}" || true
-echo "Premium model output sample:"
-head -n 5 "${INFER_LOG_PREMIUM}" || true
+echo "Primary model output sample:"
+head -n 5 "${INFER_LOG_PRIMARY}" || true
 
 section "5) Resource Check During/After Test"
 if command -v top >/dev/null 2>&1; then
