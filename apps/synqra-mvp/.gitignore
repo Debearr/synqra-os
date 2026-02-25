@@ -1,39 +1,63 @@
+########################################################
+# NODE / NEXT.JS
+########################################################
+
 # dependencies
-node_modules
+node_modules/
 .pnp
 .pnp.js
 
-# testing
-coverage
-playwright-report
-test-results
-
-# next.js
+# Next build output
 .next/
 out/
+build/
 
-# production
-build
+# TypeScript
+*.tsbuildinfo
 
-# misc
-.DS_Store
-*.pem
+########################################################
+# TESTING
+########################################################
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-ts-debug.log*
-.pnpm-debug.log*
+coverage/
+playwright-report/
+test-results/
 
-# local env files
+########################################################
+# PYTHON (Inference Router)
+########################################################
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python logs
+*.log
+
+########################################################
+# ENVIRONMENT FILES
+########################################################
+
 .env
 .env.*
 .env.local
+.env*.local
 .env.automation
 .env.automation.*
-.env*.local
+
 !.env.example
-env_config_temp.txt
+
+########################################################
+# TEMP / CACHE / DEBUG
+########################################################
+
 *.temp
 *.tmp
 tmp_*
@@ -41,17 +65,35 @@ tmp_screenshots/
 tmp_screenshots_postfix/
 *.probe.json
 
-# vercel
-.vercel
+codex-dev.log
+.tmp-build.log
+.tmp-dev-*.pid
+.tmp-dev-*.log
+.tmp-next-*.pid
+.tmp-next-*.log
 
-# typescript
-*.tsbuildinfo
+########################################################
+# SYSTEM FILES
+########################################################
 
-# Allow tracked deployment scripts in this app even if parent ignore blocks *.sh
+.DS_Store
+Thumbs.db
+*.pem
+
+########################################################
+# VERCEL
+########################################################
+
+.vercel/
+
+########################################################
+# SHELL SCRIPT OVERRIDES
+# Allow tracked deployment scripts even if parent ignores *.sh
+########################################################
+
 !scripts/block1_capacity_readiness.sh
 !scripts/block2_routing_stress.sh
 !scripts/block3_production_deploy.sh
 !scripts/block4_monitoring_rollback.sh
 !scripts/run_4block_console.sh
 !scripts/configure-telegram.sh
-
