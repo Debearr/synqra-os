@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install --filter synqra-mvp... && pnpm --filter synqra-mvp build"
+
+[deploy]
+startCommand = "cd apps/synqra-mvp && pnpm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
