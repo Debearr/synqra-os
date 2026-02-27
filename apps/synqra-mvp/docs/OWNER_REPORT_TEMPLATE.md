@@ -23,3 +23,25 @@ Max Length: 150–300 words.
 - Code dumps.
 - Repeating prior block context.
 - Over-explaining.
+
+---
+
+## Report Output Discipline
+
+Reports must be:
+
+- Short
+- Structured
+- Deterministic
+- No narrative explanation
+- No excessive verbosity
+
+Required fields:
+
+- Repository
+- Branch
+- Status
+- Risk Level
+- Confidence Score
+
+Optional commentary only if risk exists.
