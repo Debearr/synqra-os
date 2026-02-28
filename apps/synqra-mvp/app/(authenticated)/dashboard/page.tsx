@@ -8,6 +8,30 @@ type SessionUserLike = {
   user_metadata?: Record<string, unknown> | null;
 };
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function getSessionUserSafely(scope: string): Promise<SessionUserLike | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error(`[${scope}] Supabase auth.getUser failed:`, error.message);
+      return null;
+    }
+    return (data?.user as SessionUserLike | null) ?? null;
+  } catch (error) {
+    const message = getErrorMessage(error);
+    if (message.toLowerCase().includes("ref mismatch")) {
+      console.error(`[${scope}] Supabase environment mismatch: ${message}`);
+    } else {
+      console.error(`[${scope}] Supabase session initialization failed: ${message}`);
+    }
+    return null;
+  }
+}
+
 function readString(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -26,11 +50,8 @@ function resolvePlanBadge(user: SessionUserLike | null): PlanBadge {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const planBadge = resolvePlanBadge((user as SessionUserLike | null) ?? null);
+  const user = await getSessionUserSafely("dashboard-page");
+  const planBadge = resolvePlanBadge(user);
 
   return (
     <section className="space-y-6">
