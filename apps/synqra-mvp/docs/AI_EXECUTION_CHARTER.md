@@ -20,3 +20,35 @@ This document defines how AI agents (Codex App, Codex 5.3, ChatGPT 5.2, Claude S
 - Max 3–5 validation questions
 
 This charter applies to Synqra, AuraFX, NØID, and all future NoID Labs projects.
+
+---
+
+## Enforcement Protocol (Phase Discipline)
+
+1. All work must occur on a named feature branch.
+2. No direct commits to `main`.
+3. Every phase must follow:
+   - Branch -> Commit -> Push -> PR -> Merge -> Sync -> Delete branch
+4. Owner report must include:
+   - Status
+   - Risk level
+   - Confidence score
+5. Protected files may not be modified without explicit review.
+
+Violation of this protocol invalidates phase completion.
+
+---
+
+## Branch Naming Standard
+
+Format:
+
+codex/<domain>-phase-<number>
+
+Examples:
+
+- codex/governance-phase-2
+- codex/auth-phase-3
+- codex/ui-phase-4
+
+Branches must describe scope and phase.
