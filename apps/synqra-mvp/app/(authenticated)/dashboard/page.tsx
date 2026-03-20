@@ -59,24 +59,43 @@ export default async function DashboardPage() {
         <header className="space-y-3">
           <p className="text-xs uppercase tracking-[0.14em] text-ds-text-secondary">Dashboard</p>
           <h1 className="text-3xl font-medium leading-compact">Welcome back.</h1>
+          <p className="max-w-2xl text-sm leading-copy text-ds-text-secondary">
+            The fastest path from here is one focused brief, one chosen surface, and one draft you can ship today.
+          </p>
           <span className="inline-flex h-8 items-center border border-ds-gold/60 px-3 text-xs uppercase tracking-[0.14em] text-ds-gold">
             {planBadge}
           </span>
         </header>
-        <div>
+
+        <div className="flex flex-wrap items-start gap-3">
           <Link
             href="/studio"
             className="inline-flex min-h-11 items-center bg-ds-gold px-4 py-2 text-sm font-medium text-ds-bg"
+            data-testid="dashboard-open-studio"
           >
-            Open Studio →
+            Open Studio -&gt;
           </Link>
+          <span className="inline-flex min-h-11 items-center border border-ds-text-secondary/30 px-4 py-2 text-sm text-ds-text-secondary">
+            Best first run: choose realtor or travel advisor, pick one surface, and generate one clean draft
+          </span>
         </div>
       </div>
 
-      <div className="space-y-3 border border-ds-text-secondary/30 bg-ds-surface p-6">
-        <p className="text-xs uppercase tracking-[0.14em] text-ds-text-secondary">Profile nudge</p>
-        <div className="min-h-28 border border-ds-text-secondary/30 bg-ds-bg/40 p-4 text-sm text-ds-text-secondary">
-          Profile completion placeholder (Block 8).
+      <div className="grid gap-6 md:grid-cols-[1.35fr_0.95fr]">
+        <div className="space-y-4 border border-ds-text-secondary/30 bg-ds-surface p-6">
+          <p className="text-xs uppercase tracking-[0.14em] text-ds-text-secondary">Today&apos;s Flow</p>
+          <ol className="space-y-3 text-sm leading-copy text-ds-text-primary">
+            <li>1. Select the client vertical you are writing for.</li>
+            <li>2. Write the business outcome you need right now.</li>
+            <li>3. Generate, read, and refine from signal instead of guesswork.</li>
+          </ol>
+        </div>
+
+        <div className="space-y-3 border border-ds-text-secondary/30 bg-ds-surface p-6">
+          <p className="text-xs uppercase tracking-[0.14em] text-ds-text-secondary">Profile nudge</p>
+          <div className="min-h-28 border border-ds-text-secondary/30 bg-ds-bg/40 p-4 text-sm text-ds-text-secondary">
+            Profile completion can wait. The product value right now is draft velocity, not setup ceremony.
+          </div>
         </div>
       </div>
     </section>
