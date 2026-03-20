@@ -11,6 +11,7 @@ export const REDIRECT_PATHS = {
 } as const;
 
 type GoogleAuthRedirectState = "error" | "config_error";
+type PostAuthRole = "visitor" | "applicant" | "approved_pilot" | "subscriber" | "lapsed" | "denied";
 type LinkedInCallbackState =
   | "linkedin_denied"
   | "linkedin_state"
@@ -38,6 +39,27 @@ export function getGoogleAuthRedirectPath(state: GoogleAuthRedirectState): strin
   return buildQueryPath(REDIRECT_PATHS.ENTER, { auth: state });
 }
 
+export function resolveSafeNextPath(nextPath: string | null | undefined): string | null {
+  if (!nextPath) return null;
+  const trimmed = nextPath.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed, "http://localhost");
+    const resolved = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    return resolved.startsWith("//") ? null : resolved;
+  } catch {
+    return null;
+  }
+}
+
+export function getSignInRedirectPath(nextPath?: string | null): string {
+  const safeNextPath = resolveSafeNextPath(nextPath);
+  return safeNextPath ? buildQueryPath(REDIRECT_PATHS.AUTH_SIGN_IN, { next: safeNextPath }) : REDIRECT_PATHS.AUTH_SIGN_IN;
+}
+
 export function getLinkedInCallbackRedirectPath(state: LinkedInCallbackState): string {
   if (state === "linkedin") {
     return buildQueryPath(REDIRECT_PATHS.ADMIN_INTEGRATIONS, { success: "linkedin" });
@@ -46,7 +68,7 @@ export function getLinkedInCallbackRedirectPath(state: LinkedInCallbackState): s
 }
 
 export function getRedirectForRole(role: string): string {
-  const map: Record<string, string> = {
+  const map: Record<PostAuthRole, string> = {
     visitor: REDIRECT_PATHS.ROOT,
     applicant: REDIRECT_PATHS.APPLY_STATUS,
     approved_pilot: REDIRECT_PATHS.DASHBOARD,
@@ -54,5 +76,13 @@ export function getRedirectForRole(role: string): string {
     lapsed: REDIRECT_PATHS.PRICING,
     denied: REDIRECT_PATHS.APPLY_STATUS,
   };
-  return map[role] ?? REDIRECT_PATHS.ROOT;
+  return map[(role as PostAuthRole) ?? "visitor"] ?? REDIRECT_PATHS.ROOT;
+}
+
+export function resolvePostAuthRedirect(role: string, nextPath?: string | null): string {
+  const safeNextPath = resolveSafeNextPath(nextPath);
+  if (safeNextPath) {
+    return safeNextPath;
+  }
+  return REDIRECT_PATHS.DASHBOARD;
 }

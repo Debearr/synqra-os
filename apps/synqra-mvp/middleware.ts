@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { getSignInRedirectPath } from "@/lib/redirects";
 
 type RoleState = "visitor" | "applicant" | "approved_pilot" | "subscriber" | "lapsed";
 type SessionUser = {
@@ -110,6 +111,11 @@ function redirectToRoleRoute(request: NextRequest, role: RoleState): NextRespons
   return NextResponse.redirect(url);
 }
 
+function redirectToSignIn(request: NextRequest): NextResponse {
+  const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  return NextResponse.redirect(new URL(getSignInRedirectPath(nextPath), request.url));
+}
+
 function isConfigured(value: string | undefined): value is string {
   if (!value) return false;
   const trimmed = value.trim();
@@ -141,10 +147,14 @@ export async function middleware(request: NextRequest) {
   }
 
   const { response, role } = await resolveSessionRole(request);
-  const allowed = role === "visitor" || role === "approved_pilot" || role === "subscriber";
+  const allowed = role === "approved_pilot" || role === "subscriber";
 
   if (allowed) {
     return response;
+  }
+
+  if (role === "visitor") {
+    return redirectToSignIn(request);
   }
 
   return redirectToRoleRoute(request, role);

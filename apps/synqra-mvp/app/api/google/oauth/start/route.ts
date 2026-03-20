@@ -2,10 +2,11 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { REDIRECT_PATHS, buildAbsoluteRedirectUrl, getGoogleAuthRedirectPath } from "@/lib/redirects";
+import { REDIRECT_PATHS, buildAbsoluteRedirectUrl, getGoogleAuthRedirectPath, resolveSafeNextPath } from "@/lib/redirects";
 
 export async function GET(request: Request) {
-  const { origin } = new URL(request.url);
+  const { origin, searchParams } = new URL(request.url);
+  const nextPath = resolveSafeNextPath(searchParams.get("next"));
   let supabase: Awaited<ReturnType<typeof createClient>>;
   try {
     supabase = await createClient();
@@ -21,7 +22,12 @@ export async function GET(request: Request) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: buildAbsoluteRedirectUrl(origin, REDIRECT_PATHS.GOOGLE_OAUTH_CALLBACK),
+      redirectTo: buildAbsoluteRedirectUrl(
+        origin,
+        nextPath
+          ? `${REDIRECT_PATHS.GOOGLE_OAUTH_CALLBACK}?next=${encodeURIComponent(nextPath)}`
+          : REDIRECT_PATHS.GOOGLE_OAUTH_CALLBACK
+      ),
       scopes: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.compose",
       queryParams: {
         access_type: "offline",

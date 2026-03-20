@@ -87,6 +87,7 @@ export default async function AccountPage() {
             readOnly
             value={email}
             className="h-11 w-full border border-ds-text-secondary/30 bg-ds-bg px-3 text-sm text-ds-text-primary"
+            data-testid="account-email"
           />
         </div>
 
@@ -110,6 +111,7 @@ export default async function AccountPage() {
           <a
             href="/api/auth/signout"
             className="inline-flex min-h-11 items-center border border-ds-text-secondary/30 px-4 py-2 text-sm text-ds-text-primary"
+            data-testid="account-sign-out"
           >
             Sign out
           </a>

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { storeRawRefreshToken } from "@/lib/integrations/google/token-store";
-import { buildAbsoluteRedirectUrl, getGoogleAuthRedirectPath, getRedirectForRole } from "@/lib/redirects";
-import { getUserRoleState } from "@/lib/user-role-state";
+import { buildAbsoluteRedirectUrl, getGoogleAuthRedirectPath, resolveSafeNextPath } from "@/lib/redirects";
+import { normalizeAuthEmail, resolvePostLoginState } from "@/lib/auth/post-login";
 
 type ExchangeSession = {
   id?: string | null;
   user?: { id?: string | null } | null;
   provider_refresh_token?: string | null;
+  email?: string | null;
 };
 
 function resolveUserId(input: unknown): string | null {
@@ -24,10 +25,17 @@ function resolveProviderRefreshToken(input: unknown): string | null {
   return typeof token === "string" && token.trim() ? token : null;
 }
 
+function resolveUserEmail(input: unknown): string | null {
+  if (!input || typeof input !== "object") return null;
+  const typed = input as ExchangeSession;
+  return normalizeAuthEmail(typed.email) ?? normalizeAuthEmail(typed.user && "email" in typed.user ? (typed.user as { email?: unknown }).email : null);
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const nextPath = resolveSafeNextPath(searchParams.get("next"));
 
   if (error) {
     return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, getGoogleAuthRedirectPath("error")));
@@ -47,6 +55,7 @@ export async function GET(request: Request) {
     if (!error) {
       const userId = resolveUserId(data?.session) || resolveUserId(data?.user);
       const providerRefreshToken = resolveProviderRefreshToken(data?.session);
+      const userEmail = resolveUserEmail(data?.user) || resolveUserEmail(data?.session);
       if (userId && providerRefreshToken) {
         try {
           await storeRawRefreshToken(userId, providerRefreshToken);
@@ -55,17 +64,12 @@ export async function GET(request: Request) {
         }
       }
 
-      let role = "visitor";
-      if (userId) {
-        try {
-          role = await getUserRoleState(userId);
-        } catch (roleError) {
-          console.warn("[google/oauth/callback] Failed to resolve role from Supabase users table:", roleError);
-        }
-      }
-
-      const destination = getRedirectForRole(role);
-      return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, destination));
+      const { redirectTo } = await resolvePostLoginState({
+        userId,
+        email: userEmail,
+        nextPath,
+      });
+      return NextResponse.redirect(buildAbsoluteRedirectUrl(origin, redirectTo));
     }
 
     console.error("[google/oauth/callback] Session exchange failed:", error);

@@ -144,6 +144,8 @@ synqra-os/
 # Allow tracked implementation files inside synqra-mvp app
 !apps/synqra-mvp/lib/
 apps/synqra-mvp/lib/*
+!apps/synqra-mvp/lib/auth/
+!apps/synqra-mvp/lib/auth/post-login.ts
 !apps/synqra-mvp/lib/journey/
 !apps/synqra-mvp/lib/journey/**
 !apps/synqra-mvp/lib/email/
